@@ -1,0 +1,64 @@
+#cloud-config
+# Vultr bring-up for Nano Foundry. Installs the runtimes, the TimescaleDB
+# extension, clones the repo and starts both services behind nginx on :80.
+package_update: true
+packages:
+  - git
+  - nginx
+  - postgresql
+  - postgresql-contrib
+  - python3
+  - curl
+  - ca-certificates
+
+write_files:
+  - path: /etc/nginx/sites-available/nano-foundry
+    content: |
+      server {
+        listen 80 default_server;
+        server_name _;
+        location /filters/ { proxy_pass http://127.0.0.1:8000/; }
+        location /          { proxy_pass http://127.0.0.1:5173; }
+      }
+  - path: /etc/systemd/system/nano-foundry-api.service
+    content: |
+      [Unit]
+      Description=Nano Foundry app and event API
+      After=network.target postgresql.service
+      [Service]
+      WorkingDirectory=/opt/nano-foundry
+      Environment=DATABASE_URL=postgres://foundry:foundry@localhost:5432/foundry
+      ExecStart=/usr/bin/node tools/api/server.mjs
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+  - path: /etc/systemd/system/nano-foundry-filters.service
+    content: |
+      [Unit]
+      Description=Nano Foundry Python filter service
+      After=network.target
+      [Service]
+      WorkingDirectory=/opt/nano-foundry
+      ExecStart=/usr/bin/python3 py/service.py
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  - apt-get install -y nodejs
+  - |
+    echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/timescaledb.list
+    curl -fsSL https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
+    apt-get update && apt-get install -y timescaledb-2-postgresql-16 || true
+  - timescaledb-tune --quiet --yes || true
+  - systemctl restart postgresql
+  - sudo -u postgres psql -c "CREATE USER foundry WITH PASSWORD 'foundry';" || true
+  - sudo -u postgres psql -c "CREATE DATABASE foundry OWNER foundry;" || true
+  - sudo -u postgres psql -d foundry -c "CREATE EXTENSION IF NOT EXISTS timescaledb;" || true
+  - git clone https://github.com/severo126/protein_customizer /opt/nano-foundry
+  - sudo -u postgres psql -d foundry -f /opt/nano-foundry/tools/api/schema.sql || true
+  - ln -sf /etc/nginx/sites-available/nano-foundry /etc/nginx/sites-enabled/default
+  - systemctl restart nginx
+  - systemctl enable --now nano-foundry-api nano-foundry-filters
+  - cd /opt/nano-foundry && node tools/sweep.mjs --pairs 80 || true

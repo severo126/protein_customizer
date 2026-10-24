@@ -49,6 +49,13 @@ export function renderBench(root) {
       </aside>
 
       <div class="lane-wrap">
+        <div class="panel" style="padding:11px 13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <strong style="font-size:13px">Seeded demo:</strong>
+          ${(state.demo?.routes ?? [])
+            .map((r) => `<button class="btn small" data-demo="${r.id}">${escapeText(r.title)}</button>`)
+            .join('')}
+          <span class="score-note" id="demo-note">${escapeText(state.demoNote ?? 'One route that runs clean, two that fail in different, instructive ways.')}</span>
+        </div>
         <div class="panel lane" id="lane">
           <div class="lane-slot">
             <div style="text-align:center">
@@ -165,6 +172,12 @@ function lightRow(l) {
 
 function wire(root, run, entries, team) {
   root.onclick = (e) => {
+    const demo = e.target.closest('[data-demo]');
+    if (demo) {
+      const route = state.demo.routes.find((r) => r.id === demo.dataset.demo);
+      setState({ starterId: route.starter, lane: [...route.lane], demoNote: route.teaches });
+      return;
+    }
     const add = e.target.closest('[data-add]');
     if (add) {
       setState({ lane: [...state.lane, add.dataset.add] });

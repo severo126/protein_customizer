@@ -21,6 +21,7 @@ export const state = {
   siteB: null,
   linker: 6,
   spliceFocus: null,
+  demo: null,
 };
 
 const screenEl = document.getElementById('screen');
@@ -71,8 +72,9 @@ dialog.addEventListener('click', (e) => {
 
 async function boot() {
   screenEl.innerHTML = `<div class="empty">Loading the catalogue…</div>`;
-  const res = await fetch('src/data/catalogue.json');
+  const [res, demoRes] = await Promise.all([fetch('src/data/catalogue.json'), fetch('src/data/demo.json')]);
   const catalogue = await res.json();
+  state.demo = await demoRes.json();
   state.catalogue = catalogue;
   state.byId = new Map(catalogue.entries.map((e) => [e.id, e]));
   state.spliceA = catalogue.entries.find((e) => e.id === 'lipase') ?? catalogue.entries[0];

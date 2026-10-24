@@ -1,0 +1,45 @@
+# Local stack for Nano Foundry. `./deploy/bring-up.sh` uses the timescale
+# service when Docker is available; the app itself needs no container to run.
+services:
+  timescale:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: foundry
+      POSTGRES_PASSWORD: foundry
+      POSTGRES_DB: foundry
+    ports:
+      - "5432:5432"
+    volumes:
+      - foundry-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foundry"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    command: node tools/api/server.mjs
+    environment:
+      DATABASE_URL: postgres://foundry:foundry@timescale:5432/foundry
+      SERPAPI_KEY: ${SERPAPI_KEY:-}
+    ports:
+      - "5173:5173"
+    depends_on:
+      timescale:
+        condition: service_healthy
+
+  filters:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    command: python3 py/service.py
+    ports:
+      - "8000:8000"
+
+volumes:
+  foundry-pgdata:
