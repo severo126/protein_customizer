@@ -61,6 +61,33 @@ export function exportPipeline({ run, entries, team }) {
   };
 }
 
+// A workstation build: the behaviours that were asked for, the catalogue
+// domains that cover them, and the cartoon compatibility verdict. Like every
+// other export here it carries domain names and nothing a laboratory could act
+// on — no sequence, no coordinates, no ordering information. See docs/scope.md
+// §2; test/behaviours.test.js walks everything this function produces.
+export function exportBuild({ wants, build, impossible = [] }) {
+  return {
+    kind: 'nano-foundry/cartoon-build',
+    disclaimer: CARTOON_PHYSICS_NOTE,
+    not_a_design: 'This is a named set of cartoon domains assembled from a fixed catalogue. It is not a protein design and contains nothing a laboratory could act on.',
+    asked_for: wants.map((w) => ({ behaviour: w.id, reads_as: w.label, judged: w.scope })),
+    not_in_this_catalogue: impossible.map((w) => w.id),
+    build: {
+      label: build.label,
+      domains: build.domains.map((d) => ({ parent: d.parent, parent_id: d.parentId, domain: d.domain })),
+      covered: build.covered,
+      of: build.total,
+      uncovered: build.missing,
+      coverage: build.coverage.map((r) => ({ behaviour: r.id, covered: r.met, by: r.by, because: r.detail })),
+    },
+    compatibility: build.lights.map((l) => ({ check: l.id, colour: l.colour, message: l.message })),
+    verdict: build.verdict.headline,
+    verdict_meaning: build.verdict.detail,
+    not_checked: NOT_CHECKED,
+  };
+}
+
 function round(n) {
   return Number(n.toFixed(3));
 }

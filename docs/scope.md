@@ -70,6 +70,49 @@ recommendation. Nothing is removed from the catalogue by this filter — the for
 are always there, a ruled-out entry stays addable so the bench can show it refusing, and
 every one carries the sentence that ruled it out.
 
+## 3b. The workstation, and the two things it will not do
+
+**What it is.** The workstation lets you look the catalogue up by the behaviour you want
+instead of by name — *grabs a molecule carrying a hydroxyl*, *takes a sugar off*, *has to
+work at 40 °C*, *needs no cofactor* — and tells you which single entry of the forty, or
+which pairing of them, covers the most of what you asked for.
+
+Every behaviour it offers is read straight off a field that is already committed in
+`src/data/catalogue.json`: `action.requires`, `action.op`, `action.group`, `temp`, `ph`,
+`cofactor`, `destroys`, `inhibitedBy`. Nothing is fetched, inferred or modelled.
+`test/behaviours.test.js` and `py/tests/test_behaviours_parity.py` both assert that a
+catalogue entry stripped to those eight fields gives the same answer as the full entry, so
+the composer cannot quietly start depending on something that is not in the file.
+
+A **build** is a named set of one, two or three catalogue domains — nothing more. It
+carries no sequence of any kind, it is not a protein and it is not a design. That a build
+"covers" a behaviour means only that a committed catalogue field says the entry does that.
+It is not a prediction that the team would run, fold, express or exist. A build is reported
+in exactly three ways and no others: **"Nothing here ruled this out"**, **"Ruled out by
+this toy"**, or **"Not everything you asked for"**. The standing not-checked list sits
+beside every one of them.
+
+Temperature and pH are judged against the *team's* shared window rather than against one
+lucky member, using the same intersection the bench's traffic lights use, and the two
+entries that closed a window are named.
+
+**What it will not do, and why.** Two things were asked for alongside this screen and are
+deliberately absent, because both collide with the rules above:
+
+* **No gene or protein database lookup.** Searching a live database for "a gene that does
+  X" is exactly the live search §1 forbids. The workstation composes an answer out of the
+  forty fixed entries instead, and when nothing in them covers a behaviour it says so by
+  name rather than reaching outside the file.
+* **No stability or foldability predictor.** A model that says whether a construct "would
+  fall apart" or "could exist" is a folding and stability claim, and §3 puts folding
+  kinetics, expression, solubility and aggregation on the standing not-checked list and
+  forbids the app from saying a construct would fold, function or be safe. Neither screen
+  has such a model and no code path can produce one.
+
+If either is ever wanted, it is the project owner's call to widen this document first —
+not the build's. The sequence rule and the hazard rule in §1 and §2 stay in force whatever
+is decided.
+
 ## 4. Forbidden UI
 
 * No horizontal amino-acid sequence strip, in any view.
