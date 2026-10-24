@@ -1,8 +1,11 @@
 node_modules/
 .DS_Store
 *.log
-data/
-exports/
+# Scoped to the repository root on purpose: an unanchored "data/" also matches
+# src/data, which is where the committed catalogue, the seeded demo and the
+# parity contract live.
+/data/
+/exports/
 __pycache__/
 *.pyc
 .env

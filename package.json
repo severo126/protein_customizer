@@ -9,6 +9,7 @@
     "test:js": "node --test \"test/*.test.js\"",
     "test:py": "python3 -m unittest discover -s py/tests -v",
     "parity:build": "node tools/make-parity-cases.mjs",
+    "behaviours:build": "node tools/make-behaviour-cases.mjs",
     "serve": "node tools/serve.mjs",
     "api": "node tools/api/server.mjs",
     "filters": "python3 py/service.py",

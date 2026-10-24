@@ -4,16 +4,27 @@
 import { renderCatalogue } from './catalogue-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
+import { renderWorkstation } from './workstation-view.js';
 import { renderPlatform } from './platform-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
+import { closeReaction } from './reaction.js';
 
 export const state = {
   catalogue: null,
   byId: new Map(),
   screen: 'catalogue',
+  // workstation: the behaviours asked for, as {kind, arg} picked off the
+  // catalogue-derived vocabulary. Never anything the user typed in free text.
+  wants: [],
   // bench
   starterId: 'glucose',
   lane: [],
+  // which stage the reaction cartoon is playing; null follows the last stage
+  playStage: null,
+  // the enzyme list filters itself against the lane unless this is on
+  showAllEnzymes: false,
+  // the catalogue screen can borrow the same filter
+  catalogueFilter: false,
   // splice
   spliceA: null,
   spliceB: null,
@@ -37,6 +48,7 @@ export function render() {
     else tab.removeAttribute('aria-current');
   }
   if (state.screen === 'catalogue') renderCatalogue(screenEl);
+  else if (state.screen === 'workstation') renderWorkstation(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
   else if (state.screen === 'platform') renderPlatform(screenEl);
   else renderSplice(screenEl);
@@ -44,7 +56,10 @@ export function render() {
 
 document.getElementById('tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.tab');
-  if (tab) setState({ screen: tab.dataset.screen });
+  if (tab) {
+    closeReaction();
+    setState({ screen: tab.dataset.screen });
+  }
 });
 
 /* ---------- the limits panel, reachable from every screen ---------- */

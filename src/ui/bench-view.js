@@ -1,19 +1,29 @@
-// The bench: drag cards into a lane, watch the molecule change along it, and
-// see whether the team could run in one pot.
+// The bench: drag cards into a lane, watch the molecule change along it, play
+// any stage back as a cartoon, and see whether the team could run in one pot.
+//
+// The enzyme list filters itself against what the lane is currently holding.
+// Entries this toy has ruled out stay reachable on purpose — watching a stage
+// refuse a molecule is the point of the screen — but they are moved out of the
+// way and each one says what ruled it out.
 
 import { state, setState, entry, laneEntries } from './app.js';
 import { enzymePiece, moleculePiece, escapeText } from './cartoon.js';
 import { STARTERS, starter, describe } from '../model/molecules.js';
 import { runPipeline } from '../model/pipeline.js';
 import { teamReport } from '../model/compatibility.js';
+import { suggestNext, byFamily, FIT_NOTE } from '../model/suggest.js';
 import { exportPipeline } from '../model/exportConstruct.js';
 import { renderGeminiBox, wireGeminiBox } from './gemini.js';
+import { reactionPanel, wireReaction } from './reaction.js';
 import { logEvent, roomPanel, localEvents, telemetryState } from './telemetry.js';
+
+const FAMILY_LABEL = { adds: 'Adds a group', removes: 'Removes a group', creates: 'Creates / rearranges' };
 
 export function renderBench(root) {
   const entries = laneEntries();
   const run = runPipeline(starter(state.starterId), entries);
   const team = teamReport(entries, run);
+  const suggestions = suggestNext(state.catalogue.entries, entries, run.product);
 
   root.innerHTML = `
     <div class="section-head">
@@ -24,33 +34,12 @@ export function renderBench(root) {
 
     <div class="bench-grid">
       <aside class="panel palette">
-        <h3>Enzymes</h3>
-        <div class="picker-row">
-          <label for="starter">Starting molecule</label>
-          <select id="starter">
-            ${STARTERS.map((s) => `<option value="${s.id}" ${s.id === state.starterId ? 'selected' : ''}>${escapeText(s.label)}</option>`).join('')}
-          </select>
-        </div>
-        ${['adds', 'removes', 'creates']
-          .map(
-            (f) => `<div class="picker-row"><label>${f}</label>
-          ${state.catalogue.entries
-            .filter((e) => e.family === f)
-            .map(
-              (e) => `<div class="palette-item" draggable="true" data-enzyme="${e.id}">
-                ${enzymePiece(e, 32)}
-                <span>${escapeText(e.name)}<small>${escapeText(e.group)} · ${escapeText(e.cofactor)}</small></span>
-                <button class="btn small" data-add="${e.id}">+</button>
-              </div>`,
-            )
-            .join('')}</div>`,
-          )
-          .join('')}
+        ${renderPalette(suggestions, entries, run)}
       </aside>
 
       <div class="lane-wrap">
-        <div class="panel" style="padding:11px 13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <strong style="font-size:13px">Seeded demo:</strong>
+        <div class="panel demo-bar">
+          <strong>Seeded demo:</strong>
           ${(state.demo?.routes ?? [])
             .map((r) => `<button class="btn small" data-demo="${r.id}">${escapeText(r.title)}</button>`)
             .join('')}
@@ -58,12 +47,12 @@ export function renderBench(root) {
         </div>
         <div class="panel lane" id="lane">
           <div class="lane-slot">
-            <div style="text-align:center">
+            <div class="lane-end">
               ${moleculePiece(run.start, 86)}
               <div class="cartoon-label">in · ${escapeText(describe(run.start))}</div>
             </div>
           </div>
-          ${run.stages.map(stageCard).join('')}
+          ${run.stages.map((s) => stageCard(s, s.index === playIndex(run))).join('')}
           <div class="lane-slot"><div class="connector" aria-hidden="true">➜</div>
             <div class="drop-zone" id="drop">Drop an enzyme here<br /><small>or press + in the list</small></div>
           </div>
@@ -71,12 +60,14 @@ export function renderBench(root) {
             run.stalled
               ? ''
               : `<div class="lane-slot"><div class="connector" aria-hidden="true">➜</div>
-                <div style="text-align:center">
+                <div class="lane-end">
                   ${moleculePiece(run.product, 86)}
                   <div class="cartoon-label">out · ${escapeText(run.productDescription ?? '')}</div>
                 </div></div>`
           }
         </div>
+
+        ${renderReaction(run)}
 
         <div class="readout">
           <div class="panel box">
@@ -113,8 +104,116 @@ export function renderBench(root) {
 
   wire(root, run, entries, team);
   wireGeminiBox(root);
+  wireReaction(root);
   paintRoomPanel(root);
 }
+
+/* ---------- the enzyme list, filtered against the lane ---------- */
+
+function renderPalette(suggestions, entries, run) {
+  const { counts, context } = suggestions;
+  const showAll = state.showAllEnzymes || context.empty;
+  const fits = suggestions.items.filter((i) => i.verdict === 'fits');
+  const caution = suggestions.items.filter((i) => i.verdict === 'caution');
+  const blocked = suggestions.items.filter((i) => i.verdict === 'blocked');
+
+  const header = context.empty
+    ? `<div class="palette-note">Nothing in the lane yet, so the only check is whether an entry has a rule
+       for the starting molecule. Add a stage and the pot's shared windows and cofactors join in.</div>`
+    : `<div class="palette-note">Filtered against <strong>${escapeText(run.stalled ? 'a stalled lane' : describe(run.product))}</strong>
+       ${context.temp && !context.temp.empty ? ` and a pot at ${context.temp.low}–${context.temp.high} °C, pH ${context.ph.low}–${context.ph.high}` : ''}.
+       ${escapeText(FIT_NOTE)}</div>`;
+
+  const toggle = context.empty
+    ? ''
+    : `<label class="palette-toggle">
+        <input type="checkbox" id="show-all" ${state.showAllEnzymes ? 'checked' : ''} />
+        Show all forty, ruled out or not
+      </label>`;
+
+  const held = run.stalled ? 'the stalled lane' : describe(run.product);
+  const sections = [];
+  sections.push(bucket('fits', context.empty ? `Has a rule for ${held}` : 'Fits what the lane is holding', fits, context.empty));
+  if (caution.length) sections.push(bucket('caution', 'Would run, with a caution', caution, false));
+  if (blocked.length) {
+    sections.push(`<details class="palette-bucket blocked" ${showAll ? 'open' : ''}>
+      <summary><span class="bucket-dot blocked"></span>${context.empty ? `No rule for ${escapeText(held)}` : 'Ruled out by this lane'}
+        <span class="chip">${blocked.length}</span></summary>
+      <div class="palette-list">${blocked.map((i) => paletteItem(i, true)).join('')}</div>
+    </details>`);
+  }
+
+  return `<div class="palette-head">
+      <h3>Enzymes</h3>
+      <span class="chip">${counts.fits} fit · ${counts.caution} caution · ${counts.blocked} ruled out</span>
+    </div>
+    <div class="picker-row">
+      <label for="starter">Starting molecule</label>
+      <select id="starter">
+        ${STARTERS.map((s) => `<option value="${s.id}" ${s.id === state.starterId ? 'selected' : ''}>${escapeText(s.label)}</option>`).join('')}
+      </select>
+    </div>
+    ${header}
+    ${toggle}
+    ${sections.join('')}`;
+}
+
+function bucket(kind, label, items, groupByFamily) {
+  if (!items.length) {
+    return `<div class="palette-bucket ${kind}"><div class="bucket-head">
+      <span class="bucket-dot ${kind}"></span>${label} <span class="chip">0</span></div>
+      <p class="palette-note">Nothing in the catalogue lands here for this lane. Open the ruled-out list
+      to add one anyway and watch it refuse.</p></div>`;
+  }
+  const body = groupByFamily
+    ? [...byFamily(items).entries()]
+        .map(([family, group]) => `<div class="palette-family">${escapeText(FAMILY_LABEL[family] ?? family)}</div>
+          <div class="palette-list">${group.map((i) => paletteItem(i, false)).join('')}</div>`)
+        .join('')
+    : `<div class="palette-list">${items.map((i) => paletteItem(i, false)).join('')}</div>`;
+  return `<div class="palette-bucket ${kind}">
+    <div class="bucket-head"><span class="bucket-dot ${kind}"></span>${label}
+      <span class="chip">${items.length}</span></div>
+    ${body}</div>`;
+}
+
+function paletteItem(item, ruledOut) {
+  const e = item.entry;
+  return `<div class="palette-item ${item.verdict}" draggable="${ruledOut ? 'false' : 'true'}" data-enzyme="${e.id}">
+    ${enzymePiece(e, 34)}
+    <span class="palette-name">${escapeText(e.name)}
+      <small>${escapeText(item.headline || `${e.group} · ${e.cofactor}`)}</small></span>
+    <button class="btn small ${ruledOut ? 'ghost' : ''}" data-add="${e.id}"
+      title="${ruledOut ? 'Add it anyway and watch the stage refuse' : 'Add to the lane'}">${ruledOut ? 'anyway' : '+'}</button>
+  </div>`;
+}
+
+/* ---------- the reaction cartoon for one stage ---------- */
+
+// Which stage the scene is showing: the one the user picked, or the last one
+// that did something.
+function playIndex(run) {
+  if (state.playStage !== null && state.playStage < run.stages.length) return state.playStage;
+  if (run.stalled) return run.stalledAt;
+  return run.stages.length - 1;
+}
+
+function renderReaction(run) {
+  const i = playIndex(run);
+  const stage = run.stages[i];
+  if (!stage || !stage.input) {
+    return `<div class="panel reaction-empty">
+      <strong>Watch a stage run</strong>
+      <p class="score-note">Add an enzyme to the lane and the cartoon of it meeting the molecule plays
+      here, stage by stage. A stage that refuses its input gets its own ending.</p>
+    </div>`;
+  }
+  return reactionPanel(stage.enzyme, stage.input, {
+    title: `Stage ${i + 1} of ${run.stages.length}: ${stage.enzyme.name}`,
+  });
+}
+
+/* ---------- the rest of the screen ---------- */
 
 // The live panel is served from the Timescale-backed API when one is running.
 // With no server it says so plainly and falls back to this browser's own
@@ -145,18 +244,21 @@ async function paintRoomPanel(root) {
     <div class="score-note">${escapeText(data.note ?? '')}</div>`;
 }
 
-function stageCard(stage) {
+function stageCard(stage, playing) {
   const e = stage.enzyme;
   return `<div class="lane-slot">
     <div class="connector ${stage.state === 'mismatch' ? 'broken' : ''}" aria-hidden="true">${stage.state === 'mismatch' ? '✂' : '➜'}</div>
-    <div class="stage-card ${stage.state}">
+    <div class="stage-card ${stage.state} ${playing ? 'playing' : ''}">
       <div class="stage-index">Stage ${stage.index + 1}${stage.state === 'unreached' ? ' · never reached' : ''}</div>
       <h5>${escapeText(e.name)}</h5>
       ${enzymePiece(e, 56)}
       ${stage.state === 'ran' ? `<div class="did">${escapeText(stage.what)}</div>` : ''}
       ${stage.state === 'mismatch' ? `<div class="stall"><strong>Stalled.</strong> ${escapeText(stage.stallReason)}</div>` : ''}
       ${stage.product ? moleculePiece(stage.product, 62) : ''}
-      <button class="btn small ghost" data-remove="${stage.index}">Remove</button>
+      <div class="stage-actions">
+        ${stage.input ? `<button class="btn small ${playing ? 'primary' : ''}" data-play="${stage.index}">▶ Play</button>` : ''}
+        <button class="btn small ghost" data-remove="${stage.index}">Remove</button>
+      </div>
     </div>
   </div>`;
 }
@@ -175,23 +277,28 @@ function wire(root, run, entries, team) {
     const demo = e.target.closest('[data-demo]');
     if (demo) {
       const route = state.demo.routes.find((r) => r.id === demo.dataset.demo);
-      setState({ starterId: route.starter, lane: [...route.lane], demoNote: route.teaches });
+      setState({ starterId: route.starter, lane: [...route.lane], demoNote: route.teaches, playStage: null });
       return;
     }
     const add = e.target.closest('[data-add]');
     if (add) {
-      setState({ lane: [...state.lane, add.dataset.add] });
+      setState({ lane: [...state.lane, add.dataset.add], playStage: state.lane.length });
       logEvent('lane.add', { enzyme: add.dataset.add, length: state.lane.length });
+      return;
+    }
+    const play = e.target.closest('[data-play]');
+    if (play) {
+      setState({ playStage: Number(play.dataset.play) });
       return;
     }
     const remove = e.target.closest('[data-remove]');
     if (remove) {
       const i = Number(remove.dataset.remove);
-      setState({ lane: state.lane.filter((_, idx) => idx !== i) });
+      setState({ lane: state.lane.filter((_, idx) => idx !== i), playStage: null });
       return;
     }
     if (e.target.id === 'clear-lane') {
-      setState({ lane: [] });
+      setState({ lane: [], playStage: null });
       return;
     }
     if (e.target.id === 'export-run') {
@@ -200,7 +307,8 @@ function wire(root, run, entries, team) {
   };
 
   root.onchange = (e) => {
-    if (e.target.id === 'starter') setState({ starterId: e.target.value });
+    if (e.target.id === 'starter') setState({ starterId: e.target.value, playStage: null });
+    if (e.target.id === 'show-all') setState({ showAllEnzymes: e.target.checked });
   };
 
   for (const item of root.querySelectorAll('[data-enzyme]')) {
@@ -218,7 +326,7 @@ function wire(root, run, entries, team) {
     drop.classList.remove('hot');
     const id = ev.dataTransfer.getData('text/plain');
     if (entry(id)) {
-      setState({ lane: [...state.lane, id] });
+      setState({ lane: [...state.lane, id], playStage: state.lane.length });
       logEvent('lane.add', { enzyme: id, length: state.lane.length });
     }
   };

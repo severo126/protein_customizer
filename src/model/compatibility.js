@@ -33,9 +33,13 @@ export function cofactorTokens(cofactor) {
   return cofactor.split(/\s\+\s/).map((s) => s.trim()).filter(Boolean);
 }
 
-function family(token) {
+// Exported so the "what fits next" filter pools cofactors the same way the
+// traffic lights do, rather than keeping its own copy of the aliases.
+export function cofactorFamily(token) {
   return COFACTOR_FAMILY[token] ?? token;
 }
+
+const family = cofactorFamily;
 
 // Intersect a list of [low, high] windows, naming the pair that closed it.
 export function intersectWindows(entries, key) {
@@ -141,7 +145,7 @@ export function checkInhibition(entries, run) {
 
 // What a stage puts loose into the pot: the group it adds, or the group it
 // cuts off, or the group it hands back.
-function producedGroups(entry) {
+export function producedGroups(entry) {
   const a = entry.action;
   const out = new Set();
   if (a.op === 'add') out.add(a.group);

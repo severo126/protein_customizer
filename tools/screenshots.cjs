@@ -34,6 +34,20 @@ const OUT = join(__dirname, '..', 'docs', 'screenshots');
     console.log(`  docs/screenshots/${name}.png`);
   };
 
+  // The reaction cartoon runs once and holds. Pin it to a chosen millisecond
+  // so the committed picture is the same frame every time.
+  const freezeAt = (ms) =>
+    page.evaluate((t) => {
+      document.getAnimations().forEach((a) => {
+        try {
+          a.pause();
+          a.currentTime = t;
+        } catch {
+          /* an animation that has already finished cannot be scrubbed */
+        }
+      });
+    }, ms);
+
   await page.goto(BASE, { waitUntil: 'networkidle' });
   console.log('Catalogue');
   await shot('1-catalogue');
@@ -44,6 +58,23 @@ const OUT = join(__dirname, '..', 'docs', 'screenshots');
     await page.click(`[data-demo="${route.id}"]`);
     await shot(`2-bench-${route.id}`);
   }
+
+  console.log('The reaction cartoon, frozen mid-transfer');
+  await page.click('[data-demo="clean"]');
+  await page.waitForTimeout(250);
+  await page.click('[data-play="0"]');
+  await page.waitForTimeout(250);
+  await freezeAt(2650);
+  await page.locator('.reaction-panel').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
+  await page.locator('.reaction-panel').screenshot({ path: join(OUT, '8-reaction.png') });
+  console.log('  docs/screenshots/8-reaction.png');
+
+  console.log('The catalogue, filtered against that lane');
+  await page.click('[data-screen="catalogue"]');
+  await page.waitForTimeout(250);
+  await page.click('#catalogue-filter');
+  await shot('9-catalogue-filtered');
 
   console.log('Splice table');
   await page.click('[data-screen="splice"]');
