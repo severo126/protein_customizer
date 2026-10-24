@@ -1,17 +1,18 @@
-// App shell: load the fixed catalogue, route between the three screens, and
+// App shell: load the fixed catalogue, route between the screens, and
 // keep the "what this can't tell you" panel reachable from all of them.
 
 import { renderCatalogue } from './catalogue-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
 import { renderPlatform } from './platform-view.js';
+import { renderHome, unmountHome } from './home-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { closeReaction } from './reaction.js';
 
 export const state = {
   catalogue: null,
   byId: new Map(),
-  screen: 'catalogue',
+  screen: 'home',
   // bench
   starterId: 'glucose',
   lane: [],
@@ -43,7 +44,9 @@ export function render() {
     if (tab.dataset.screen === state.screen) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
   }
-  if (state.screen === 'catalogue') renderCatalogue(screenEl);
+  if (state.screen !== 'home') unmountHome();
+  if (state.screen === 'home') renderHome(screenEl);
+  else if (state.screen === 'catalogue') renderCatalogue(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
   else if (state.screen === 'platform') renderPlatform(screenEl);
   else renderSplice(screenEl);
