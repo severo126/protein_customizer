@@ -38,8 +38,9 @@ walks every exported object recursively so a new field cannot quietly reintroduc
 
 * The physics is deliberately order-of-magnitude wrong. Blobs are spheres, linkers are
   straight rubber bands, "yield" is a made-up score with made-up units.
-* A plausibility result that clears every filter is reported as **"Nothing here ruled this
-  out"** — never as stable, viable, correct, validated, approved, or designed.
+* A plausibility result that clears every filter is reported as
+  **"Nothing here ruled this out"** — never as stable, viable, correct, validated, approved,
+  or designed.
 * Beside that verdict the app lists, as a standing list and not a footnote, what was never
   checked: folding kinetics, real side-chain packing, expression, solubility, aggregation,
   activity retention, allostery, any cellular context, and anything to do with actual

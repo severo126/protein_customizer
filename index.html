@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nano Foundry</title>
+    <meta name="description" content="A classroom sandbox for chaining cartoon enzymes together — educational toy, order-of-magnitude-wrong physics." />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <strong>Nano Foundry</strong>
+          <small>classroom cartoon · not a design tool</small>
+        </span>
+      </div>
+      <nav class="tabs" id="tabs" aria-label="Screens">
+        <button class="tab" data-screen="catalogue" aria-current="page">Catalogue</button>
+        <button class="tab" data-screen="bench">The bench</button>
+        <button class="tab" data-screen="splice">Splice table</button>
+      </nav>
+      <button class="limits-button" id="limits-button" aria-haspopup="dialog">
+        <span aria-hidden="true">?</span> What this can't tell you
+      </button>
+    </header>
+
+    <div class="standing-note" role="note">
+      Everything on every screen is a classroom cartoon with order-of-magnitude-wrong physics. A pass
+      means only that this toy did not rule something out. Nothing here says a construct would fold,
+      function, or be safe. No sequences anywhere, by design.
+    </div>
+
+    <main id="screen" class="screen" aria-live="polite"></main>
+
+    <dialog id="limits-dialog" class="limits-dialog" aria-labelledby="limits-title"></dialog>
+
+    <script type="module" src="src/ui/app.js"></script>
+  </body>
+</html>
