@@ -14,7 +14,18 @@ import { escapeText } from './cartoon.js';
 import { logEvent } from './telemetry.js';
 
 const KEY_STORE = 'nano-foundry.gemini-key';
-const MODEL = 'gemini-2.5-flash';
+
+// Model, instructions and limits come from the agent registry — see
+// config/agents.json and docs/tracks.md. Changing a model is a config change.
+let registry = null;
+
+async function agentSpec(id) {
+  if (!registry) registry = await (await fetch('config/agents.json')).json();
+  const spec = registry.agents.find((a) => a.id === id);
+  if (!spec) throw new Error(`no agent ${id} in the registry`);
+  const instructions = await (await fetch(spec.instructions)).text();
+  return { ...spec, instructionText: instructions };
+}
 
 export function geminiKey() {
   try {
@@ -95,18 +106,12 @@ export function wireGeminiBox(root) {
 
 // Ask for a lane, then keep only what exists in the fixed catalogue.
 async function proposeLane(prompt) {
+  const spec = await agentSpec('pipeline-builder');
   const menu = state.catalogue.entries.map((e) => `${e.id} — ${e.name}: ${e.family}, ${describeAction(e)}`).join('\n');
   const starters = 'glucose, glycerol, catechol, glycine, pyruvate, triose, starch, cellulose, tributyrin, fumarate, aspartate, urea, peroxide, nitrile, protein-stain, acetoacetate, glycerate-2-p, glucose-1-p';
   const text = await callGemini(
-    [
-      'You are picking stages for a teaching toy that chains cartoon enzymes.',
-      'Choose ONLY from this fixed catalogue, by id:',
-      menu,
-      `Starting molecules available: ${starters}.`,
-      'Reply with JSON only, no prose, shaped {"starter": "<id>", "stages": ["<enzyme id>", ...]}.',
-      'Order the stages so each one acts on what the previous one produced. Never invent an id.',
-      `Request: ${prompt}`,
-    ].join('\n\n'),
+    [spec.instructionText, 'Catalogue:', menu, `Starting molecules available: ${starters}.`, `Request: ${prompt}`].join('\n\n'),
+    spec,
   );
   const json = text.match(/\{[\s\S]*\}/);
   if (!json) throw new Error('no JSON in the reply');
@@ -123,8 +128,11 @@ export async function explainRejection({ a, b, siteA, siteB, linker, verdict }) 
   if (!geminiKey() || !killer) return deterministic;
 
   try {
+    const spec = await agentSpec('rejection-explainer');
     const text = await callGemini(
       [
+        spec.instructionText,
+        '',
         'Explain, in two or three plain sentences for a first-year biochemistry student, why a toy',
         'geometric filter rejected a hypothetical two-domain cartoon construct. Do not add any',
         'biology the input does not contain, do not speculate about whether the construct would',
@@ -136,6 +144,7 @@ export async function explainRejection({ a, b, siteA, siteB, linker, verdict }) 
         `Filter that rejected it: ${killer.label}.`,
         `Reason the deterministic filter gave: ${killer.reason}`,
       ].join('\n'),
+      spec,
     );
     logEvent('gemini.explain', { filter: killer.id });
     return text.trim() || deterministic;
@@ -144,12 +153,26 @@ export async function explainRejection({ a, b, siteA, siteB, linker, verdict }) 
   }
 }
 
-async function callGemini(prompt) {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': geminiKey() },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-  });
+async function callGemini(prompt, spec) {
+  const started = performance.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), spec.limits.timeout_ms ?? 20000);
+  let res;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': geminiKey() },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: spec.limits.max_output_tokens ?? 1024 },
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+  // One trace row per model call, the same shape the Python platform writes.
+  logEvent('agent.trace', { agent: spec.id, model: spec.model, latency_ms: Math.round(performance.now() - started), status: res.ok ? 'ok' : `http_${res.status}` });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';

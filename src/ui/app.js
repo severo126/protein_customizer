@@ -4,6 +4,7 @@
 import { renderCatalogue } from './catalogue-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
+import { renderPlatform } from './platform-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 
 export const state = {
@@ -36,6 +37,7 @@ export function render() {
   }
   if (state.screen === 'catalogue') renderCatalogue(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
+  else if (state.screen === 'platform') renderPlatform(screenEl);
   else renderSplice(screenEl);
 }
 

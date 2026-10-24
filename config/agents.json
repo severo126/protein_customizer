@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "note": "The agent registry. Nano Foundry's three agents are declared here — tools, model, instructions and limits — rather than hand-wired into code paths. The Python service (py/service.py) and the browser both read this file, so changing a model or a limit is a config change, not a code change. Every run writes a trace, and any trace can be replayed. See docs/tracks.md.",
+  "defaults": {
+    "trace": true,
+    "trace_sink": "data/traces",
+    "redact": ["api_key", "authorization"],
+    "refuse_fields": ["sequence", "fasta", "codon", "oligo", "primer", "aa_seq", "nt_seq"]
+  },
+  "tools": {
+    "catalogue.list": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.tools:catalogue_list",
+      "description": "The fixed 40-entry catalogue, ids and actions only. Read-only; there is no write tool and no upload tool anywhere in this registry."
+    },
+    "lane.validate": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.tools:lane_validate",
+      "description": "Run a proposed lane through the symbolic molecule model and the four team checks. This is what decides whether a lane works — not the model."
+    },
+    "splice.funnel": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.tools:splice_funnel_tool",
+      "description": "Enumerate candidate splice points for a pair and run the six hard-reject filters over each."
+    },
+    "filters.explain": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.tools:filter_reason",
+      "description": "Return the deterministic reason string a filter already produced, for the explainer to put into plain words."
+    },
+    "events.write": {
+      "kind": "sink",
+      "impl": "nano_foundry.tools:write_event",
+      "description": "Append a time-series row to the event store (Timescale hypertable, or the JSONL buffer when no database is configured)."
+    }
+  },
+  "agents": [
+    {
+      "id": "pipeline-builder",
+      "title": "Pipeline builder",
+      "job": "Turn a sentence of English into a candidate lane of catalogue enzymes.",
+      "model": "gemini-2.5-flash",
+      "tools": ["catalogue.list", "lane.validate"],
+      "instructions": "config/instructions/pipeline-builder.md",
+      "limits": {
+        "max_output_tokens": 1024,
+        "timeout_ms": 20000,
+        "max_stages": 8,
+        "retries": 1
+      },
+      "guarantees": [
+        "Every enzyme id it returns is checked against the fixed catalogue and dropped if it is not there.",
+        "It proposes a lane; whether that lane runs is decided by lane.validate, which is deterministic code."
+      ]
+    },
+    {
+      "id": "rejection-explainer",
+      "title": "Rejection explainer",
+      "job": "Put a deterministic filter verdict into plain English for a student.",
+      "model": "gemini-2.5-flash",
+      "tools": ["filters.explain"],
+      "instructions": "config/instructions/rejection-explainer.md",
+      "limits": {
+        "max_output_tokens": 400,
+        "timeout_ms": 15000,
+        "retries": 0
+      },
+      "guarantees": [
+        "It never decides a verdict; it receives one and rewords it.",
+        "If it is unavailable the UI falls back to the filter's own wording, which is always present."
+      ]
+    },
+    {
+      "id": "sweep-runner",
+      "title": "Filter sweep runner",
+      "job": "Walk catalogue pairs, run the funnel over every candidate, and write each verdict to the event store.",
+      "model": null,
+      "tools": ["splice.funnel", "events.write"],
+      "instructions": "config/instructions/sweep-runner.md",
+      "limits": {
+        "max_pairs": 500,
+        "timeout_ms": 600000,
+        "concurrency": 1
+      },
+      "guarantees": [
+        "No model is involved at all, which is why its output is reproducible and testable.",
+        "It is declared here anyway so the platform treats deterministic workers and model-backed agents the same way."
+      ]
+    }
+  ]
+}
