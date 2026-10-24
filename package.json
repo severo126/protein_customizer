@@ -1,0 +1,11 @@
+{
+  "name": "nano-foundry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An educational browser sandbox for chaining cartoon enzymes — HackTX 26",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "serve": "node tools/serve.mjs"
+  }
+}
