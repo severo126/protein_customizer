@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "note": "The seeded demo: one route that runs clean, two that fail in instructive and different ways. Used by the Load demo control on the bench and by tools/screenshots.cjs.",
+  "routes": [
+    {
+      "id": "clean",
+      "title": "A team that gets along",
+      "starter": "glucose",
+      "lane": ["hexokinase", "gpat"],
+      "teaches": "Two stages, one pot: the kinase parks a phosphate on the sugar and the acyltransferase hangs a fatty chain off that phosphate. Shared window 20–40 °C, pH 7–8.2, nothing eaten, nothing inhibited.",
+      "expect": "runs"
+    },
+    {
+      "id": "mismatch",
+      "title": "A stage handed the wrong molecule",
+      "starter": "glycerol",
+      "lane": ["glucose-isomerase"],
+      "teaches": "An isomerase only rearranges the skeleton it knows. Handed glycerol, it stalls and says so, rather than quietly passing the molecule along — which is the failure mode this toy exists to make visible.",
+      "expect": "stalls"
+    },
+    {
+      "id": "pot-clash",
+      "title": "Both stages work, the pot does not",
+      "starter": "starch",
+      "lane": ["invertase", "ugt"],
+      "teaches": "Each stage runs perfectly well on its own, and the lane produces a product. The traffic light is still red: invertase wants pH 4–6 and the glucuronosyltransferase wants 6.5–8, so there is no pH either of them could share.",
+      "expect": "runs-but-red"
+    }
+  ],
+  "splice": {
+    "a": "lipase",
+    "site_a": "s1",
+    "b": "alpha-amylase",
+    "site_b": "s1",
+    "linker": 6,
+    "teaches": "A pair that clears all six filters at a 6-unit linker — reported as 'Nothing here ruled this out', never as anything stronger. Drag the linker to 2 and the blobs clash; drag it to 20 and the compactness band rejects the dumbbell."
+  }
+}
