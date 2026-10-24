@@ -3,9 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "An educational browser sandbox for chaining cartoon enzymes — HackTX 26",
+  "description": "An educational browser sandbox for chaining cartoon enzymes \u2014 HackTX 26",
   "scripts": {
-    "test": "node --test \"test/*.test.js\"",
-    "serve": "node tools/serve.mjs"
+    "test": "node --test \"test/*.test.js\" && python3 -m unittest discover -s py/tests",
+    "test:js": "node --test \"test/*.test.js\"",
+    "test:py": "python3 -m unittest discover -s py/tests -v",
+    "parity:build": "node tools/make-parity-cases.mjs",
+    "serve": "node tools/serve.mjs",
+    "api": "node tools/api/server.mjs",
+    "filters": "python3 py/service.py",
+    "sweep": "node tools/sweep.mjs",
+    "snowflake:export": "node tools/snowflake-export.mjs"
   }
 }

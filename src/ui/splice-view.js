@@ -32,6 +32,11 @@ export function renderSplice(root) {
           <strong>${escapeText(a.name)} ⟶ ${escapeText(b.name)}</strong>
           ${constructPiece(verdict.geometry, a.domain.label, b.domain.label)}
           <div class="cartoon-label">stylised cartoon construct — chunky game pieces, not a coordinate set</div>
+          <div class="score-note">Every distance on this screen is derived from invented cartoon
+          geometry (<strong>${escapeText(a.source.cartoon)}</strong> for ${escapeText(a.name)},
+          <strong>${escapeText(b.source.cartoon)}</strong> for ${escapeText(b.name)}). The only numbers
+          taken from reference material are the temperature and pH windows, and those are rounded
+          teaching ranges rather than measurements.</div>
         </div>
 
         ${verdictBox(verdict)}

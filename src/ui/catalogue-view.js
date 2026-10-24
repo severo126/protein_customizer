@@ -4,6 +4,7 @@ import { state, setState, entry } from './app.js';
 import { enzymePiece, moleculePiece, windowBars, domainMap, FAMILY_STYLE, escapeText } from './cartoon.js';
 import { STARTERS, starter } from '../model/molecules.js';
 import { runStage } from '../model/pipeline.js';
+import { showSources } from './sources.js';
 
 export function renderCatalogue(root) {
   const families = ['adds', 'removes', 'creates'];
@@ -23,6 +24,11 @@ export function renderCatalogue(root) {
     const add = e.target.closest('[data-add]');
     if (add) {
       setState({ screen: 'bench', lane: [...state.lane, add.dataset.add] });
+      return;
+    }
+    const sources = e.target.closest('[data-sources]');
+    if (sources) {
+      showSources(entry(sources.dataset.sources));
       return;
     }
     const splice = e.target.closest('[data-splice]');
@@ -76,6 +82,14 @@ function card(e) {
       ${(e.destroys ?? []).length ? `<span class="chip">consumes <strong>${e.destroys.map(escapeText).join(', ')}</strong></span>` : ''}
       ${(e.inhibitedBy ?? []).length ? `<span class="chip">inhibited by <strong>${e.inhibitedBy.map(escapeText).join(', ')}</strong></span>` : ''}
     </div>
+
+    <div class="meta" title="${escapeText(e.source.note)}">
+      <span class="chip">windows <strong>${escapeText(e.source.windows)}</strong></span>
+      <span class="chip">cartoon <strong>${escapeText(e.source.cartoon)}</strong></span>
+      <span class="chip">regions <strong>${escapeText(e.source.domain_regions)}</strong></span>
+    </div>
+    <p class="blurb" style="font-size:11px;color:var(--ink-faint)">${escapeText(e.source.note)}</p>
+    <button class="btn small ghost" data-sources="${e.id}">Go and check the real biochemistry</button>
 
     <div class="actions">
       <button class="btn small primary" data-add="${e.id}">Add to bench</button>
