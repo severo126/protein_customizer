@@ -1,6 +1,8 @@
 #cloud-config
 # Vultr bring-up for Nano Foundry. Installs the runtimes, the TimescaleDB
 # extension, clones the repo and starts both services behind nginx on :80.
+# bring-up.sh --vultr adds /etc/nano-foundry.env from your local .env; when it
+# sets DATABASE_URL (Tiger Cloud) the app uses that instead of the local database.
 package_update: true
 packages:
   - git
@@ -28,6 +30,7 @@ write_files:
       [Service]
       WorkingDirectory=/opt/nano-foundry
       Environment=DATABASE_URL=postgres://foundry:foundry@localhost:5432/foundry
+      EnvironmentFile=-/etc/nano-foundry.env
       ExecStart=/usr/bin/node tools/api/server.mjs
       Restart=always
       [Install]
@@ -56,9 +59,14 @@ runcmd:
   - sudo -u postgres psql -c "CREATE USER foundry WITH PASSWORD 'foundry';" || true
   - sudo -u postgres psql -c "CREATE DATABASE foundry OWNER foundry;" || true
   - sudo -u postgres psql -d foundry -c "CREATE EXTENSION IF NOT EXISTS timescaledb;" || true
-  - git clone https://github.com/severo126/protein_customizer /opt/nano-foundry
+  - git clone --branch __REPO_REF__ https://github.com/severo126/protein_customizer /opt/nano-foundry
+  - cd /opt/nano-foundry && npm ci --omit=dev || npm install --omit=dev || true
   - sudo -u postgres psql -d foundry -f /opt/nano-foundry/tools/api/schema.sql || true
+  - |
+    if grep -q '^DATABASE_URL=' /etc/nano-foundry.env 2>/dev/null; then
+      psql "$(sed -n 's/^DATABASE_URL=//p' /etc/nano-foundry.env)" -f /opt/nano-foundry/tools/api/schema.sql || true
+    fi
   - ln -sf /etc/nginx/sites-available/nano-foundry /etc/nginx/sites-enabled/default
   - systemctl restart nginx
   - systemctl enable --now nano-foundry-api nano-foundry-filters
-  - cd /opt/nano-foundry && node tools/sweep.mjs --pairs 80 || true
+  - cd /opt/nano-foundry && set -a && { [ -f /etc/nano-foundry.env ] && . /etc/nano-foundry.env; set +a; } && node tools/sweep.mjs --pairs 80 || true

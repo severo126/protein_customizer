@@ -28,8 +28,25 @@ if [[ "$MODE" == "vultr" ]]; then
   OS_ID="${VULTR_OS_ID:-1743}"           # Ubuntu 22.04 LTS x64
   LABEL="${VULTR_LABEL:-nano-foundry}"
 
-  log "Creating $PLAN in $REGION…"
-  USER_DATA=$(base64 -w0 < deploy/cloud-init.yaml 2>/dev/null || base64 < deploy/cloud-init.yaml | tr -d '\n')
+  REPO_REF="${REPO_REF:-main}"           # branch the instance clones
+
+  # Credentials ride along in the instance's user data as /etc/nano-foundry.env,
+  # never in the repo. Only the variables that are set are written.
+  ENV_LINES=""
+  for var in DATABASE_URL SERPAPI_KEY; do
+    [[ -n "${!var:-}" ]] && ENV_LINES+="      $var=${!var}"$'\n'
+  done
+  CLOUD_INIT=$(sed "s|__REPO_REF__|$REPO_REF|" deploy/cloud-init.yaml)
+  if [[ -n "$ENV_LINES" ]]; then
+    ENV_FILE="  - path: /etc/nano-foundry.env
+    permissions: '0600'
+    content: |
+$ENV_LINES"
+    CLOUD_INIT=$(printf '%s\n' "$CLOUD_INIT" | awk -v block="$ENV_FILE" '{print} /^write_files:/{printf "%s", block}')
+  fi
+
+  log "Creating $PLAN in $REGION from $REPO_REF…"
+  USER_DATA=$(printf '%s\n' "$CLOUD_INIT" | { base64 -w0 2>/dev/null || base64 | tr -d '\n'; })
 
   RESPONSE=$(curl -sS -X POST "https://api.vultr.com/v2/instances" \
     -H "Authorization: Bearer $VULTR_API_KEY" \

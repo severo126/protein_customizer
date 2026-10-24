@@ -43,7 +43,13 @@ export VULTR_API_KEY=...
 It creates the instance, waits for an address, and prints it. `deploy/cloud-init.yaml` then installs
 Node, Python and TimescaleDB on the box, clones the repo, applies the schema, starts both services
 behind nginx and seeds the funnel history. Optional overrides: `VULTR_REGION` (default `dfw`,
-Dallas, closest to Austin), `VULTR_PLAN`, `VULTR_OS_ID`.
+Dallas, closest to Austin), `VULTR_PLAN`, `VULTR_OS_ID`, `VULTR_LABEL`, and `REPO_REF` (the
+branch the box clones, default `main`).
+
+If `DATABASE_URL` and `SERPAPI_KEY` are set when you run it, they are written to
+`/etc/nano-foundry.env` on the instance (mode 0600, via its user data, never the repo). The app then
+uses your Tiger Cloud service instead of the box's local TimescaleDB, and the schema is applied to
+it on first boot.
 
 **Check it worked:** `curl http://<ip>/api/room` returns JSON, and `http://<ip>/` serves the app.
 
