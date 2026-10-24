@@ -6,6 +6,9 @@
     <title>Nano Foundry</title>
     <meta name="description" content="A classroom sandbox for chaining cartoon enzymes together — educational toy, order-of-magnitude-wrong physics." />
     <link rel="stylesheet" href="src/styles.css" />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three.module.min.js" } }
+    </script>
   </head>
   <body>
     <header class="topbar">
@@ -17,7 +20,8 @@
         </span>
       </div>
       <nav class="tabs" id="tabs" aria-label="Screens">
-        <button class="tab" data-screen="catalogue" aria-current="page">Catalogue</button>
+        <button class="tab" data-screen="home" aria-current="page">Vacuum</button>
+        <button class="tab" data-screen="catalogue">Catalogue</button>
         <button class="tab" data-screen="workstation">Workstation</button>
         <button class="tab" data-screen="bench">The bench</button>
         <button class="tab" data-screen="splice">Splice table</button>
