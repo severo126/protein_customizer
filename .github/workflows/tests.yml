@@ -1,0 +1,48 @@
+name: tests
+
+# The point of running these on a clean machine is to check what is COMMITTED,
+# not what happens to be on a contributor's disk. That is the failure this repo
+# already had once: src/data/demo.json was missing from the repo while everything
+# still worked locally for whoever had it, so a fresh clone got a dead app on the
+# first click and nothing noticed.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Several threads push to this repo, often in quick succession. A newer push to
+# the same branch makes the older run irrelevant.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The parity suite asserts exact floats. Checked against 3.11, 3.12 and
+      # 3.13 before pinning, so this choice does not make the contract fragile.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Nothing under src/, test/ or py/ imports a dependency, so this is not
+      # needed to run the suites. It is here so a lockfile that has drifted out
+      # of sync with package.json fails here rather than on someone's machine.
+      - run: npm ci
+
+      # Run the two halves as separate steps rather than through `npm test`, so
+      # a red cross says which half broke without opening the log.
+      - name: Node suite
+        run: npm run test:js
+
+      - name: Python suite
+        run: npm run test:py
