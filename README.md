@@ -108,6 +108,8 @@ the browser and stays there.
 * [`docs/tracks.md`](docs/tracks.md) — what each sponsor service actually does here, and what would
   break without it, including the three that could not earn a role
 * [`docs/demo-day.md`](docs/demo-day.md) — the two-minute walkthrough and the track pitches
+* [`docs/credentials.md`](docs/credentials.md) — how to get the Vultr, SerpApi and Timescale
+  credentials, and what each one turns on
 
 ## What this cannot tell you
 
