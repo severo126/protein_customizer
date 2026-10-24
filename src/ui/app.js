@@ -4,6 +4,7 @@
 import { renderCatalogue } from './catalogue-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
+import { renderWorkstation } from './workstation-view.js';
 import { renderPlatform } from './platform-view.js';
 import { renderHome, unmountHome } from './home-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
@@ -13,6 +14,9 @@ export const state = {
   catalogue: null,
   byId: new Map(),
   screen: 'home',
+  // workstation: the behaviours asked for, as {kind, arg} picked off the
+  // catalogue-derived vocabulary. Never anything the user typed in free text.
+  wants: [],
   // bench
   starterId: 'glucose',
   lane: [],
@@ -47,6 +51,7 @@ export function render() {
   if (state.screen !== 'home') unmountHome();
   if (state.screen === 'home') renderHome(screenEl);
   else if (state.screen === 'catalogue') renderCatalogue(screenEl);
+  else if (state.screen === 'workstation') renderWorkstation(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
   else if (state.screen === 'platform') renderPlatform(screenEl);
   else renderSplice(screenEl);
