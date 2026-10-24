@@ -1,7 +1,9 @@
-// Drawing. Everything here is deliberately a game piece: chunky silhouettes,
-// studs on top, a hard bevel and a drop shadow. None of it is derived from a
-// coordinate set, and every view that uses it carries the "stylised cartoon"
-// label so nobody mistakes it for a structure.
+// Drawing. Everything here is deliberately a game piece: a chunky silhouette,
+// a hinged jaw with an active-site cleft, a bevel and a drop shadow. The
+// ribbons inside a piece are drawn from the loop / helix / sheet labels in the
+// catalogue entry's own region list, so the decoration tracks the data — but
+// none of it is derived from a coordinate set, and every view that uses it
+// carries the "stylised cartoon" label so nobody mistakes it for a structure.
 
 import { groupMeta, prettyCore } from '../model/molecules.js';
 
@@ -10,6 +12,10 @@ export const FAMILY_STYLE = {
   removes: { label: 'Removes', hue: 14, blurb: 'Takes a group off — hydrolases, phosphatases, decarboxylases.' },
   creates: { label: 'Creates / rearranges', hue: 150, blurb: 'Forms a new bond or skeleton — ligases, isomerases, synthases.' },
 };
+
+// The same three colours the domain map uses, so a ribbon inside a piece and a
+// band under it mean the same thing.
+export const REGION_COLOUR = { loop: '#4ddba0', helix: '#ff6b6b', sheet: '#ffb648' };
 
 // Chunky silhouettes in a 100×100 box.
 const SHAPES = {
@@ -27,58 +33,196 @@ const SHAPES = {
   stapler: 'M20 30h60l-6 20h10v26H24V50h10z',
 };
 
+// The hinge of the jaw, in piece coordinates. The cleft opens to the right.
+export const HINGE = { x: 60, y: 50 };
+const JAW_TOP = `M 0 0 H 100 V 34 L ${HINGE.x} ${HINGE.y} L 0 48 Z`;
+const JAW_BOTTOM = `M 0 100 H 100 V 66 L ${HINGE.x} ${HINGE.y} L 0 52 Z`;
+
+let uidCounter = 0;
+function uid(prefix) {
+  uidCounter += 1;
+  return `${prefix}${uidCounter}`;
+}
+
 function hsl(hue, s, l) {
   return `hsl(${hue} ${s}% ${l}%)`;
 }
 
-// One enzyme as a game piece.
-export function enzymePiece(entry, size = 96) {
+/* ---------- secondary-structure ribbons ---------- */
+
+// A coil: a run of alternating half-circles, which reads as a helix at this
+// size without pretending to be one.
+function helixRibbon(x0, x1, y, turns) {
+  const step = (x1 - x0) / turns;
+  const r = step / 2;
+  let d = `M ${x0} ${y}`;
+  for (let i = 0; i < turns; i++) {
+    d += ` A ${r} ${r * 1.5} 0 0 ${i % 2 === 0 ? 1 : 0} ${x0 + step * (i + 1)} ${y}`;
+  }
+  return d;
+}
+
+// A sheet: flat arrows pointing along the band.
+function sheetRibbon(x0, x1, y) {
+  const n = 2;
+  const w = (x1 - x0) / n;
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * w;
+    d += ` M ${x} ${y} h ${w - 10} l 0 -5 l 9 5 l -9 5 l 0 -5 Z`;
+  }
+  return d.trim();
+}
+
+// A loop: a lazy meander.
+function loopRibbon(x0, x1, y) {
+  const m = (x0 + x1) / 2;
+  return `M ${x0} ${y} C ${x0 + (m - x0) * 0.4} ${y - 9}, ${m - (m - x0) * 0.4} ${y + 9}, ${m} ${y}` +
+    ` S ${x1 - (x1 - m) * 0.4} ${y - 9}, ${x1} ${y}`;
+}
+
+function ribbon(site, x0, x1, y) {
+  const colour = REGION_COLOUR[site.region] ?? '#8c95ad';
+  if (site.region === 'sheet') {
+    return `<path d="${sheetRibbon(x0, x1, y)}" fill="${colour}" opacity="0.34"/>`;
+  }
+  const d = site.region === 'helix' ? helixRibbon(x0, x1, y, 4) : loopRibbon(x0, x1, y);
+  return `<path d="${d}" fill="none" stroke="${colour}" stroke-width="4" stroke-linecap="round" opacity="0.34"/>`;
+}
+
+/* ---------- the enzyme body ---------- */
+
+// The body as a bare SVG group in a 100×100 box, so the catalogue piece and
+// the reaction scene draw the same object. `jaws` names the two halves so a
+// stylesheet can hinge them; nothing here animates on its own.
+export function enzymeBody(entry, { detail = true, ids = uid('e') } = {}) {
   const hue = entry.cartoon.hue;
   const d = SHAPES[entry.cartoon.shape] ?? SHAPES.drum;
-  const id = `g-${entry.id}`;
+  const sites = entry.domain?.sites ?? [];
+  const origin = `transform-origin:${HINGE.x}px ${HINGE.y}px;transform-box:view-box`;
+
   const studs = [];
-  for (let i = 0; i < entry.cartoon.pips; i++) {
-    const x = 28 + (i % 3) * 22;
-    const y = 30 + Math.floor(i / 3) * 20;
-    studs.push(`<circle cx="${x}" cy="${y}" r="6" fill="${hsl(hue, 70, 78)}" opacity="0.85"/>
-      <circle cx="${x}" cy="${y - 1.5}" r="4" fill="${hsl(hue, 80, 90)}" opacity="0.6"/>`);
+  if (detail) {
+    for (let i = 0; i < entry.cartoon.pips; i++) {
+      const y = 30 + i * 14;
+      if (Math.abs(y - HINGE.y) < 6) continue;
+      studs.push(`<circle cx="20" cy="${y}" r="4.5" fill="${hsl(hue, 45, 22)}" opacity="0.8"/>
+        <circle cx="20" cy="${y - 1.2}" r="3" fill="${hsl(hue, 85, 86)}" opacity="0.5"/>`);
+    }
   }
-  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Stylised cartoon game piece for ${entry.name}">
-    <defs>
-      <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${hsl(hue, 72, 62)}"/>
-        <stop offset="1" stop-color="${hsl(hue, 64, 38)}"/>
+
+  const topRibbons = detail
+    ? [sites[0] ? ribbon(sites[0], 26, 74, 28) : '', sites[2] ? ribbon(sites[2], 24, 54, 41) : ''].join('')
+    : '';
+  const bottomRibbons = detail && sites[1] ? ribbon(sites[1], 26, 74, 72) : '';
+
+  return `<defs>
+      <linearGradient id="${ids}-body" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stop-color="${hsl(hue, 74, 66)}"/>
+        <stop offset="0.55" stop-color="${hsl(hue, 68, 52)}"/>
+        <stop offset="1" stop-color="${hsl(hue, 62, 34)}"/>
       </linearGradient>
+      <radialGradient id="${ids}-core" cx="0.7" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="${hsl(hue, 40, 10)}"/>
+        <stop offset="1" stop-color="${hsl(hue, 35, 18)}"/>
+      </radialGradient>
+      <clipPath id="${ids}-clip"><path d="${d}"/></clipPath>
     </defs>
-    <path d="${d}" transform="translate(0 5)" fill="#0b0d13" opacity="0.55"/>
-    <path d="${d}" fill="url(#${id})" stroke="${hsl(hue, 55, 24)}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="${d}" fill="none" stroke="${hsl(hue, 85, 80)}" stroke-width="1.5" stroke-linejoin="round" opacity="0.35" transform="translate(0 -2)"/>
-    ${studs.join('')}
+
+    <ellipse cx="50" cy="92" rx="30" ry="6" fill="#05070b" opacity="0.45"/>
+    <path d="${d}" transform="translate(0 5)" fill="#05070b" opacity="0.55"/>
+
+    <g clip-path="url(#${ids}-clip)">
+      <rect x="0" y="0" width="100" height="100" fill="url(#${ids}-core)"/>
+      <g class="nf-jaw nf-jaw-top" style="${origin}">
+        <path d="${JAW_TOP}" fill="url(#${ids}-body)"/>
+        ${detail ? `<ellipse cx="38" cy="24" rx="19" ry="9" fill="#ffffff" opacity="0.16"/>` : ''}
+        ${topRibbons}
+        <path d="${JAW_TOP}" fill="none" stroke="${hsl(hue, 80, 84)}" stroke-width="2" opacity="0.4"/>
+      </g>
+      <g class="nf-jaw nf-jaw-bottom" style="${origin}">
+        <path d="${JAW_BOTTOM}" fill="url(#${ids}-body)"/>
+        ${bottomRibbons}
+        <path d="${JAW_BOTTOM}" fill="none" stroke="${hsl(hue, 70, 70)}" stroke-width="2" opacity="0.28"/>
+      </g>
+      <circle class="nf-site-glow" cx="${HINGE.x + 2}" cy="${HINGE.y}" r="6"
+        fill="${hsl(hue, 90, 72)}" opacity="0.28"/>
+      ${studs.join('')}
+    </g>
+
+    <path d="${d}" fill="none" stroke="${hsl(hue, 55, 20)}" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="${hsl(hue, 90, 86)}" stroke-width="1.4" stroke-linejoin="round"
+      opacity="0.3" transform="translate(0 -2)"/>`;
+}
+
+// One enzyme as a game piece.
+export function enzymePiece(entry, size = 96) {
+  const detail = size >= 46;
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" class="nf-enzyme" role="img"
+      aria-label="Stylised cartoon game piece for ${escapeText(entry.name)}: a hinged jaw with an active-site cleft. Not a coordinate set.">
+    ${enzymeBody(entry, { detail })}
   </svg>`;
 }
 
-// One molecule as a core tile with group studs around it.
-export function moleculePiece(mol, size = 74) {
-  if (!mol) return `<div class="empty">—</div>`;
+// A legend for the ribbons, so the colours inside a piece mean something.
+export function regionLegend() {
+  return `<div class="region-legend">${Object.entries(REGION_COLOUR)
+    .map(([region, colour]) => `<span><i style="background:${colour}"></i>${region}</span>`)
+    .join('')}</div>`;
+}
+
+// One molecule as a faceted core with its groups bonded around it.
+export function moleculeGlyph(mol, { ids = uid('m') } = {}) {
   const n = mol.groups.length || 1;
-  const studs = mol.groups
+  const bonds = [];
+  const marbles = [];
+  mol.groups.forEach((g, i) => {
+    const meta = groupMeta(g);
+    const angle = (-90 + (360 / Math.max(n, 3)) * i) * (Math.PI / 180);
+    const x = 50 + Math.cos(angle) * 33;
+    const y = 50 + Math.sin(angle) * 33;
+    bonds.push(`<line x1="50" y1="50" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"
+      stroke="#8b94b0" stroke-width="4" stroke-linecap="round" opacity="0.65"/>`);
+    marbles.push(`<g class="nf-group" data-group="${escapeText(g)}">
+      <circle cx="${x.toFixed(2)}" cy="${(y + 2).toFixed(2)}" r="11.5" fill="#05070b" opacity="0.5"/>
+      <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="11.5" fill="url(#${ids}-g${i})"
+        stroke="${hsl(meta.hue, 55, 24)}" stroke-width="2.4"/>
+      <ellipse cx="${(x - 3.4).toFixed(2)}" cy="${(y - 4).toFixed(2)}" rx="4" ry="2.6" fill="#ffffff" opacity="0.45"/>
+      <text x="${x.toFixed(2)}" y="${(y + 4).toFixed(2)}" text-anchor="middle" font-size="9"
+        font-weight="700" fill="#10131c">${meta.symbol}</text>
+    </g>`);
+  });
+
+  const gradients = mol.groups
     .map((g, i) => {
       const meta = groupMeta(g);
-      const angle = (-90 + (360 / Math.max(n, 3)) * i) * (Math.PI / 180);
-      const x = 50 + Math.cos(angle) * 34;
-      const y = 50 + Math.sin(angle) * 34;
-      return `<g>
-        <circle cx="${x}" cy="${y + 2}" r="11.5" fill="#0b0d13" opacity="0.5"/>
-        <circle cx="${x}" cy="${y}" r="11.5" fill="${hsl(meta.hue, 68, 55)}" stroke="${hsl(meta.hue, 55, 26)}" stroke-width="2.5"/>
-        <text x="${x}" y="${y + 4}" text-anchor="middle" font-size="9" font-weight="700" fill="#10131c">${meta.symbol}</text>
-      </g>`;
+      return `<radialGradient id="${ids}-g${i}" cx="0.35" cy="0.3" r="0.8">
+        <stop offset="0" stop-color="${hsl(meta.hue, 85, 72)}"/>
+        <stop offset="1" stop-color="${hsl(meta.hue, 62, 44)}"/>
+      </radialGradient>`;
     })
     .join('');
-  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Cartoon of ${prettyCore(mol.core)}">
-    <polygon points="50,29 69,40 69,60 50,71 31,60 31,40" fill="#0b0d13" opacity="0.5" transform="translate(0 4)"/>
-    <polygon points="50,29 69,40 69,60 50,71 31,60 31,40" fill="#39415c" stroke="#5a648a" stroke-width="3"/>
+
+  const hexPoints = '50,27 70,39 70,61 50,73 30,61 30,39';
+  return `<defs>${gradients}
+      <linearGradient id="${ids}-core" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0" stop-color="#4a5478"/><stop offset="1" stop-color="#2b3148"/>
+      </linearGradient>
+    </defs>
+    ${bonds.join('')}
+    <polygon points="${hexPoints}" fill="#05070b" opacity="0.5" transform="translate(0 4)"/>
+    <polygon points="${hexPoints}" fill="url(#${ids}-core)" stroke="#6b76a0" stroke-width="3"/>
+    <polyline points="50,27 30,39 30,61" fill="none" stroke="#8b96c4" stroke-width="2" opacity="0.6"/>
+    <polyline points="50,73 70,61 70,39" fill="none" stroke="#141827" stroke-width="2" opacity="0.5"/>
     <text x="50" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#e8ecf7">${shortCore(mol.core)}</text>
-    ${studs}
+    ${marbles.join('')}`;
+}
+
+export function moleculePiece(mol, size = 74) {
+  if (!mol) return `<div class="empty">—</div>`;
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" class="nf-molecule" role="img"
+      aria-label="Symbolic cartoon of ${escapeText(prettyCore(mol.core))} with ${mol.groups.length} groups. Not a structure.">
+    ${moleculeGlyph(mol)}
   </svg>`;
 }
 

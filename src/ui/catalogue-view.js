@@ -1,21 +1,57 @@
 // The catalogue: three columns, grouped by what the enzyme does to a molecule.
 
-import { state, setState, entry } from './app.js';
-import { enzymePiece, moleculePiece, windowBars, domainMap, FAMILY_STYLE, escapeText } from './cartoon.js';
-import { STARTERS, starter } from '../model/molecules.js';
-import { runStage } from '../model/pipeline.js';
+import { state, setState, entry, laneEntries } from './app.js';
+import { enzymePiece, moleculePiece, windowBars, domainMap, regionLegend, FAMILY_STYLE, escapeText } from './cartoon.js';
+import { STARTERS, starter, describe } from '../model/molecules.js';
+import { runStage, runPipeline } from '../model/pipeline.js';
+import { suggestNext } from '../model/suggest.js';
+import { openReaction } from './reaction.js';
 import { showSources } from './sources.js';
+
+// The verdict for each entry against whatever is on the bench, so a card can
+// badge itself and the screen can filter. Rebuilt on every render because the
+// lane changes under it.
+let fit = new Map();
+let benchProduct = null;
 
 export function renderCatalogue(root) {
   const families = ['adds', 'removes', 'creates'];
+  const lane = laneEntries();
+  const run = runPipeline(starter(state.starterId), lane);
+  const suggestions = suggestNext(state.catalogue.entries, lane, run.product);
+  // Only badge a card once something is actually on the bench; with an empty
+  // lane there is nothing for an entry to fit or fail.
+  fit = lane.length ? new Map(suggestions.items.map((i) => [i.entry.id, i])) : new Map();
+  benchProduct = lane.length && !run.stalled ? run.product : null;
+  const filtering = state.catalogueFilter && lane.length > 0;
+
   root.innerHTML = `
     <div class="section-head">
       <h2>Catalogue</h2>
       <p>Forty hand-curated, commonplace enzymes, grouped by what they do to a molecule. Fixed list —
       there is no database lookup and nothing to upload.</p>
     </div>
+
+    <div class="panel catalogue-bar">
+      ${
+        lane.length
+          ? `<label class="palette-toggle">
+              <input type="checkbox" id="catalogue-filter" ${state.catalogueFilter ? 'checked' : ''} />
+              Only what fits the bench
+            </label>
+            <span class="score-note">The bench is holding
+              <strong>${escapeText(run.stalled ? 'a stalled lane' : describe(run.product))}</strong> after
+              ${lane.length} stage${lane.length === 1 ? '' : 's'} ·
+              ${suggestions.counts.fits} fit, ${suggestions.counts.caution} with a caution,
+              ${suggestions.counts.blocked} ruled out. ${escapeText(suggestions.note)}</span>`
+          : `<span class="score-note">Nothing on the bench yet, so nothing is filtered. Add a stage and
+              this screen can narrow itself to what the running product and the pot can still take.</span>`
+      }
+      ${regionLegend()}
+    </div>
+
     <div class="family-columns">
-      ${families.map((f) => column(f)).join('')}
+      ${families.map((f) => column(f, filtering)).join('')}
     </div>`;
 
   // Assignment rather than addEventListener: renderCatalogue runs on every
@@ -35,30 +71,60 @@ export function renderCatalogue(root) {
     if (splice) {
       const picked = entry(splice.dataset.splice);
       setState({ screen: 'splice', spliceA: picked, siteA: picked.domain.sites[0].id });
+      return;
     }
+    const play = e.target.closest('[data-play-pair]');
+    if (play) {
+      const picked = entry(play.dataset.playPair);
+      // Play it against what the bench is actually holding when that pairing
+      // runs, and against a demo substrate otherwise.
+      const against =
+        benchProduct && runStage(benchProduct, picked).ok ? benchProduct : demoTransform(picked).input;
+      openReaction(picked, against);
+    }
+  };
+
+  root.onchange = (e) => {
+    if (e.target.id === 'catalogue-filter') setState({ catalogueFilter: e.target.checked });
   };
 }
 
-function column(family) {
+function column(family, filtering) {
   const style = FAMILY_STYLE[family];
-  const entries = state.catalogue.entries.filter((e) => e.family === family);
-  return `<section class="family-column">
+  const all = state.catalogue.entries.filter((e) => e.family === family);
+  const shown = filtering ? all.filter((e) => fit.get(e.id)?.verdict !== 'blocked') : all;
+  const hidden = all.length - shown.length;
+  return `<section class="family-column" style="--family-hue:${style.hue}">
     <div class="family-header">
       <h3><span class="family-dot" style="background:hsl(${style.hue} 70% 55%)"></span>${style.label}
-        <span class="chip">${entries.length}</span></h3>
+        <span class="chip">${shown.length}${filtering ? ` of ${all.length}` : ''}</span></h3>
       <p>${style.blurb}</p>
+      ${hidden ? `<p class="hidden-note">${hidden} ruled out by the current lane and hidden. Untick the
+        filter to see them and why.</p>` : ''}
     </div>
-    ${entries.map(card).join('')}
+    ${shown.map(card).join('')}
+    ${!shown.length ? `<p class="palette-note">Nothing in this column fits the current lane.</p>` : ''}
   </section>`;
 }
 
 function card(e) {
   const demo = demoTransform(e);
-  return `<article class="enzyme-card">
+  const verdict = fit.get(e.id);
+  const badge =
+    verdict && !verdict.reasons.length
+      ? ''
+      : verdict
+        ? `<span class="fit-badge ${verdict.verdict}" title="${escapeText(verdict.headline)}">${
+            { fits: 'fits the bench', caution: 'caution', blocked: 'ruled out' }[verdict.verdict]
+          }</span>`
+        : '';
+  return `<article class="enzyme-card ${verdict?.reasons.length ? verdict.verdict : ''}">
     <header>
       <h4>${escapeText(e.name)}</h4>
       <span class="chip"><strong>${escapeText(e.group)}</strong></span>
     </header>
+    ${badge}
+    ${verdict && verdict.reasons.length ? `<p class="fit-reason ${verdict.verdict}">${escapeText(verdict.headline)}</p>` : ''}
     <p class="blurb">${escapeText(e.blurb)}</p>
 
     <div class="transform-row">
@@ -93,6 +159,7 @@ function card(e) {
 
     <div class="actions">
       <button class="btn small primary" data-add="${e.id}">Add to bench</button>
+      <button class="btn small" data-play-pair="${e.id}">▶ Play</button>
       <button class="btn small ghost" data-splice="${e.id}">Use in splice</button>
     </div>
   </article>`;

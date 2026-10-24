@@ -49,6 +49,27 @@ walks every exported object recursively so a new field cannot quietly reintroduc
   can produce one.
 * A pass is the absence of a red flag from a cartoon. The UI says so in those words.
 
+## 3a. The two things added after the first build, and what they may claim
+
+**The reaction cartoon.** Any enzyme-and-molecule pair can be played back as a short
+animation: the molecule rides into a cleft, a jaw closes, a group changes hands, the
+product leaves. The *order of events* comes from the same deterministic rule the bench
+runs, so the picture cannot show something the model did not do — including a refusal,
+which gets its own ending rather than being smoothed over. Everything else about it is
+invented: the shapes, the motion, the speed, the idea that a reaction has four tidy
+phases. It is not a mechanism, not a trajectory and not a rate, and the caption under
+every scene says so.
+
+**The "what fits next" filter.** The enzyme list sorts itself against whatever the lane is
+holding, into *fits*, *caution* and *ruled out*, using the same cartoon checks as the
+traffic lights: does this stage have a rule for the running product, would the shared
+temperature and pH windows survive, has an earlier stage eaten a cofactor this one needs,
+does the curated inhibition table name the pair. **Fits means only that these checks found
+nothing against it.** It is not a prediction that the stage would run, and it is not a
+recommendation. Nothing is removed from the catalogue by this filter — the forty entries
+are always there, a ruled-out entry stays addable so the bench can show it refusing, and
+every one carries the sentence that ruled it out.
+
 ## 4. Forbidden UI
 
 * No horizontal amino-acid sequence strip, in any view.

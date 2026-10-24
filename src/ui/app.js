@@ -6,6 +6,7 @@ import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
 import { renderPlatform } from './platform-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
+import { closeReaction } from './reaction.js';
 
 export const state = {
   catalogue: null,
@@ -14,6 +15,12 @@ export const state = {
   // bench
   starterId: 'glucose',
   lane: [],
+  // which stage the reaction cartoon is playing; null follows the last stage
+  playStage: null,
+  // the enzyme list filters itself against the lane unless this is on
+  showAllEnzymes: false,
+  // the catalogue screen can borrow the same filter
+  catalogueFilter: false,
   // splice
   spliceA: null,
   spliceB: null,
@@ -44,7 +51,10 @@ export function render() {
 
 document.getElementById('tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.tab');
-  if (tab) setState({ screen: tab.dataset.screen });
+  if (tab) {
+    closeReaction();
+    setState({ screen: tab.dataset.screen });
+  }
 });
 
 /* ---------- the limits panel, reachable from every screen ---------- */

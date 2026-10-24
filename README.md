@@ -29,7 +29,7 @@ filter service, seeds the funnel history with a sweep, and prints the URLs. Open
 <http://localhost:5173> and press **A team that gets along** on the bench.
 
 ```bash
-npm test          # 53 JavaScript tests + the Python parity suite
+npm test          # 70 JavaScript tests + the Python parity suite
 ```
 
 ## What is in it
@@ -55,10 +55,12 @@ that went in, which filter killed how many, and the few that came out.
 **Platform** — the three agents, read from `config/agents.json`: their tools, models, instructions
 and limits, with per-run traces and replay.
 
+![A phosphate changing hands, mid-animation](docs/screenshots/8-reaction.png)
+
 | | |
 | --- | --- |
 | ![Catalogue](docs/screenshots/1-catalogue.png) | ![A clean run on the bench](docs/screenshots/2-bench-clean.png) |
-| ![A team that cannot share a pot](docs/screenshots/2-bench-pot-clash.png) | ![The platform screen](docs/screenshots/6-platform.png) |
+| ![The catalogue filtered to what fits the bench](docs/screenshots/9-catalogue-filtered.png) | ![A team that cannot share a pot](docs/screenshots/2-bench-pot-clash.png) |
 
 ## How it is put together
 
