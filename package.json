@@ -13,6 +13,13 @@
     "api": "node tools/api/server.mjs",
     "filters": "python3 py/service.py",
     "sweep": "node tools/sweep.mjs",
-    "snowflake:export": "node tools/snowflake-export.mjs"
+    "snowflake:export": "node tools/snowflake-export.mjs",
+    "db:schema": "psql \"$DATABASE_URL\" -f tools/api/schema.sql"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "optionalDependencies": {
+    "pg": "^8.13.0"
   }
 }

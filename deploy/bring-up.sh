@@ -11,6 +11,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Credentials live in .env (gitignored). Copy .env.example and fill it in; the
+# app runs without any of them, and every panel that needs one says so.
+# shellcheck disable=SC1091
+if [[ -f .env ]]; then source .env; fi
+
 MODE="local"
 [[ "${1:-}" == "--vultr" ]] && MODE="vultr"
 
