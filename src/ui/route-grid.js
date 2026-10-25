@@ -241,7 +241,12 @@ function head(target, result, crit, reachable) {
 }
 
 function wire(root) {
-  root.addEventListener('click', async (e) => {
+  // On the wrapper this render just created, not on `root`. `root` is the
+  // screen element and outlives every render, so attaching to it stacked a
+  // listener per render — which on this screen meant one click on "ask Gemini"
+  // firing as many requests as there had been renders.
+  const panel = root.querySelector('.rg') ?? root;
+  panel.addEventListener('click', async (e) => {
     if (e.target.closest('[data-back]')) {
       setState({ homeStep: 'ask' });
       return;

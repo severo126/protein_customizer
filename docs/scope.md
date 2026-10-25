@@ -202,6 +202,28 @@ nucleotide runs, and over-long text. `test/picker.test.js` asserts every catalog
 by name and by id, and that the app's own on-screen prose passes its own screen. **The flow works
 with no API key**: a keyword parser pins the target, and the orderings are code either way.
 
+**The map shown while you are still choosing.** Before the target is finished, the picker draws a
+node-and-edge map of what the catalogue can actually reach on the chosen skeleton, and it narrows as
+groups are added. `src/model/route-map.js` builds it from `scanFromStarter` — the route search's own
+walk, run to full depth rather than stopped at the first match — so **every node is a molecule the
+search also reaches and every line is one catalogue entry acting under its own rule**.
+`test/route-map.test.js` takes every line on the map, runs that enzyme on the molecule the line
+starts at, and checks it produces the molecule the line ends at. A picture of a graph reads as a
+fact, so the map is held to the same standard as the search rather than to a looser one for being
+decoration.
+
+The map is capped for readability, and says so: at most thirty molecules and eight per column, with
+a line under it naming how many more lie deeper and noting the search still finds them. **A target
+nothing reaches is drawn, not dropped** — dashed, in a column marked "not reached", with no line
+arriving at it — because leaving it out would make the picture look complete when it is not. Any
+claim about what is *not* reachable cites the depth the walk actually ran to, never the width of the
+drawn picture, and an unfinished walk is reported as unfinished.
+
+Nothing is highlighted until the draft rules something out: with no groups named every variant
+matches, and an emphasis on everything says nothing. The map is built from already-mirrored code, so
+it asserts no chemistry of its own; the one option it added to the search, running the walk past the
+target, is mirrored in `py/nano_foundry/routes.py` and pinned in `src/data/route-cases.json`.
+
 **The criteria are arithmetic, not judgement.** You may optimise for fewest stages, lowest supply
 load, or the widest shared temperature or pH window — each a committed catalogue field or a sum of
 them, named on screen beside the ordering so a reader can see what was sorted. There is no "best

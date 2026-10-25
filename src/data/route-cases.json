@@ -4974,5 +4974,25 @@
    "exhausted": false,
    "headline": "The search did not finish inside its budget, so this says nothing either way about whether Malate carrying a sulfate can be made. It walked 143 molecules without reaching it."
   }
+ },
+ "explored": {
+  "spec": {
+   "core": "glucose-6-p",
+   "groups": [],
+   "match": "carries",
+   "starter_ids": [
+    "glucose-1-p"
+   ]
+  },
+  "stopped": {
+   "states_seen": 9,
+   "shortest_depth": 1,
+   "exhausted": true
+  },
+  "full": {
+   "states_seen": 1393,
+   "shortest_depth": 1,
+   "exhausted": true
+  }
  }
 }

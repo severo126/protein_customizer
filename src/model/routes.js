@@ -53,6 +53,13 @@ export const SEARCH_LIMITS = {
   // without this cap they crowd out the genuinely different combinations.
   routesPerSet: 2,
   nearMisses: 6,
+  // Stop the walk at the first layer that produces the target. True for a
+  // route search, because a chain that reaches the target and then keeps going
+  // is not a shorter way to the target. The reachability map sets it false: it
+  // is asking what this catalogue can reach at all, not how to reach one
+  // thing, so it needs the walk to run to maxDepth whether it passes through
+  // the target or not.
+  stopAtTarget: true,
 };
 
 /* ---------------- the target, and the vocabulary it may use ---------------- */
@@ -302,8 +309,10 @@ export function scanFromStarter(entries, target, starterId, limits = SEARCH_LIMI
     // Stop once a layer has produced the target. The layer was walked to its
     // end first, so every shortest-route edge into it has been recorded.
     if (targetKeys.length) {
-      shortestDepth = depth + 1;
-      break;
+      // Record the first layer that produced it, and only the first: a later
+      // layer reaching it again is a longer way to the same molecule.
+      if (shortestDepth === null) shortestDepth = depth + 1;
+      if (limits.stopAtTarget !== false) break;
     }
   }
 

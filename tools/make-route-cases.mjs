@@ -143,6 +143,34 @@ const cases = specs.map((spec) => {
   };
 });
 
+// The walk run to its full depth rather than stopping at the first layer that
+// produces the target. This is the mode the picker's reachability map runs the
+// search in, so it needs pinning on both sides: a divergence here would mean
+// the map and the search disagreed about what this catalogue can reach.
+const explored = (() => {
+  // Reached at one stage rather than at zero, so stopping and running on
+  // genuinely differ: a target matched by the starting molecule itself would
+  // end both walks immediately and pin nothing.
+  const target = makeTarget({ core: 'glucose-6-p', groups: [], match: 'carries' });
+  const stopped = searchRoutes(entries, target, { starterIds: ['glucose-1-p'] });
+  const full = searchRoutes(entries, target, { starterIds: ['glucose-1-p'], stopAtTarget: false });
+  return {
+    spec: { core: 'glucose-6-p', groups: [], match: 'carries', starter_ids: ['glucose-1-p'] },
+    stopped: {
+      states_seen: stopped.scan.statesSeen,
+      shortest_depth: stopped.shortestDepth,
+      exhausted: stopped.scan.exhausted,
+    },
+    full: {
+      // The same shortest depth — running on past the target must not change
+      // how far away the target is — but many more molecules seen.
+      states_seen: full.scan.statesSeen,
+      shortest_depth: full.shortestDepth,
+      exhausted: full.scan.exhausted,
+    },
+  };
+})();
+
 // One case with the budget cut to almost nothing, which is the only way to
 // exercise the branch that refuses to call an unfinished scan a dead end. It
 // is pinned separately because the honesty rule it carries is the one thing in
@@ -179,6 +207,7 @@ const out = {
   criteria: CRITERIA.map((c) => c.id),
   cases,
   starved,
+  explored,
 };
 
 writeFileSync(new URL('../src/data/route-cases.json', import.meta.url), `${JSON.stringify(out, null, 1)}\n`);

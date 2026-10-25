@@ -432,3 +432,23 @@ test('the contract pins the rule that an unfinished scan is not a dead end', () 
   assert.match(searchHeadline(result), /did not finish inside its budget/);
   assert.doesNotMatch(searchHeadline(result), /No chain/);
 });
+
+test('running the walk on past the target is pinned, because the picker map runs it that way', () => {
+  const { spec, stopped, full } = CASES.explored;
+  const target = makeTarget({ core: spec.core, groups: spec.groups, match: spec.match });
+  const opts = { starterIds: spec.starter_ids };
+
+  const a = searchRoutes(entries, target, opts);
+  assert.equal(a.scan.statesSeen, stopped.states_seen, 'stopping at the target');
+  assert.equal(a.shortestDepth, stopped.shortest_depth);
+  assert.equal(a.scan.exhausted, stopped.exhausted);
+
+  const b = searchRoutes(entries, target, { ...opts, stopAtTarget: false });
+  assert.equal(b.scan.statesSeen, full.states_seen, 'running on to full depth');
+  assert.equal(b.scan.exhausted, full.exhausted);
+
+  // The thing that must not change: running on past the target cannot make the
+  // target look further away than it is.
+  assert.equal(b.shortestDepth, a.shortestDepth, 'the full walk moved the target');
+  assert.ok(b.scan.statesSeen > a.scan.statesSeen, 'the full walk saw no more than the stopped one');
+});

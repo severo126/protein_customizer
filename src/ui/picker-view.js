@@ -28,6 +28,8 @@ import {
 import { makeTarget, describeTarget, validateTarget, SEARCH_LIMITS } from '../model/routes.js';
 import { groupMeta } from '../model/molecules.js';
 import { foldedWays } from './folded-ways.js';
+import { exploreCatalogue, mapFor } from '../model/route-map.js';
+import { routeMapPanel } from './route-map-view.js';
 import { geminiKey, setGeminiKey, parseTarget } from './gemini.js';
 
 /* ------------------------------ the transcript ---------------------------- */
@@ -173,13 +175,67 @@ export function renderPicker(root) {
       </div>
     </div>
 
+    <div class="pick-map" data-map>${mapPanel()}</div>
+
     ${foldedWays()}
   </div>`;
 
   wire(root, opts);
 }
 
+/* --------------------------- what is even possible ------------------------ */
+//
+// The map of what this catalogue can reach, drawn while the target is still
+// being decided. It comes out of the same walk the route search uses, so it
+// cannot show a chain the search would not find.
+//
+// The walk itself does not depend on what has been typed, so it is run once and
+// kept: about a third of a second the first time a skeleton is picked, and
+// nothing after that. Redrawing the map for a new draft is single-digit
+// milliseconds, which is what lets it narrow as you choose rather than only
+// once you have finished.
+let exploration = null;
+let exploreFailed = false;
+
+function entriesById() {
+  return new Map(state.catalogue.entries.map((e) => [e.id, e]));
+}
+
+function mapPanel() {
+  const draft = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
+  if (!draft.core) {
+    return `<p class="rm-empty">Pick a skeleton and this fills in with what the catalogue can
+      actually do to it, and narrows as you add groups.</p>`;
+  }
+  if (exploreFailed) {
+    return `<p class="rm-empty">The map could not be built, so it is not being shown rather than
+      shown wrong. The search itself is unaffected: press “Find the routes”.</p>`;
+  }
+  if (!exploration) return `<p class="rm-empty">Working out what this catalogue can reach…</p>`;
+  return routeMapPanel(mapFor(exploration, draft), entriesById());
+}
+
+// Build the walk once, off the first paint, then redraw the panel in place.
+function ensureExploration(root) {
+  if (exploration || exploreFailed) return;
+  const draft = state.pickerDraft ?? {};
+  if (!draft.core) return;
+  // A frame later, so the picker paints before the walk runs rather than the
+  // screen appearing to hang on the click that chose the skeleton.
+  requestAnimationFrame(() => {
+    try {
+      exploration = exploreCatalogue(state.catalogue.entries);
+    } catch (err) {
+      exploreFailed = true;
+      console.error('route map: exploration failed', err);
+    }
+    const holder = root.querySelector('[data-map]');
+    if (holder) holder.innerHTML = mapPanel();
+  });
+}
+
 function wire(root, opts) {
+  ensureExploration(root);
   const form = root.querySelector('[data-form]');
   const field = root.querySelector('[data-sentence]');
 
@@ -193,7 +249,13 @@ function wire(root, opts) {
     await handleSentence(sentence, opts);
   });
 
-  root.addEventListener('click', (e) => {
+  // On the wrapper this render just created, NOT on `root`. `root` is the
+  // screen element and outlives every render, so attaching here stacked one
+  // listener per render: the first chip click added one group, the second two,
+  // the third three. The wrapper is rebuilt by the innerHTML above, so its
+  // listeners go with it.
+  const panel = root.querySelector('.pick') ?? root;
+  panel.addEventListener('click', (e) => {
     const add = e.target.closest('[data-add-group]');
     if (add) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
@@ -225,7 +287,9 @@ function wire(root, opts) {
     }
   });
 
-  root.addEventListener('change', (e) => {
+  // Same reason as the click handler above: on this render's wrapper, not on
+  // the screen element that outlives it.
+  panel.addEventListener('change', (e) => {
     const sel = e.target.closest('[data-core]');
     if (sel) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };

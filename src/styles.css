@@ -1125,3 +1125,66 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .folded-ways li > button { flex: 0 0 auto; }
 .folded-ways li > span { flex: 1 1 14rem; min-width: 0; font-size: 12.5px; color: var(--ink-dim); }
 @media (min-width: 860px) { .folded-ways ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- the map of what is even possible, on the picker ---------- */
+/* Columns are stages; a line is one enzyme under its own rule. Owned by the
+   molecule-first flow thread. */
+
+.pick-map { margin-top: 20px; min-width: 0; }
+.rm {
+  padding: 16px 18px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--edge); background: var(--panel);
+  /* min-width:0 so the wide picture inside cannot stretch the page: without it
+     a flex or grid parent sizes to the SVG's natural width instead of letting
+     the scroll container below clip it. */
+  min-width: 0;
+}
+.rm-headline { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.rm-deadend {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: var(--radius-sm);
+  border-left: 3px solid var(--danger, #c2443d);
+  background: var(--panel-dim, rgba(0, 0, 0, 0.12));
+  font-size: 12.5px; line-height: 1.5; color: var(--ink);
+}
+.rm-empty { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+.rm-cut { margin: 8px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); }
+.rm-note { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-faint); }
+
+/* The picture scrolls sideways rather than shrinking past readable: the node
+   text has to stay above the 11px floor at phone width. */
+.rm-scroll { margin-top: 10px; overflow-x: auto; overflow-y: hidden; max-width: 100%; min-width: 0; }
+/* Natural size, never scaled down: the SVG carries width and height attributes
+   matching its viewBox, so the labels stay the size the rules below set and the
+   container scrolls sideways on a narrow screen. */
+.rm-svg { display: block; max-width: none; }
+
+.rm-node rect {
+  fill: var(--panel-dim, rgba(255, 255, 255, 0.04));
+  stroke: var(--edge); stroke-width: 1;
+}
+.rm-node text { font-size: 11px; fill: var(--ink-dim); letter-spacing: 0.02em; }
+.rm-node.starter rect { fill: var(--panel); stroke: var(--ink-faint); }
+.rm-node.starter text { fill: var(--ink); font-weight: 600; }
+.rm-node.off-skeleton rect { stroke-dasharray: 3 3; }
+/* What the reader asked for. The only emphasis on the map, so it cannot be
+   confused with a verdict about the molecule. */
+.rm-node.match rect { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+.rm-node.match text { fill: var(--ink); font-weight: 700; }
+
+/* What was asked for but not reached: dashed, muted, and with no line into it.
+   Drawn so the gap is visible rather than the subject being left out. */
+.rm-node.asked rect {
+  fill: none; stroke: var(--danger, #c2443d); stroke-width: 1.5; stroke-dasharray: 5 4;
+}
+.rm-node.asked text { fill: var(--ink-dim); font-weight: 600; }
+
+.rm-edge path { fill: none; stroke: var(--edge); stroke-width: 1.2; }
+/* The whole chain to a match, not only its last step, so a route can be read
+   back to a starting molecule. */
+.rm-edge.on-path path { stroke: var(--accent); stroke-width: 1.5; }
+.rm-edge.to-match path { stroke: var(--accent); stroke-width: 1.9; }
+.rm-edge-count { font-size: 11px; fill: var(--ink-dim); }
+.rm-tick { font-size: 11px; fill: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.rm-node, .rm-edge { transition: opacity 0.2s; }
+@media (prefers-reduced-motion: reduce) { .rm-node, .rm-edge { transition: none; } }
