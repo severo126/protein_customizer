@@ -48,6 +48,12 @@ function hsl(hue, s, l) {
   return `hsl(${hue} ${s}% ${l}%)`;
 }
 
+// The flat look: every shadow is the same solid indigo, offset straight down,
+// and dark ink on a bright fill matches the stylesheet's --shadow-ink and
+// --on-accent tokens.
+const SHADOW_INK = '#0c0f33';
+const ON_ACCENT = '#1b1240';
+
 /* ---------- secondary-structure ribbons ---------- */
 
 // A coil: a run of alternating half-circles, which reads as a helix at this
@@ -106,8 +112,7 @@ export function enzymeBody(entry, { detail = true, ids = uid('e') } = {}) {
     for (let i = 0; i < entry.cartoon.pips; i++) {
       const y = 30 + i * 14;
       if (Math.abs(y - HINGE.y) < 6) continue;
-      studs.push(`<circle cx="20" cy="${y}" r="4.5" fill="${hsl(hue, 45, 22)}" opacity="0.8"/>
-        <circle cx="20" cy="${y - 1.2}" r="3" fill="${hsl(hue, 85, 86)}" opacity="0.5"/>`);
+      studs.push(`<circle cx="20" cy="${y}" r="4.5" fill="${hsl(hue, 45, 24)}" opacity="0.9"/>`);
     }
   }
 
@@ -117,42 +122,29 @@ export function enzymeBody(entry, { detail = true, ids = uid('e') } = {}) {
   const bottomRibbons = detail && sites[1] ? ribbon(sites[1], 26, 74, 72) : '';
 
   return `<defs>
-      <linearGradient id="${ids}-body" x1="0" y1="0" x2="0.3" y2="1">
-        <stop offset="0" stop-color="${hsl(hue, 74, 66)}"/>
-        <stop offset="0.55" stop-color="${hsl(hue, 68, 52)}"/>
-        <stop offset="1" stop-color="${hsl(hue, 62, 34)}"/>
-      </linearGradient>
-      <radialGradient id="${ids}-core" cx="0.7" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="${hsl(hue, 40, 10)}"/>
-        <stop offset="1" stop-color="${hsl(hue, 35, 18)}"/>
-      </radialGradient>
       <clipPath id="${ids}-clip"><path d="${d}"/></clipPath>
     </defs>
 
-    <ellipse cx="50" cy="92" rx="30" ry="6" fill="#05070b" opacity="0.45"/>
-    <path d="${d}" transform="translate(0 5)" fill="#05070b" opacity="0.55"/>
+    <path d="${d}" transform="translate(0 5)" fill="${SHADOW_INK}" opacity="0.85"/>
 
     <g clip-path="url(#${ids}-clip)">
-      <rect x="0" y="0" width="100" height="100" fill="url(#${ids}-core)"/>
+      <rect x="0" y="0" width="100" height="100" fill="${hsl(hue, 45, 22)}"/>
       <g class="nf-jaw nf-jaw-top" style="${origin}">
-        <path d="${JAW_TOP}" fill="url(#${ids}-body)"/>
-        ${detail ? `<ellipse cx="38" cy="24" rx="19" ry="9" fill="#ffffff" opacity="0.16"/>` : ''}
+        <path d="${JAW_TOP}" fill="${hsl(hue, 70, 58)}"/>
         ${topRibbons}
-        <path d="${JAW_TOP}" fill="none" stroke="${hsl(hue, 80, 84)}" stroke-width="2" opacity="0.4"/>
+        <path d="${JAW_TOP}" fill="none" stroke="${hsl(hue, 80, 84)}" stroke-width="2.4" opacity="0.55"/>
       </g>
       <g class="nf-jaw nf-jaw-bottom" style="${origin}">
-        <path d="${JAW_BOTTOM}" fill="url(#${ids}-body)"/>
+        <path d="${JAW_BOTTOM}" fill="${hsl(hue + 16, 66, 48)}"/>
         ${bottomRibbons}
-        <path d="${JAW_BOTTOM}" fill="none" stroke="${hsl(hue, 70, 70)}" stroke-width="2" opacity="0.28"/>
+        <path d="${JAW_BOTTOM}" fill="none" stroke="${hsl(hue, 80, 84)}" stroke-width="2.4" opacity="0.4"/>
       </g>
       <circle class="nf-site-glow" cx="${HINGE.x + 2}" cy="${HINGE.y}" r="6"
         fill="${hsl(hue, 90, 72)}" opacity="0.28"/>
       ${studs.join('')}
     </g>
 
-    <path d="${d}" fill="none" stroke="${hsl(hue, 55, 20)}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="${d}" fill="none" stroke="${hsl(hue, 90, 86)}" stroke-width="1.4" stroke-linejoin="round"
-      opacity="0.3" transform="translate(0 -2)"/>`;
+    <path d="${d}" fill="none" stroke="${hsl(hue, 80, 86)}" stroke-width="2.2" stroke-linejoin="round" opacity="0.7"/>`;
 }
 
 // One enzyme as a game piece.
@@ -182,39 +174,21 @@ export function moleculeGlyph(mol, { ids = uid('m') } = {}) {
     const x = 50 + Math.cos(angle) * 33;
     const y = 50 + Math.sin(angle) * 33;
     bonds.push(`<line x1="50" y1="50" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"
-      stroke="#8b94b0" stroke-width="4" stroke-linecap="round" opacity="0.65"/>`);
+      stroke="#a7add8" stroke-width="4" stroke-linecap="round" opacity="0.7"/>`);
     marbles.push(`<g class="nf-group" data-group="${escapeText(g)}">
-      <circle cx="${x.toFixed(2)}" cy="${(y + 2).toFixed(2)}" r="11.5" fill="#05070b" opacity="0.5"/>
-      <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="11.5" fill="url(#${ids}-g${i})"
-        stroke="${hsl(meta.hue, 55, 24)}" stroke-width="2.4"/>
-      <ellipse cx="${(x - 3.4).toFixed(2)}" cy="${(y - 4).toFixed(2)}" rx="4" ry="2.6" fill="#ffffff" opacity="0.45"/>
+      <circle cx="${x.toFixed(2)}" cy="${(y + 3).toFixed(2)}" r="11.5" fill="${SHADOW_INK}" opacity="0.85"/>
+      <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="11.5" fill="${hsl(meta.hue, 78, 60)}"
+        stroke="${hsl(meta.hue, 85, 84)}" stroke-width="1.6"/>
       <text x="${x.toFixed(2)}" y="${(y + 4).toFixed(2)}" text-anchor="middle" font-size="9"
-        font-weight="700" fill="#10131c">${meta.symbol}</text>
+        font-weight="700" fill="${ON_ACCENT}">${meta.symbol}</text>
     </g>`);
   });
 
-  const gradients = mol.groups
-    .map((g, i) => {
-      const meta = groupMeta(g);
-      return `<radialGradient id="${ids}-g${i}" cx="0.35" cy="0.3" r="0.8">
-        <stop offset="0" stop-color="${hsl(meta.hue, 85, 72)}"/>
-        <stop offset="1" stop-color="${hsl(meta.hue, 62, 44)}"/>
-      </radialGradient>`;
-    })
-    .join('');
-
   const hexPoints = '50,27 70,39 70,61 50,73 30,61 30,39';
-  return `<defs>${gradients}
-      <linearGradient id="${ids}-core" x1="0" y1="0" x2="0.4" y2="1">
-        <stop offset="0" stop-color="#4a5478"/><stop offset="1" stop-color="#2b3148"/>
-      </linearGradient>
-    </defs>
-    ${bonds.join('')}
-    <polygon points="${hexPoints}" fill="#05070b" opacity="0.5" transform="translate(0 4)"/>
-    <polygon points="${hexPoints}" fill="url(#${ids}-core)" stroke="#6b76a0" stroke-width="3"/>
-    <polyline points="50,27 30,39 30,61" fill="none" stroke="#8b96c4" stroke-width="2" opacity="0.6"/>
-    <polyline points="50,73 70,61 70,39" fill="none" stroke="#141827" stroke-width="2" opacity="0.5"/>
-    <text x="50" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#e8ecf7">${shortCore(mol.core)}</text>
+  return `${bonds.join('')}
+    <polygon points="${hexPoints}" fill="${SHADOW_INK}" opacity="0.85" transform="translate(0 4)"/>
+    <polygon points="${hexPoints}" fill="#3b4690" stroke="#8c98e6" stroke-width="2"/>
+    <text x="50" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#eceefb">${shortCore(mol.core)}</text>
     ${marbles.join('')}`;
 }
 
@@ -255,37 +229,26 @@ export function constructPiece(geo, labelA, labelB, { width = 560, height = 230 
 
   return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img"
       aria-label="Stylised cartoon of a two-blob construct joined by a linker. Not a coordinate set.">
-    <defs>
-      <linearGradient id="blobA" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#7fd4ff"/><stop offset="1" stop-color="#2f7fa8"/>
-      </linearGradient>
-      <linearGradient id="blobB" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffd27f"/><stop offset="1" stop-color="#c88a2a"/>
-      </linearGradient>
-    </defs>
+    <line x1="${pad / 2}" y1="${cy}" x2="${width - pad / 2}" y2="${cy}" stroke="#333d82" stroke-width="2" stroke-dasharray="6 7"/>
 
-    <line x1="${pad / 2}" y1="${cy}" x2="${width - pad / 2}" y2="${cy}" stroke="#2e3447" stroke-width="2" stroke-dasharray="6 7"/>
-
-    <path d="M ${exitAx} ${cy} Q ${mid} ${cy - slack} ${exitBx} ${cy}" fill="none" stroke="#0b0d13" stroke-width="12" stroke-linecap="round" opacity="0.5" transform="translate(0 5)"/>
-    <path d="M ${exitAx} ${cy} Q ${mid} ${cy - slack} ${exitBx} ${cy}" fill="none" stroke="#9aa4c4" stroke-width="8" stroke-linecap="round"/>
+    <path d="M ${exitAx} ${cy} Q ${mid} ${cy - slack} ${exitBx} ${cy}" fill="none" stroke="${SHADOW_INK}" stroke-width="8" stroke-linecap="round" opacity="0.85" transform="translate(0 5)"/>
+    <path d="M ${exitAx} ${cy} Q ${mid} ${cy - slack} ${exitBx} ${cy}" fill="none" stroke="#a7add8" stroke-width="8" stroke-linecap="round"/>
 
     <g>
-      <circle cx="${ax}" cy="${cy + 7}" r="${rA}" fill="#0b0d13" opacity="0.5"/>
-      <circle cx="${ax}" cy="${cy}" r="${rA}" fill="url(#blobA)" stroke="#1b4a63" stroke-width="4"/>
-      <circle cx="${ax - rA * 0.3}" cy="${cy - rA * 0.35}" r="${rA * 0.26}" fill="#ffffff" opacity="0.28"/>
-      <text x="${ax}" y="${cy + rA + 24}" text-anchor="middle" font-size="13" font-weight="700" fill="#e8ecf7">${escapeText(labelA)}</text>
+      <circle cx="${ax}" cy="${cy + 7}" r="${rA}" fill="${SHADOW_INK}" opacity="0.85"/>
+      <circle cx="${ax}" cy="${cy}" r="${rA}" fill="#4fbaf0" stroke="#bfe8ff" stroke-width="2.5"/>
+      <text x="${ax}" y="${cy + rA + 24}" text-anchor="middle" font-size="13" font-weight="700" fill="#eceefb">${escapeText(labelA)}</text>
     </g>
     <g>
-      <circle cx="${bx}" cy="${cy + 7}" r="${rB}" fill="#0b0d13" opacity="0.5"/>
-      <circle cx="${bx}" cy="${cy}" r="${rB}" fill="url(#blobB)" stroke="#6b4a12" stroke-width="4"/>
-      <circle cx="${bx - rB * 0.3}" cy="${cy - rB * 0.35}" r="${rB * 0.26}" fill="#ffffff" opacity="0.28"/>
-      <text x="${bx}" y="${cy + rB + 24}" text-anchor="middle" font-size="13" font-weight="700" fill="#e8ecf7">${escapeText(labelB)}</text>
+      <circle cx="${bx}" cy="${cy + 7}" r="${rB}" fill="${SHADOW_INK}" opacity="0.85"/>
+      <circle cx="${bx}" cy="${cy}" r="${rB}" fill="#f2ad3c" stroke="#ffe1a6" stroke-width="2.5"/>
+      <text x="${bx}" y="${cy + rB + 24}" text-anchor="middle" font-size="13" font-weight="700" fill="#eceefb">${escapeText(labelB)}</text>
     </g>
 
-    <circle cx="${exitAx}" cy="${cy}" r="6" fill="#ffc65c" stroke="#16181f" stroke-width="2"/>
-    <circle cx="${exitBx}" cy="${cy}" r="6" fill="#ffc65c" stroke="#16181f" stroke-width="2"/>
-    <text x="${width / 2}" y="22" text-anchor="middle" font-size="12" fill="#a3abc2">${geo.linkerUnits}-unit linker · ${geo.span.toFixed(2)} nm of reach</text>
-    <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#727b94">${geo.joinDistance.toFixed(2)} nm between cut ends · centres ${geo.centreDistance.toFixed(2)} nm apart</text>
+    <circle cx="${exitAx}" cy="${cy}" r="6" fill="#ffc65c" stroke="${SHADOW_INK}" stroke-width="2"/>
+    <circle cx="${exitBx}" cy="${cy}" r="6" fill="#ffc65c" stroke="${SHADOW_INK}" stroke-width="2"/>
+    <text x="${width / 2}" y="22" text-anchor="middle" font-size="12" fill="#a7add8">${geo.linkerUnits}-unit linker · ${geo.span.toFixed(2)} nm of reach</text>
+    <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#7a82b8">${geo.joinDistance.toFixed(2)} nm between cut ends · centres ${geo.centreDistance.toFixed(2)} nm apart</text>
   </svg>`;
 }
 
@@ -306,7 +269,7 @@ export function domainMap(entry, { width = 300 } = {}) {
     .join('');
   return `<svg viewBox="0 0 ${width} ${h}" width="100%" height="${h}" role="img"
       aria-label="Schematic domain map of ${entry.domain.label}: region bands only, no residue detail.">
-    <rect x="0" y="14" width="${width}" height="8" rx="4" fill="#2e3447"/>
+    <rect x="0" y="14" width="${width}" height="8" rx="4" fill="#333d82"/>
     ${bands}
   </svg>`;
 }

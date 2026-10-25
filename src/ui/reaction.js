@@ -52,9 +52,9 @@ function glyphAt(mol, size) {
 function marble(group, r = 13) {
   const meta = groupMeta(group);
   return `<g>
-    <circle r="${r}" fill="hsl(${meta.hue} 80% 58%)" stroke="hsl(${meta.hue} 55% 24%)" stroke-width="2.5"/>
-    <ellipse cx="${-r * 0.3}" cy="${-r * 0.35}" rx="${r * 0.34}" ry="${r * 0.22}" fill="#fff" opacity="0.5"/>
-    <text y="4" text-anchor="middle" font-size="10" font-weight="700" fill="#10131c">${meta.symbol}</text>
+    <circle cy="3" r="${r}" fill="#0c0f33" opacity="0.85"/>
+    <circle r="${r}" fill="hsl(${meta.hue} 78% 60%)" stroke="hsl(${meta.hue} 85% 84%)" stroke-width="1.6"/>
+    <text y="4" text-anchor="middle" font-size="10" font-weight="700" fill="#1b1240">${meta.symbol}</text>
   </g>`;
 }
 
