@@ -30,24 +30,18 @@ export function renderWorkstation(root) {
   root.innerHTML = `
     <div class="section-head">
       <h2>Workstation</h2>
-      <p>Ask for the behaviour rather than the name. Tick what you want the enzyme to do and this
-      screen tells you which of the forty committed entries, or which pairing of them, covers the most
-      of it — and names what went uncovered. Every behaviour below is read off a field already in the
-      catalogue file.</p>
     </div>
 
     <div class="workstation-grid">
       <section class="panel want-picker">
         <div class="palette-head">
-          <strong>What do you want it to do?</strong>
+          <strong title="Each count is how many of the forty catalogue entries a committed field says do it. Nothing here searches outside that file.">What do you want it to do?</strong>
           <span class="chip">${picked.length} picked</span>
         </div>
         ${WANT_QUESTIONS.map((q) => questionBlock(q, vocabulary, picked)).join('')}
         <div class="actions">
           <button class="btn small ghost" id="clear-wants" ${picked.length ? '' : 'disabled'}>Clear all</button>
         </div>
-        <div class="score-note">The count beside each behaviour is how many of the forty entries a
-        committed field says do it. Nothing here searches outside this file.</div>
       </section>
 
       <section class="workstation-results">
@@ -134,9 +128,7 @@ function askedPanel(result) {
   return `<div class="panel asked-panel">
     <strong>You asked for ${result.wants.length} behaviour${result.wants.length === 1 ? '' : 's'}</strong>
     <div class="want-chips">${result.wants.map((w) => `<span class="chip">${escapeText(w.label)}</span>`).join('')}</div>
-    <div class="score-note">Searched ${result.searchedSizes.map((n) => `${n}`).join(' then ') || '—'}
-    ${result.searchedSizes.length > 1 ? 'entries at a time' : 'entry at a time'}, over the fixed forty.
-    ${escapeText(result.closestNote)}</div>
+    <span class="chip" title="${escapeText(result.closestNote)}">searched ${result.searchedSizes.map((n) => `${n}`).join(' then ') || '—'} at a time, over the fixed forty</span>
   </div>`;
 }
 
@@ -144,9 +136,7 @@ function impossiblePanel(result) {
   return `<div class="panel not-in-catalogue">
     <strong>Not in this catalogue at all</strong>
     <ul>${result.impossible.map((w) => `<li>${escapeText(w.label)}</li>`).join('')}</ul>
-    <div class="score-note">No entry of the forty has a field saying it does this, so no build below can
-    cover it. The catalogue is fixed and cannot be extended from the interface — that is the point of
-    it. Drop the behaviour or ask for something near it.</div>
+    <div class="score-note">No catalogue entry claims this, so no build below can cover it.</div>
   </div>`;
 }
 
@@ -157,7 +147,7 @@ function buildCard(build, index) {
     <header class="build-head">
       <div>
         <h3>${escapeText(build.label)}</h3>
-        <div class="cartoon-label">${build.domains.map((d) => escapeText(d.domain)).join(' · ')} — cartoon domains, no residue detail</div>
+        <div class="cartoon-label">${build.domains.map((d) => escapeText(d.domain)).join(' · ')} — cartoon domains</div>
       </div>
       <div class="build-count">
         <span class="score-value">${build.covered}/${build.total}</span>
@@ -207,10 +197,8 @@ function buildCard(build, index) {
       <strong>${escapeText(build.verdict.headline)}</strong>
       <div>${escapeText(build.verdict.detail)}</div>
       ${!short && !ruled
-        ? `<div class="score-note">"${escapeText(PASS_VERDICT)}" is the strongest thing this app will
-           ever say about a build. It is the absence of a red flag from a cartoon. There is no
-           validated or approved state here, and nothing above says this would fold, function, or be
-           safe.</div>`
+        ? `<div class="score-note">"${escapeText(PASS_VERDICT)}" is the strongest thing this app says:
+           the absence of a red flag from a cartoon, never a validated or approved state.</div>`
         : ''}
     </div>
 
@@ -222,7 +210,7 @@ function buildCard(build, index) {
 
     <div class="actions">
       <button class="btn small primary" data-bench="${escapeText(build.entryIds.join('+'))}">Send to the bench</button>
-      ${build.entries.length === 2 ? `<button class="btn small" data-splice-build="${escapeText(build.entryIds.join('+'))}">Cartoon it in the splice table</button>` : ''}
+      ${build.entries.length === 2 ? `<button class="btn small" data-splice-build="${escapeText(build.entryIds.join('+'))}">Splice table</button>` : ''}
       <button class="btn small ghost" data-export-build="${index}">Export this build</button>
     </div>
   </article>`;
@@ -232,10 +220,7 @@ function notCheckedPanel() {
   return `<div class="panel not-checked">
     <h4>Not checked — here or on any other screen</h4>
     <ul>${NOT_CHECKED.map((l) => `<li>${escapeText(l)}</li>`).join('')}</ul>
-    <div class="score-note">${escapeText(CARTOON_PHYSICS_NOTE)} This list sits beside the verdict
-    rather than under it, because it is the larger part of the truth. Covering a behaviour means a
-    committed catalogue field says the entry does it — not that this team would run, fold, express or
-    exist.</div>
+    <div class="score-note">${escapeText(CARTOON_PHYSICS_NOTE)}</div>
   </div>`;
 }
 

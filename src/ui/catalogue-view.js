@@ -28,8 +28,6 @@ export function renderCatalogue(root) {
   root.innerHTML = `
     <div class="section-head">
       <h2>Catalogue</h2>
-      <p>Forty hand-curated, commonplace enzymes, grouped by what they do to a molecule. Fixed list —
-      there is no database lookup and nothing to upload.</p>
     </div>
 
     <div class="panel catalogue-bar">
@@ -39,13 +37,12 @@ export function renderCatalogue(root) {
               <input type="checkbox" id="catalogue-filter" ${state.catalogueFilter ? 'checked' : ''} />
               Only what fits the bench
             </label>
-            <span class="score-note">The bench is holding
-              <strong>${escapeText(run.stalled ? 'a stalled lane' : describe(run.product))}</strong> after
-              ${lane.length} stage${lane.length === 1 ? '' : 's'} ·
-              ${suggestions.counts.fits} fit, ${suggestions.counts.caution} with a caution,
-              ${suggestions.counts.blocked} ruled out. ${escapeText(suggestions.note)}</span>`
-          : `<span class="score-note">Nothing on the bench yet, so nothing is filtered. Add a stage and
-              this screen can narrow itself to what the running product and the pot can still take.</span>`
+            <span class="chip" title="${escapeText(suggestions.note)}">bench
+              <strong>${escapeText(run.stalled ? 'stalled' : describe(run.product))}</strong></span>
+            <span class="chip">${suggestions.counts.fits} fit</span>
+            <span class="chip">${suggestions.counts.caution} caution</span>
+            <span class="chip">${suggestions.counts.blocked} ruled out</span>`
+          : ``
       }
       ${regionLegend()}
     </div>
@@ -97,13 +94,11 @@ function column(family, filtering) {
   return `<section class="family-column" style="--family-hue:${style.hue}">
     <div class="family-header">
       <h3><span class="family-dot" style="background:hsl(${style.hue} 70% 55%)"></span>${style.label}
-        <span class="chip">${shown.length}${filtering ? ` of ${all.length}` : ''}</span></h3>
-      <p>${style.blurb}</p>
-      ${hidden ? `<p class="hidden-note">${hidden} ruled out by the current lane and hidden. Untick the
-        filter to see them and why.</p>` : ''}
+        <span class="chip" title="${escapeText(style.blurb)}">${shown.length}${filtering ? ` of ${all.length}` : ''}</span></h3>
+      ${hidden ? `<p class="hidden-note">${hidden} hidden by the filter</p>` : ''}
     </div>
     ${shown.map(card).join('')}
-    ${!shown.length ? `<p class="palette-note">Nothing in this column fits the current lane.</p>` : ''}
+    ${!shown.length ? `<p class="palette-note">Nothing here fits the lane.</p>` : ''}
   </section>`;
 }
 
@@ -132,16 +127,16 @@ function card(e) {
       <span class="transform-arrow" aria-hidden="true">➜</span>
       ${demo.product ? moleculePiece(demo.product, 68) : `<span class="chip">no demo substrate</span>`}
     </div>
-    <div class="cartoon-label">substrate in · product out (symbolic)</div>
+    <div class="cartoon-label">substrate → product (symbolic)</div>
 
     <div style="display:flex;gap:10px;align-items:center">
       ${enzymePiece(e, 78)}
       <div style="flex:1">${windowBars(e)}</div>
     </div>
-    <div class="cartoon-label">stylised cartoon game piece — not a real coordinate set</div>
+    <div class="cartoon-label">cartoon game piece — not a coordinate set</div>
 
     ${domainMap(e)}
-    <div class="cartoon-label">${escapeText(e.domain.label)} · loop / helix / sheet regions, no residue detail</div>
+    <div class="cartoon-label">${escapeText(e.domain.label)} · region bands only</div>
 
     <div class="meta">
       <span class="chip">cofactor <strong>${escapeText(e.cofactor)}</strong></span>
@@ -154,8 +149,7 @@ function card(e) {
       <span class="chip">cartoon <strong>${escapeText(e.source.cartoon)}</strong></span>
       <span class="chip">regions <strong>${escapeText(e.source.domain_regions)}</strong></span>
     </div>
-    <p class="blurb" style="font-size:11px;color:var(--ink-faint)">${escapeText(e.source.note)}</p>
-    <button class="btn small ghost" data-sources="${e.id}">Go and check the real biochemistry</button>
+    <button class="btn small ghost" data-sources="${e.id}">Sources</button>
 
     <div class="actions">
       <button class="btn small primary" data-add="${e.id}">Add to bench</button>

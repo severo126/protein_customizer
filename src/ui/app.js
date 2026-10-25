@@ -5,7 +5,6 @@ import { renderCatalogue } from './catalogue-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
 import { renderWorkstation } from './workstation-view.js';
-import { renderPlatform } from './platform-view.js';
 import { renderHome, unmountHome } from './home-view.js';
 import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { closeReaction } from './reaction.js';
@@ -53,7 +52,6 @@ export function render() {
   else if (state.screen === 'catalogue') renderCatalogue(screenEl);
   else if (state.screen === 'workstation') renderWorkstation(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
-  else if (state.screen === 'platform') renderPlatform(screenEl);
   else renderSplice(screenEl);
 }
 

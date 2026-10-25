@@ -16,8 +16,7 @@ import * as THREE from 'three';
 import { groupMeta } from '../model/molecules.js';
 import { buildStructure, buildGroupFragment, elementMeta, STRUCTURE_NOTE } from '../model/structure.js';
 
-export const SCENE_NOTE =
-  'Enzyme bodies are invented geometry — not a structure, not a coordinate set. Molecules are a ball-and-stick cartoon: real atoms and bonds, drawn positions.';
+export const SCENE_NOTE = 'Invented geometry — not a structure. Molecules drawn oversized.';
 
 export const SCENE_NOTE_LONG =
   `The enzyme is a noise-displaced blob with a carved cleft and ribbons laid on by hand: not a coordinate set, not a structure, not a trajectory. ${STRUCTURE_NOTE}`;
@@ -164,10 +163,10 @@ function lobeShape(seed, { radius, squash, dishAt, dishDepth }) {
   // The surface radius along a unit direction, so ribbons can be laid on the
   // same skin the mesh is built from.
   const at = (n) => {
+    // Big, soft lumps only. A fine bumpy skin reads as a real molecular
+    // surface, which is exactly what this piece is not, so there is none.
     const lumps = fbm(n.x * 1.9 + 3, n.y * 1.9 + 7, n.z * 1.9 + 11, seed);
-    // A finer second pass gives the metal a hammered skin to catch light on.
-    const skin = noise3(n.x * 9 + 1, n.y * 9 + 2, n.z * 9 + 3, seed + 5.1);
-    let r = radius * (0.86 + lumps * 0.3 + skin * 0.025);
+    let r = radius * (0.9 + lumps * 0.2);
     // The dish: push vertices near the facing pole inward, which is what makes
     // a cleft you can fly a molecule into rather than a seam.
     const facing = n.dot(dishAt);
@@ -293,8 +292,8 @@ function buildEnzyme(entry, env) {
   group.userData.parts = {};
 
   const squash = new THREE.Vector3(1.18, 0.9, 1.0);
-  const upperShape = lobeShape(seed, { radius, squash, dishAt: new THREE.Vector3(0.35, -1, 0).normalize(), dishDepth: 0.3 });
-  const lowerShape = lobeShape(seed + 0.37, { radius: radius * 0.94, squash, dishAt: new THREE.Vector3(0.35, 1, 0).normalize(), dishDepth: 0.3 });
+  const upperShape = lobeShape(seed, { radius, squash, dishAt: new THREE.Vector3(0.35, -1, 0).normalize(), dishDepth: 0.42 });
+  const lowerShape = lobeShape(seed + 0.37, { radius: radius * 0.94, squash, dishAt: new THREE.Vector3(0.35, 1, 0).normalize(), dishDepth: 0.42 });
   const upper = new THREE.Mesh(upperShape.geo, metal);
   upper.position.y = radius * 0.46;
   const lower = new THREE.Mesh(lowerShape.geo, metal);
@@ -633,6 +632,13 @@ export function createFoundryScene(canvas) {
   ];
 
   const smooth = (t) => t * t * (3 - 2 * t);
+  // A jaw that overshoots a little as it shuts reads as weight; a group that
+  // hops rather than slides reads as being handed over.
+  const easeOutBack = (t, k = 1.4) => 1 + (k + 1) * Math.pow(t - 1, 3) + k * Math.pow(t - 1, 2);
+  const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  // A sum of sines: never still, never a loop you can see repeating.
+  const breathe = (clock, seed, speed = 1) =>
+    Math.sin(clock * 0.9 * speed + seed) * 0.6 + Math.sin(clock * 1.7 * speed + seed * 2.3) * 0.3 + Math.sin(clock * 2.9 * speed + seed * 3.7) * 0.1;
   const clamp01 = (t) => Math.min(1, Math.max(0, t));
   // 0 before `a`, 1 after `b`, eased between.
   const span = (t, a, b) => smooth(clamp01((t - a) / (b - a)));
@@ -678,7 +684,8 @@ export function createFoundryScene(canvas) {
     // The swap: this stage's enzyme comes in while the last one leaves.
     const arrive = span(t, 0, 0.17);
     enzyme.position.copy(OFFSTAGE_IN).lerp(new THREE.Vector3(0, 0, 0), arrive);
-    enzyme.position.y += Math.sin(clock * 0.5) * 0.04;
+    enzyme.position.y += breathe(clock, 0.4, 0.5) * radius * 0.03;
+    enzyme.position.x += breathe(clock, 3.1, 0.4) * radius * 0.02;
     enzyme.rotation.y = -0.35 + Math.sin(clock * 0.12) * 0.06 + t * 0.4;
     if (outgoing) {
       outgoing.position.lerpVectors(new THREE.Vector3(0, 0, 0), OFFSTAGE_OUT, arrive);
@@ -690,21 +697,34 @@ export function createFoundryScene(canvas) {
     const start = carry ? HANDOFF.clone() : new THREE.Vector3(radius + 9, 0.6, 2.2);
     const exit = last ? new THREE.Vector3(-radius - 9, -1.4, 3.4) : HANDOFF.clone();
 
-    const approach = span(t, 0.18, 0.46);
-    const close = span(t, 0.46, 0.56);
-    const hand = span(t, 0.54, 0.7);
-    const open = span(t, 0.72, 0.8);
-    const leave = span(t, 0.8, 1);
+    const approach = span(t, 0.18, 0.44);
+    const anticipate = span(t, 0.4, 0.46) * (1 - span(t, 0.46, 0.5));
+    const close = easeOutBack(clamp01((t - 0.46) / 0.1));
+    const hand = span(t, 0.56, 0.66);
+    // A beat of stillness after the hand-off, before anything moves again.
+    const open = span(t, 0.78, 0.86);
+    const leave = span(t, 0.86, 1);
 
-    // The jaw shuts over whatever is in the cleft, then opens again.
+    // The jaw draws back a hair, then shuts over whatever is in the cleft.
     const shut = close * (1 - open);
-    parts.jawTop.rotation.z = -shut * 0.16;
-    parts.jawBottom.rotation.z = shut * 0.16;
+    parts.jawTop.rotation.z = -shut * 0.17 + anticipate * 0.03;
+    parts.jawBottom.rotation.z = shut * 0.17 - anticipate * 0.03;
     parts.siteRing.material.emissiveIntensity = 0.8 + hand * (1 - leave) * 3.2;
     parts.siteHalo.material.opacity = 0.25 + hand * (1 - leave) * 0.75;
     parts.siteHalo.scale.setScalar(radius * (2.0 + hand * (1 - leave) * 1.6));
 
-    const docked = molecule.position.copy(start).lerp(dockAt, approach);
+    // The molecule wanders in rather than sliding down a rail, and bumps a
+    // lobe once on the way. Everything keeps a little jitter throughout:
+    // nothing in a cell is ever still, and nothing here is ever posed.
+    const wander = new THREE.Vector3(
+      breathe(clock, 1.3) * radius * 0.5 * (1 - approach),
+      breathe(clock, 4.1) * radius * 0.42 * (1 - approach) + Math.sin(approach * Math.PI) * radius * 0.5,
+      breathe(clock, 7.9) * radius * 0.4 * (1 - approach),
+    );
+    const docked = molecule.position.copy(start).lerp(dockAt, easeInOutCubic(approach)).add(wander);
+    const held = 0.4 + 0.6 * (1 - approach); // the jitter calms once it is seated
+    molecule.position.x += breathe(clock, 0.7, 1.6) * radius * 0.06 * held;
+    molecule.position.y += breathe(clock, 2.2, 1.6) * radius * 0.06 * held;
     molecule.rotation.y = clock * 0.5;
     molecule.rotation.x = Math.sin(clock * 0.35) * 0.18;
 
@@ -721,14 +741,19 @@ export function createFoundryScene(canvas) {
       if (flyer) {
         const donor = new THREE.Vector3(radius * 1.2, -radius * 2.2, 2.6);
         const away = new THREE.Vector3(radius * 1.1, -radius * 2.4, 3.0);
+        const hop = easeInOutCubic(hand);
+        // A squash at the moment of contact, which is what sells the hand-off.
+        const impact = Math.sin(clamp01((hand - 0.78) / 0.22) * Math.PI);
         if (op === 'add') {
-          flyer.visible = t > 0.3 && hand < 0.98;
-          flyer.position.copy(donor).lerp(dockAt, hand);
-          flyer.scale.setScalar(1 - hand * 0.45);
+          flyer.visible = t > 0.3 && hand < 0.995;
+          flyer.position.copy(donor).lerp(dockAt, hop);
+          flyer.position.y += Math.sin(hop * Math.PI) * radius * 0.5;
+          flyer.scale.set(1 + impact * 0.2, 1 - impact * 0.15, 1 + impact * 0.2).multiplyScalar(1 - hop * 0.35);
         } else {
           flyer.visible = hand > 0.02 && leave < 0.9;
-          flyer.position.copy(dockAt).lerp(away, Math.max(0, (hand - 0.3) / 0.7));
-          flyer.scale.setScalar(Math.min(1, hand * 2));
+          flyer.position.copy(dockAt).lerp(away, hop);
+          flyer.position.y -= Math.sin(hop * Math.PI) * radius * 0.35;
+          flyer.scale.set(1 + impact * 0.2, 1 - impact * 0.15, 1 + impact * 0.2).multiplyScalar(Math.min(1, 0.5 + hand));
         }
         flyer.rotation.y = clock * 1.1;
         flyer.rotation.z = clock * 0.7;
@@ -736,14 +761,19 @@ export function createFoundryScene(canvas) {
     } else {
       // A refusal, shown mid-run: it comes in, will not seat, and backs out.
       // The jaw never shuts, which is the whole point of the moment.
-      const bounce = span(t, 0.55, 0.85);
+      const bounce = span(t, 0.62, 0.9);
       const nudge = dockAt.clone().add(new THREE.Vector3(radius * 0.9, 0, 0.3));
-      molecule.position.copy(start).lerp(nudge, approach);
+      molecule.position.copy(start).lerp(nudge, easeInOutCubic(approach));
       molecule.position.lerp(start.clone().add(new THREE.Vector3(radius * 0.6, -1.2, 1.6)), bounce);
+      molecule.position.x += breathe(clock, 0.7, 1.6) * radius * 0.06;
       molecule.visible = true;
-      parts.jawTop.rotation.z = 0;
-      parts.jawBottom.rotation.z = 0;
-      parts.siteRing.material.emissiveIntensity = 0.5;
+      // The jaw tries, half shuts on nothing, and shakes itself off.
+      const tryShut = span(t, 0.44, 0.52) * (1 - span(t, 0.58, 0.68));
+      const shake = Math.exp(-(clamp01((t - 0.52) / 0.1)) * 3) * Math.sin(clamp01((t - 0.52) / 0.1) * Math.PI * 6) * (t > 0.52 ? 1 : 0);
+      parts.jawTop.rotation.z = -tryShut * 0.07 + shake * 0.05;
+      parts.jawBottom.rotation.z = tryShut * 0.07 - shake * 0.05;
+      parts.siteRing.material.emissiveIntensity = 0.35;
+      parts.siteHalo.material.opacity = 0.12;
     }
   }
 
