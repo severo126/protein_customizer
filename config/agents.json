@@ -28,6 +28,11 @@
       "impl": "nano_foundry.tools:filter_reason",
       "description": "Return the deterministic reason string a filter already produced, for the explainer to put into plain words."
     },
+    "sources.search": {
+      "kind": "retrieval",
+      "impl": "tools/api/server.mjs:/api/sources",
+      "description": "The one retrieval path in the app. Holds the SerpApi key server-side and returns public references for a catalogue card or for a failure mode a filter has already named. Results are screened against the topics docs/scope.md §1 excludes before they leave the server; there is no second retrieval path and no write path."
+    },
     "events.write": {
       "kind": "sink",
       "impl": "nano_foundry.tools:write_event",
@@ -68,6 +73,24 @@
       "guarantees": [
         "It never decides a verdict; it receives one and rewords it.",
         "If it is unavailable the UI falls back to the filter's own wording, which is always present."
+      ]
+    },
+    {
+      "id": "literature-explainer",
+      "title": "Literature explainer",
+      "job": "Read references retrieved about the failure mode a filter already named, and say what they report.",
+      "model": "gemini-2.5-flash",
+      "tools": ["filters.explain", "sources.search"],
+      "instructions": "config/instructions/literature-explainer.md",
+      "limits": {
+        "max_output_tokens": 600,
+        "timeout_ms": 20000,
+        "retries": 0
+      },
+      "guarantees": [
+        "It is handed a verdict and a list of retrieved references; it never decides a verdict and never scores anything.",
+        "It sees only the screened reference titles and snippets plus the filter's own reason, so it has nothing else to draw a number from.",
+        "If it is unavailable the panel still shows the references and the filter's own wording, which are both present without it."
       ]
     },
     {

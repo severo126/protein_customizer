@@ -113,6 +113,44 @@ If either is ever wanted, it is the project owner's call to widen this document 
 not the build's. The sequence rule and the hazard rule in §1 and §2 stay in force whatever
 is decided.
 
+## 3c. The literature layer, and the number it refuses to produce
+
+**What it is.** When a filter rejects a candidate, the splice screen can go and find what has
+actually been published about that kind of failure. The order matters and is the whole claim:
+
+1. a deterministic filter in `src/model/splice.js` rejects the candidate and names which filter
+   and why. The verdict is reached before any of this runs, and nothing below can change it;
+2. `src/model/failureModes.js` maps that filter id to the real failure mode it is a crude stand-in
+   for, as committed text plus the queries to look it up. One entry per filter, asserted by
+   `test/literature.test.js`;
+3. `/api/sources` runs those queries — the same endpoint, the same server-side key handling and the
+   same screen the catalogue cards already use. There is no second retrieval path, and
+   `test/literature.test.js` greps the panel to keep it that way;
+4. only then, and only if a Gemini key is set, is a model shown the verdict and the retrieved
+   titles, so it can say what they report.
+
+Steps 1 to 3 work with no key and no model at all. With no `SERPAPI_KEY` the search falls back to
+Crossref, which needs no account, so the citation trail works on a fresh clone.
+
+**This is not the live search §1 forbids.** §1 forbids reaching outside the forty fixed entries for
+a *catalogue fact* — what an enzyme is, what it does, whether it exists. Nothing retrieved here ever
+becomes a catalogue fact or touches a verdict. It is a reading list attached to a decision already
+made, which is the same thing the per-card citation trail has always been.
+
+**What comes back is screened.** The open literature contains a great deal §1 deliberately excludes.
+`tools/api/sourceFilter.mjs` drops results touching toxins, virulence factors, select agents and
+human pathogens, and any whose snippet has pasted a residue or nucleotide run into it, before they
+leave the server. The panel reports how many were held back rather than quietly shortening the list.
+
+**No viability score, and this is the considered answer rather than an omission.** Asked for a number
+saying how likely a construct is to work, this project says no, for four reasons: there is no
+benchmark of fusion-construct outcomes to calibrate one against, so the number could not be checked
+by anyone, including its author; it would put a model back inside a verdict that deterministic code
+reaches reproducibly; it is strictly weaker than what the app already does, because every filter can
+name the rule it applied and a score cannot; and "how likely is this to work" is a folding and
+function claim, which §3 rules out. The model may summarise what was retrieved. It may not rank,
+rate or score, its instructions say so, and `test/literature.test.js` checks the panel says so too.
+
 ## 4. Forbidden UI
 
 * No horizontal amino-acid sequence strip, in any view.
