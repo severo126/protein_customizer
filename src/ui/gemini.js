@@ -43,6 +43,12 @@ function setKey(k) {
   }
 }
 
+// The key box exists on more than one screen now, so storing it is exported
+// rather than reached for through a module-private function.
+export function setGeminiKey(k) {
+  setKey(k);
+}
+
 export function renderGeminiBox() {
   const hasKey = Boolean(geminiKey());
   return `<div class="panel gemini-box" id="gemini-box">
@@ -186,6 +192,82 @@ export async function summariseReferences({ killer, mode, references }) {
   );
   logEvent('literature.summarise', { filter: killer.id, references: references.length });
   return text.trim();
+}
+
+/* ---------------- the molecule-first flow: parse, then advise -------------- */
+//
+// Both calls below keep the same split as everything above them. The parser is
+// handed the catalogue's own derived vocabulary and returns a structure, which
+// src/model/picker.js checks before anything is done with it. The adviser is
+// handed routes a deterministic search already found and numbers that same code
+// already measured, so there is nothing left for it to decide — it reads out an
+// ordering, and the grid is ordered in code whether it answers or not.
+
+// Ask which molecule the sentence means. Returns the raw object; the caller
+// runs it through normalisePickerReply, which is where the checking lives.
+export async function parseTarget(sentence, vocabulary, history = []) {
+  const spec = await agentSpec('target-parser');
+  const cores = vocabulary.cores.map((c) => `${c.id} — ${c.label}${c.isStarter ? '' : ' (has to be made from something else)'}`).join('\n');
+  const groups = vocabulary.groups.map((g) => `${g.id} — ${g.label}`).join('\n');
+  const said = history
+    .filter((h) => h.role === 'user' || h.role === 'app')
+    .slice(-6)
+    .map((h) => `${h.role === 'user' ? 'Person' : 'App'}: ${h.text}`)
+    .join('\n');
+
+  const text = await callGemini(
+    [
+      spec.instructionText,
+      '',
+      'Skeletons available:',
+      cores,
+      '',
+      'Groups available:',
+      groups,
+      '',
+      said ? `The conversation so far:\n${said}` : '',
+      `The person has just said: ${sentence}`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    spec,
+  );
+  const json = text.match(/\{[\s\S]*\}/);
+  if (!json) throw new Error('no JSON in the reply');
+  const parsed = JSON.parse(json[0]);
+  logEvent('gemini.target', { sentence_length: sentence.length, kind: String(parsed?.kind ?? 'none') });
+  return parsed;
+}
+
+// Ask which of the routes the search found suits the chosen criterion. `rows`
+// is already-measured data; the model is shown no catalogue and no rule, so it
+// has nothing to build a new route out of.
+export async function adviseRoute({ target, criterion, rows }) {
+  const spec = await agentSpec('route-adviser');
+  const list = rows
+    .map(
+      (r) =>
+        `${r.routeId} | start ${r.starter} | ${r.stages.join(' then ')} | ${r.stageCount} stages | supply load ${r.supplyLoad} (${r.cofactors.join(', ') || 'no cofactor'}${r.needs.length ? `; needs ${r.needs.join(', ')}` : ''}) | ${r.temp} | ${r.ph}`,
+    )
+    .join('\n');
+
+  const text = await callGemini(
+    [
+      spec.instructionText,
+      '',
+      `The person wants to make: ${target}`,
+      `What they said they care about: ${criterion}`,
+      '',
+      'The routes the search found, with the measurements already taken:',
+      list,
+    ].join('\n'),
+    spec,
+  );
+  const json = text.match(/\{[\s\S]*\}/);
+  if (!json) throw new Error('no JSON in the reply');
+  const parsed = JSON.parse(json[0]);
+  logEvent('gemini.advise', { criterion, routes: rows.length });
+  return { routeId: typeof parsed.routeId === 'string' ? parsed.routeId : null, why: typeof parsed.why === 'string' ? parsed.why : '' };
 }
 
 async function callGemini(prompt, spec) {

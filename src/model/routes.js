@@ -100,6 +100,38 @@ export function targetVocabulary(entries) {
   };
 }
 
+/* ---------------------------- display names ------------------------------ */
+//
+// Display text only — the ids stay the ids and nothing downstream reads these.
+// `prettyCore` turns "glucose-6-p" into "Glucose 6 p", which reads badly in a
+// sentence, so the cores that need a better label get one here.
+
+const CORE_LABELS = {
+  'glucose-1-p': 'Glucose-1-phosphate',
+  'glucose-6-p': 'Glucose-6-phosphate',
+  'glycerate-2-p': '2-Phosphoglycerate',
+  'triose-iso': 'Rearranged triose',
+  enolpyruvate: 'Enolpyruvate',
+  'protein-stain': 'Protein stain fragment',
+  tributyrin: 'Small fat',
+  peroxide: 'Hydrogen peroxide',
+  nitrile: 'Small nitrile',
+  starch: 'Starch fragment',
+  cellulose: 'Cellulose fragment',
+};
+
+export function coreLabel(core) {
+  if (CORE_LABELS[core]) return CORE_LABELS[core];
+  const s = STARTERS.find((x) => x.core === core);
+  return s ? s.label : prettyCore(core);
+}
+
+// Whether a core can be started from, or has to be made on the way.
+export function coreOrigin(core) {
+  const starters = STARTERS.filter((s) => s.core === core).map((s) => s.id);
+  return { isStarter: starters.length > 0, starters };
+}
+
 // A target is a core skeleton plus a multiset of groups, and how strictly to
 // read it: `exact` means that core carrying exactly those groups, `carries`
 // means that core carrying at least those groups.
@@ -115,7 +147,7 @@ export function validateTarget(entries, target) {
   if (!target || typeof target.core !== 'string' || !target.core) {
     problems.push('No skeleton was named.');
   } else if (!vocab.cores.includes(target.core)) {
-    problems.push(`Nothing in this catalogue can reach a ${prettyCore(target.core)} skeleton. Reachable skeletons: ${vocab.cores.map(prettyCore).join(', ')}.`);
+    problems.push(`Nothing in this catalogue can reach a ${coreLabel(target.core)} skeleton. Reachable skeletons: ${vocab.cores.map(coreLabel).join(', ')}.`);
   }
   const groups = Array.isArray(target?.groups) ? target.groups : [];
   for (const g of groups) {
@@ -140,7 +172,13 @@ export function describeTarget(target) {
     const label = groupMeta(g).label;
     return n > 1 ? `${n}× ${label}` : `${article(label)} ${label}`;
   });
-  const body = parts.length ? `${prettyCore(target.core)} carrying ${parts.join(', ')}` : `${prettyCore(target.core)} carrying nothing else`;
+  const name = coreLabel(target.core);
+  if (!parts.length) {
+    // "carrying nothing else (and possibly more)" is a contradiction, so the
+    // two empty cases get their own wording.
+    return target.match === 'carries' ? `${name}, carrying anything` : `${name} carrying nothing else`;
+  }
+  const body = `${name} carrying ${parts.join(', ')}`;
   return target.match === 'carries' ? `${body} (and possibly more)` : body;
 }
 
@@ -528,10 +566,10 @@ export function searchHeadline(result) {
     }
     const d = best.distance;
     const bits = [];
-    if (d.coreOff) bits.push(`never reached a ${prettyCore(result.target.core)} skeleton at all`);
+    if (d.coreOff) bits.push(`never reached a ${coreLabel(result.target.core)} skeleton at all`);
     if (d.missing.length) bits.push(`still short of ${d.missing.map((g) => groupMeta(g).label).join(', ')}`);
     if (d.extra.length) bits.push(`still carrying ${d.extra.map((g) => groupMeta(g).label).join(', ')} that would have to come off`);
-    const where = prettyCore(best.molecule.core);
+    const where = coreLabel(best.molecule.core);
     const howFar = best.depth ? `${best.depth} stage${best.depth === 1 ? '' : 's'} in, at ${where}` : `${where} itself, before any stage ran`;
     return `No chain of up to ${result.limits.maxDepth} catalogue stages makes ${t}. The search walked every one of the ${result.scan.statesSeen.toLocaleString('en')} molecules the forty entries can reach; the closest it came was ${howFar}, ${bits.join(' and ')}.`;
   }

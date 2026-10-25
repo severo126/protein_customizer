@@ -13,6 +13,27 @@ export const state = {
   catalogue: null,
   byId: new Map(),
   screen: 'home',
+  // The home screen is a flow rather than one page: say what molecule you
+  // want ('ask'), look at the chains that could make it ('routes'), then
+  // watch one of them run ('run'). The bench and the workstation no longer
+  // have tabs of their own; they are reachable from inside this flow, and
+  // every screen they had still renders, so the one-press chain run and the
+  // mid-run refusal are where they always were.
+  homeStep: 'ask',
+  // picker: the transcript, the target as it currently stands, and the one
+  // question the parser is allowed to ask. The draft is the only thing the
+  // search ever reads, and it is always editable by hand.
+  pickerLog: [],
+  pickerDraft: { core: null, groups: [], match: 'carries' },
+  pickerAsk: null,
+  // routes: the target the search is run for, its cached result, what the grid
+  // is ordered by, which route was chosen, and Gemini's reading of the numbers.
+  target: null,
+  routeResult: null,
+  routeResultKey: null,
+  criterion: 'stages',
+  chosenRoute: null,
+  routeAdvice: null,
   // workstation: the behaviours asked for, as {kind, arg} picked off the
   // catalogue-derived vocabulary. Never anything the user typed in free text.
   wants: [],
@@ -57,13 +78,32 @@ export function render() {
     if (tab.dataset.screen === state.screen) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
   }
-  if (state.screen !== 'home') unmountHome();
+  if (state.screen !== 'home' || state.homeStep !== 'run') unmountHome();
   if (state.screen === 'home') renderHome(screenEl);
   else if (state.screen === 'collection') renderCollection(screenEl);
   else if (state.screen === 'workstation') renderWorkstation(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
   else renderSplice(screenEl);
+
+  // The bench and the workstation lost their tabs when the flow took over the
+  // front door, so each needs a way back that the nav no longer provides.
+  // Done here rather than inside either view, so neither screen changed.
+  if (state.screen === 'bench' || state.screen === 'workstation') {
+    const back = document.createElement('div');
+    back.className = 'folded-back';
+    back.innerHTML = `<button class="btn small ghost" data-back-to-flow>‹ Back to making a molecule</button>
+      <span>${
+        state.screen === 'bench'
+          ? 'The bench is still here, unchanged: build a lane by hand and press the run.'
+          : 'Still here, unchanged: look the catalogue up by the behaviour you want.'
+      }</span>`;
+    screenEl.prepend(back);
+  }
 }
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-back-to-flow]')) setState({ screen: 'home' });
+});
 
 document.getElementById('tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.tab');
