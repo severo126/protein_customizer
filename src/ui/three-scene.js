@@ -215,7 +215,7 @@ function lobeShape(seed, { radius, squash, dishAt, dishDepth }) {
   };
   const surface = (n, lift = 0) => n.clone().multiplyScalar(at(n) + lift).multiply(squash);
 
-  const geo = welded(new THREE.IcosahedronGeometry(radius, 6));
+  const geo = welded(new THREE.IcosahedronGeometry(radius, 5));
   const pos = geo.attributes.position;
   const v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
@@ -496,7 +496,26 @@ export function createFoundryScene(canvas) {
   }
   if (!renderer.getContext()) return { ok: false, reason: 'no WebGL context' };
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  // Resolution follows the machine: start at the display's ratio (capped),
+  // and if frames run long for a while, step down; step back up when they
+  // are quick again. A modest laptop or a projector feed gets a softer
+  // picture rather than a stuttering one.
+  const PIXEL_MAX = Math.min(window.devicePixelRatio || 1, 1.5);
+  let pixelRatio = PIXEL_MAX;
+  let frameCost = 0.016;
+  let costHold = 0;
+  renderer.setPixelRatio(pixelRatio);
+  function adaptResolution(rawDt) {
+    frameCost += (rawDt - frameCost) * 0.1;
+    costHold += rawDt;
+    if (costHold < 1.5) return;
+    costHold = 0;
+    if (frameCost > 0.04 && pixelRatio > 0.6) pixelRatio = Math.max(0.6, pixelRatio - 0.25);
+    else if (frameCost < 0.018 && pixelRatio < PIXEL_MAX) pixelRatio = Math.min(PIXEL_MAX, pixelRatio + 0.25);
+    else return;
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  }
   // Flat colour as picked: no filmic curve to grey the saturation out.
   renderer.toneMapping = THREE.NoToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -940,8 +959,10 @@ export function createFoundryScene(canvas) {
 
   function frame(now) {
     if (!running) return;
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const rawDt = (now - last) / 1000;
+    const dt = Math.min(0.05, rawDt);
     last = now;
+    if (rawDt > 0 && rawDt < 1) adaptResolution(rawDt);
     clock += dt;
 
     orbit.az += (orbitTarget.az - orbit.az) * Math.min(1, dt * 6);
