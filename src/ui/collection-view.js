@@ -97,11 +97,11 @@ function vocabulary() {
 
 function stage(e, index = state.cardIndex) {
   const a = archetypeOf(e);
-  const theme = a ?? { hue: 220, accent: 220, label: 'Unfiled', epithet: 'not in any archetype', ec: '', does: '', glyph: '?' };
+  const theme = a ?? { token: 'edge', token2: 'edge', label: 'Unfiled', epithet: 'not in any archetype', ec: '', does: '', glyph: '?' };
   const group = a ? deal(state.catalogue.entries).groups.find((g) => g.archetype.id === a.id) : null;
   const inGroup = group ? group.entries.findIndex((x) => x.id === e.id) + 1 : 0;
 
-  return `<section class="card-stage" style="--arch-hue:${theme.hue};--arch-accent:${theme.accent}">
+  return `<section class="card-stage" style="--arch:var(--${theme.token});--arch-2:var(--${theme.token2})">
     <div class="card-stage-glow" aria-hidden="true"></div>
 
     <header class="card-arch">
@@ -170,17 +170,17 @@ function figure(e) {
     .join('');
 
   return `<div class="card-figure">
-    <svg viewBox="0 0 360 300" width="100%" height="100%" role="img"
+    <svg viewBox="0 34 360 266" width="100%" height="100%" role="img"
       aria-label="Stylised cartoon game piece for ${escapeText(e.name)} standing on a lit disc, with one pillar per region in its catalogue entry. Not a coordinate set.">
       <defs>
         <radialGradient id="disc-${e.id}" cx="50%" cy="50%">
-          <stop offset="0%" stop-color="hsl(var(--arch-hue) 90% 72%)" stop-opacity="0.95"/>
-          <stop offset="52%" stop-color="hsl(var(--arch-hue) 85% 55%)" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="hsl(var(--arch-hue) 75% 45%)" stop-opacity="0"/>
+          <stop offset="0%" style="stop-color:var(--arch)" stop-opacity="0.95"/>
+          <stop offset="55%" style="stop-color:var(--arch)" stop-opacity="0.4"/>
+          <stop offset="100%" style="stop-color:var(--arch)" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="halo-${e.id}" cx="50%" cy="42%">
-          <stop offset="0%" stop-color="hsl(var(--arch-accent) 90% 70%)" stop-opacity="0.26"/>
-          <stop offset="100%" stop-color="hsl(var(--arch-accent) 90% 60%)" stop-opacity="0"/>
+          <stop offset="0%" style="stop-color:var(--arch-2)" stop-opacity="0.22"/>
+          <stop offset="100%" style="stop-color:var(--arch-2)" stop-opacity="0"/>
         </radialGradient>
       </defs>
 
@@ -190,9 +190,9 @@ function figure(e) {
       <g class="card-disc">
         <ellipse cx="180" cy="248" rx="${discR}" ry="40" fill="url(#disc-${e.id})"/>
         <ellipse cx="180" cy="248" rx="${(discR * 0.7).toFixed(0)}" ry="26" fill="none"
-          stroke="hsl(var(--arch-hue) 95% 80%)" stroke-opacity="0.6" stroke-width="2"/>
+          style="stroke:var(--arch)" stroke-opacity="0.75" stroke-width="2.5"/>
         <ellipse cx="180" cy="248" rx="${(discR * (0.26 + radius / 12)).toFixed(0)}" ry="${(10 + radius * 2).toFixed(0)}"
-          fill="none" stroke="hsl(var(--arch-hue) 95% 88%)" stroke-opacity="0.38" stroke-width="1.5" stroke-dasharray="6 8"/>
+          fill="none" style="stroke:var(--arch)" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="6 8"/>
       </g>
 
       <g class="card-piece" transform="translate(90 68) scale(1.8)">
@@ -295,7 +295,7 @@ function drawer() {
               <span class="drawer-chips">${ARCHETYPES.map((a) => {
                 const n = state.catalogue.entries.filter((e) => archetypeOf(e)?.id === a.id).length;
                 return `<button class="pill ${state.cardArchetype === a.id ? 'on' : ''}" data-arch="${a.id}"
-                  style="--arch-hue:${a.hue}" title="${escapeText(a.ec)}">${escapeText(a.label)} <small>${n}</small></button>`;
+                  style="--arch:var(--${a.token})" title="${escapeText(a.ec)}">${escapeText(a.label)} <small>${n}</small></button>`;
               }).join('')}</span>
             </div>
             ${

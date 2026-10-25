@@ -15,7 +15,9 @@
 // out rather than derived.
 //
 // The theme attached to each archetype — the name, the colour, the epithet — is
-// decoration, and only the decoration is playful. The class, the EC hint and
+// decoration, and only the decoration is playful. `token` and `token2` name
+// the stylesheet's flat hues rather than carrying colour values of their own,
+// so the palette lives in one place and this file cannot drift from it. The class, the EC hint and
 // the "what they do" line are the honest part, and the screen shows them
 // together so the fun label never travels on its own.
 
@@ -29,8 +31,8 @@ export const ARCHETYPES = [
     epithet: 'the Chargers',
     ec: 'EC 2.7 — phosphoryl transferases',
     does: 'Move a phosphate off a nucleotide and onto something else, usually to stop it leaving the cell.',
-    hue: 205,
-    accent: 268,
+    token: 'k-sky',
+    token2: 'k-violet',
     glyph: '⚡',
   },
   {
@@ -39,8 +41,8 @@ export const ARCHETYPES = [
     epithet: 'the Couriers',
     ec: 'EC 2 — group transferases',
     does: 'Carry a group — methyl, sugar, acyl, sulfate — from a donor onto a substrate.',
-    hue: 170,
-    accent: 190,
+    token: 'k-mint',
+    token2: 'k-lime',
     glyph: '⇄',
   },
   {
@@ -49,8 +51,8 @@ export const ARCHETYPES = [
     epithet: 'the Breakers',
     ec: 'EC 3 — hydrolases',
     does: 'Cut a bond with water. The detergent-bottle enzymes live here.',
-    hue: 14,
-    accent: 36,
+    token: 'k-coral',
+    token2: 'k-amber',
     glyph: '✂',
   },
   {
@@ -59,8 +61,8 @@ export const ARCHETYPES = [
     epithet: 'the Splitters',
     ec: 'EC 4 — lyases',
     does: 'Break or make a bond without water and without a redox step, usually leaving a double bond behind.',
-    hue: 290,
-    accent: 320,
+    token: 'k-violet',
+    token2: 'k-rose',
     glyph: '◇',
   },
   {
@@ -69,8 +71,8 @@ export const ARCHETYPES = [
     epithet: 'the Shape-shifters',
     ec: 'EC 5 — isomerases',
     does: 'Rearrange a molecule into its own isomer. Same atoms in, same atoms out.',
-    hue: 48,
-    accent: 28,
+    token: 'k-amber',
+    token2: 'k-coral',
     glyph: '↻',
   },
   {
@@ -79,8 +81,8 @@ export const ARCHETYPES = [
     epithet: 'the Welders',
     ec: 'EC 6, and the EC 2.3.3 synthases',
     does: 'Join two molecules into one, generally paying for it with a nucleotide or a thioester.',
-    hue: 150,
-    accent: 120,
+    token: 'k-lime',
+    token2: 'k-mint',
     glyph: '⛓',
   },
   {
@@ -89,8 +91,8 @@ export const ARCHETYPES = [
     epithet: 'the Firefighters',
     ec: 'EC 1 — oxidoreductases',
     does: 'Move electrons. This catalogue holds exactly one, and it exists to destroy peroxide.',
-    hue: 0,
-    accent: 20,
+    token: 'k-rose',
+    token2: 'k-violet',
     glyph: '☉',
   },
 ];
