@@ -222,7 +222,9 @@ function drawLabels(stage, t) {
 
   // Three at once is the most a reader can take in while something is moving.
   placed.sort((m, n) => m.ly - n.ly);
-  placed.splice(3);
+  // Anything past the cap is not placed this frame, so it must not stay shown
+  // at the position it held in the last one.
+  for (const dropped of placed.splice(3)) seen.delete(dropped.el.dataset.label);
   for (let i = 0; i < placed.length; i++) {
     const m = placed[i];
     m.ly = Math.max(16, m.ly);

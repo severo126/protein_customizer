@@ -6,7 +6,7 @@ hypothetical two-domain constructs.** Built at HackTX 26.
 > Live at **nanofoundry.tech** *(domain not registered yet — see `docs/tracks.md`; everything on
 > this side is ready for it)*
 
-![The splice table, with the candidate funnel](docs/screenshots/3-splice-pass.png)
+![The vacuum: the lane running in 3D](docs/screenshots/0-vacuum.png)
 
 Nano Foundry is an educational toy. The physics is order-of-magnitude wrong on purpose, the enzyme
 catalogue is forty hand-curated commonplace entries committed to this repo, and **the app emits no
@@ -34,6 +34,11 @@ npm test          # 70 JavaScript tests + the Python parity suite
 
 ## What is in it
 
+**The vacuum** — the home screen. The lane from the bench, run as one chain in a dark metallic 3D
+scene: press Play once and each enzyme in turn takes the molecule, acts on it, and hands the product
+to the next. Enzyme bodies are invented geometry; molecules are ball-and-stick, with the atoms and
+bonds of their composition and drawn positions.
+
 **Catalogue** — forty enzymes in three columns by what they do to a molecule: *adds*, *removes*,
 *creates / rearranges*. Each card shows the group it moves, a cartoon of substrate in and product
 out, its cofactor, its temperature and pH window, and a schematic loop/helix/sheet domain map. Every
@@ -52,15 +57,13 @@ hard-reject filters report pass or fail with a reason: cut site, backbone join, 
 breaks, compactness, buried core, operating window. The funnel shows every candidate splice point
 that went in, which filter killed how many, and the few that came out.
 
-**Platform** — the three agents, read from `config/agents.json`: their tools, models, instructions
-and limits, with per-run traces and replay.
-
 ![A phosphate changing hands, mid-animation](docs/screenshots/8-reaction.png)
 
 | | |
 | --- | --- |
 | ![Catalogue](docs/screenshots/1-catalogue.png) | ![A clean run on the bench](docs/screenshots/2-bench-clean.png) |
 | ![The catalogue filtered to what fits the bench](docs/screenshots/9-catalogue-filtered.png) | ![A team that cannot share a pot](docs/screenshots/2-bench-pot-clash.png) |
+| ![The splice table, with the candidate funnel](docs/screenshots/3-splice-pass.png) | ![What this can't tell you](docs/screenshots/7-what-this-cant-tell-you.png) |
 
 ## How it is put together
 
