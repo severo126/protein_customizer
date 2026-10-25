@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { root } from './helpers.js';
+import { root, walkFiles } from './helpers.js';
 import { FILTERS } from '../src/model/splice.js';
 import { FAILURE_MODES, failureModeFor, uncoveredFilters } from '../src/model/failureModes.js';
 import { referenceIsAllowed, screenReferences } from '../tools/api/sourceFilter.mjs';
@@ -126,18 +126,25 @@ test('the explainer instructions forbid scoring, fixing and deciding', () => {
   }
 });
 
-test('no citation panel ever dead-ends the reader with a developer instruction', () => {
-  // The published build has no server, so /api/sources 404s and both panels land
-  // in their catch. Telling a reader at a demo to start tools/api/server.mjs
-  // answers a question nobody asked, and it reached all forty cards before it was
-  // caught. Whatever a panel does when nothing answers, it hands over somewhere to
-  // go and read.
+test('no view anywhere dead-ends the reader with a developer instruction', () => {
+  // The published build has no server, so every /api/* call 404s. Telling a
+  // reader at a demo to start tools/api/server.mjs answers a question nobody
+  // asked. This reached all forty catalogue cards once and the splice panel
+  // once, both found by luck, so the rule is now the whole interface rather
+  // than the two files that happened to break.
+  for (const file of walkFiles(`${root}/src/ui`, ['.js'])) {
+    // Comments may name the server — that is accurate and useful. What may not
+    // is a string the interface renders, so comment lines come out first.
+    const code = readFileSync(file, 'utf8')
+      .split('\n')
+      .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
+      .join('\n');
+    assert.ok(!/tools\/api\/server\.mjs/.test(code), `${file} tells the reader to start a development server`);
+  }
+  // The two panels whose whole purpose is sending someone to the literature
+  // must still have somewhere to send them when nothing answers.
   for (const file of ['src/ui/literature.js', 'src/ui/sources.js']) {
     const text = readFileSync(`${root}/${file}`, 'utf8');
-    assert.ok(
-      !/Start\s*<code>tools\/api\/server\.mjs<\/code>/.test(text),
-      `${file} tells the reader to start a development server`,
-    );
     assert.match(text, /https:\/\/(europepmc|pubmed|search\.crossref)/, `${file} has no search link to fall back to`);
   }
 });
