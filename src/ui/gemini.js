@@ -325,7 +325,13 @@ async function callGemini(prompt, spec) {
   }
   // One trace row per model call, the same shape the Python platform writes.
   logEvent('agent.trace', { agent: spec.id, model: spec.model, latency_ms: Math.round(performance.now() - started), status: res.ok ? 'ok' : `http_${res.status}` });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    // Say why when either leg says: our server's plain sentence (a limit, a
+    // bad agent id) or Google's error message. Otherwise the bare status.
+    const d = await res.json().catch(() => null);
+    const why = typeof d?.error === 'string' ? d.error : d?.error?.message;
+    throw new Error(why ? String(why).slice(0, 200) : `HTTP ${res.status}`);
+  }
   const data = await res.json();
   const text = key ? (data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '') : (data?.text ?? '');
   if (!text) throw new Error('empty reply');
