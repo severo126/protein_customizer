@@ -112,7 +112,7 @@ function stage(e) {
         <h3 class="card-name">${escapeText(e.name)}</h3>
         <p class="card-blurb">${escapeText(e.blurb)}</p>
         ${figure(e)}
-        <p class="card-figure-note">Cartoon figure — not a coordinate set.</p>
+        <p class="card-figure-note" title="Drawn from this entry's own catalogue numbers: the ring is scaled to its cartoon radius and each pillar's height comes from that site's own tension value. Those numbers are rounded teaching figures, and their arrangement here is invented, so none of it is a coordinate set.">Cartoon figure — not a coordinate set.</p>
       </div>
 
       <button class="card-nav next" data-step="1" aria-label="Next enzyme">›</button>
