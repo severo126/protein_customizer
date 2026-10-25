@@ -15,6 +15,7 @@ import { extname, join, normalize } from 'node:path';
 import { screenReferences } from './sourceFilter.mjs';
 import { searchQueries, searchWithFallback } from './sourceQuery.mjs';
 import { makeSpendGuard, clientAddress } from './spendGuard.mjs';
+import { sendGemini } from '../../src/model/gemini-request.js';
 
 const root = process.cwd();
 const port = Number(process.env.PORT ?? 5173);
@@ -219,15 +220,14 @@ async function viaGemini({ agent, prompt }) {
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt is required');
   if (prompt.length > PROMPT_CAP) throw new Error(`prompt is over ${PROMPT_CAP} characters`);
   const spec = await registeredAgent(String(agent));
-  const out = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: spec.limits?.max_output_tokens ?? 1024 },
+  const out = await sendGemini(prompt, spec.limits ?? {}, (body) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(spec.limits?.timeout_ms ?? 20000),
     }),
-    signal: AbortSignal.timeout(spec.limits?.timeout_ms ?? 20000),
-  });
+  );
   if (!out.ok) {
     // Google's reason (wrong model, no free tier, quota) is what anyone
     // debugging this needs, and the key is never part of it.
