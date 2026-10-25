@@ -771,7 +771,11 @@ export function createFoundryScene(canvas) {
     tmpA.fromArray(a.pos);
     tmpB.fromArray(b.pos);
     // A tall phone screen is narrow, so stand further back to keep it all in.
-    const pos = tmpA.lerp(tmpB, k).multiplyScalar(1.05 * Math.max(1, 0.9 / camera.aspect));
+    // The vertical field of view is fixed, so a taller stage (the controls
+    // folded away, or a phone) would show the subject larger. Standing back as
+    // the stage grows taller keeps it the same size against the width.
+    const back = 1.05 * Math.pow(Math.max(1, 2.3 / camera.aspect), 0.8);
+    const pos = tmpA.lerp(tmpB, k).multiplyScalar(back);
     lookAt.fromArray(a.look).lerp(tmpB.fromArray(b.look), k);
     // Aim a little under the subject so it sits higher in the frame and the
     // pool of light beneath it is not cut off by the bottom edge.
@@ -785,6 +789,20 @@ export function createFoundryScene(canvas) {
     const ce = Math.max(-1.2, Math.min(1.2, el));
     camera.position.set(r * Math.cos(ce) * Math.sin(az), r * Math.sin(ce), r * Math.cos(ce) * Math.cos(az));
     camera.fov = a.fov + (b.fov - a.fov) * k;
+
+    // The end of the run: the final product has settled, and the camera pans
+    // to it and closes in, so what you are left looking at is what was made.
+    const product = subject?.last && subject.result?.ok ? subject.product : null;
+    if (product && t > 0.86) {
+      const pan = smooth(clamp01((t - 0.86) / 0.14));
+      product.getWorldPosition(tmpB);
+      lookAt.lerp(tmpB, pan);
+      camera.position.lerp(tmpB.clone().add(new THREE.Vector3(1.6, 1.0, 6.4).multiplyScalar(back)), pan * 0.6);
+      camera.fov += (34 - camera.fov) * pan;
+    }
+    // On a taller stage the caption column is a bigger share of the width, so
+    // the subject is kept to the right of it by aiming a little to its left.
+    lookAt.x -= (back - 1.05) * 2.4;
     camera.updateProjectionMatrix();
     camera.lookAt(lookAt);
   }
@@ -819,7 +837,10 @@ export function createFoundryScene(canvas) {
     const dockAt = new THREE.Vector3(radius * 0.95, -0.05, 0.35);
     // A molecule the previous stage handed over starts where it was let go.
     const start = carry ? HANDOFF.clone() : new THREE.Vector3(radius + 9, 0.6, 2.2);
-    const exit = last ? new THREE.Vector3(-radius - 9, -1.4, 3.4) : HANDOFF.clone();
+    // The last stage's product does not leave: it settles in front of the
+    // enzyme, where the camera goes to meet it, so the run ends on the thing
+    // that was made rather than on an empty cleft.
+    const exit = last ? new THREE.Vector3(radius * 1.9, 0.2, 2.2) : HANDOFF.clone();
 
     const approach = span(t, 0.18, 0.44);
     const anticipate = span(t, 0.4, 0.46) * (1 - span(t, 0.46, 0.5));

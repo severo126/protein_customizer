@@ -47,6 +47,7 @@ const STAGE_SECONDS = 5.5;
 // Where the timeline rests before Play: just past the enzyme's entrance, so
 // the piece is already on stage rather than the vacuum looking empty.
 const IDLE_AT = 0.2;
+const FOLD_STORE = 'nano-foundry.home-fold';
 
 let mounted = null;
 let mountedTimer = null;
@@ -445,6 +446,7 @@ async function renderRun(root) {
       </div>
       <div class="home-progress"><div class="home-progress-bar"></div></div>
       <div class="home-scene-note" role="note"></div>
+      <button class="home-fold" data-fold aria-expanded="true" title="Hide the controls so the animation fills the screen">Hide controls</button>
     </div>
     ${flowHead()}
     ${controls(run, entries)}
@@ -554,7 +556,7 @@ async function renderRun(root) {
     } else if (lastStage) {
       captionEl.insertAdjacentHTML(
         'beforeend',
-        `<div class="home-card"><div class="beat-step">End of the run</div>
+        `<div class="home-card end"><div class="beat-step">End of the run</div>
           <h2>Out comes ${escapeText(describe(run.product ?? lastStage.result.product))}</h2></div>`,
       );
     }
@@ -667,7 +669,33 @@ async function renderRun(root) {
   };
   window.addEventListener('resize', onResize);
 
+  // The controls strip folds away so the animation can fill the frame. The
+  // choice is remembered per browser; it starts open.
+  const foldBtn = homeEl.querySelector('[data-fold]');
+  const setFolded = (folded) => {
+    homeEl.classList.toggle('folded', folded);
+    foldBtn.textContent = folded ? 'Show controls' : 'Hide controls';
+    foldBtn.setAttribute('aria-expanded', String(!folded));
+    try {
+      localStorage.setItem(FOLD_STORE, folded ? '1' : '0');
+    } catch {
+      /* private window: the fold just does not persist */
+    }
+    requestAnimationFrame(() => scene?.resize());
+  };
+  let foldedAtStart = false;
+  try {
+    foldedAtStart = localStorage.getItem(FOLD_STORE) === '1';
+  } catch {
+    /* as above */
+  }
+  if (foldedAtStart) setFolded(true);
+
   homeEl.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fold]')) {
+      setFolded(!homeEl.classList.contains('folded'));
+      return;
+    }
     if (e.target.closest('[data-play]')) {
       dismissHint();
       if (playing) stop();
