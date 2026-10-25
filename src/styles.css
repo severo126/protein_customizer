@@ -128,6 +128,37 @@ h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -0.01em; font-weight: 
 
 .screen { padding: 22px 20px 80px; max-width: 1400px; margin: 0 auto; }
 
+/* The field. Behind every flat screen sits the same set dressing the vacuum
+   draws in three dimensions: blurred clumps in the five flat hues, two dotted
+   orbits, a hairline grid that fades toward the middle, and specks that drift.
+   It is drawn in code (src/assets/field.svg) so it is sharp at projector
+   scale and carries no one else's licence, and it is quiet on purpose: every
+   text run still clears the contrast check with the field behind it. */
+body::before, body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+body::before {
+  background: url('assets/field.svg') center / cover no-repeat;
+}
+/* Specks that drift. Four per tile, the tile repeated, the whole layer sliding
+   slowly; the still specks in the SVG give it depth. */
+body::after {
+  inset: -120px 0 0 -120px;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.34) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 71% 58%, rgba(134, 212, 255, 0.38) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 44% 86%, rgba(255, 198, 92, 0.32) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 88% 12%, rgba(255, 107, 107, 0.30) 0 1px, transparent 1.6px);
+  background-size: 420px 420px;
+  animation: field-drift 90s linear infinite;
+}
+@keyframes field-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(120px, 120px); }
+}
+@media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+.screen { position: relative; z-index: 1; }
+
 /* ---------- generic bits ---------- */
 small { font-size: 11px; }
 
