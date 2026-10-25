@@ -547,39 +547,39 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .home-fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px 24px 24px 42%; }
 .home-fallback[hidden] { display: none; }
 .home-leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.home-leaders line { stroke: rgba(232, 228, 255, 0.7); stroke-width: 1.5; }
+.home-leaders line { stroke: rgba(232, 228, 255, 0.55); stroke-width: 1; }
 .home-leaders circle { fill: #fff; }
 .home-labels { position: absolute; inset: 0; pointer-events: none; }
-/* A label is a flat pale tag, dark ink on light, the way an illustration
-   captions a part. */
+/* A callout is a dot, a hairline and a small name in caps: no box, so the
+   labels weigh less than the thing they point at. The explanation lives in
+   the tooltip. */
 .home-label {
-  position: absolute; left: 0; top: 0; width: 200px;
-  padding: 6px 12px; border-radius: 999px;
-  background: #e9e6ff;
-  box-shadow: 0 3px 0 rgba(12, 15, 51, 0.55);
-  font-size: 11px; color: var(--on-accent);
+  position: absolute; left: 0; top: 0; width: auto; max-width: 220px;
+  padding: 0;
+  font-size: 11px; color: var(--ink);
   opacity: 0; transition: opacity 0.35s;
 }
 .home-label.shown { opacity: 1; }
-.home-label.hot { background: var(--accent); }
-.home-label strong { display: block; color: var(--on-accent); font-size: 12px; font-weight: 800; }
+.home-label strong {
+  display: block; color: var(--ink); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 1px 0 var(--shadow-ink), 0 0 12px rgba(12, 15, 51, 0.8);
+}
+.home-label.hot strong { color: var(--accent); }
 .home-label span { display: block; line-height: 1.35; }
 .home-scene-note {
   position: absolute; left: clamp(12px, 3vw, 40px); bottom: 14px; width: min(400px, 40vw);
   font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.02em;
   text-transform: uppercase; line-height: 1.5;
 }
-.home-caption { position: absolute; left: clamp(12px, 3vw, 40px); top: 0; bottom: 56px; width: min(400px, 40vw);
+.home-caption { position: absolute; left: 6%; top: 0; bottom: 56px; width: min(440px, 40vw);
   display: flex; flex-direction: column; justify-content: center; gap: 10px; pointer-events: none; }
-.home-card {
-  pointer-events: auto; padding: 18px 20px; border-radius: var(--radius);
-  background: rgba(26, 32, 82, 0.88);
-  border: 1px solid var(--rim);
-  box-shadow: var(--shadow-flat);
-}
-.home-card.ruled-out { border-color: var(--red); }
-.home-card h2 { margin: 4px 0 8px; font-size: 21px; letter-spacing: -0.01em; }
-.home-card p { margin: 0 0 8px; color: var(--ink-dim); font-size: 13.5px; line-height: 1.55; }
+/* The caption is set straight on the field, no box: type at a different
+   weight from the callouts is what separates it, not a border. */
+.home-card { pointer-events: auto; padding: 0; }
+.home-card.ruled-out .beat-step { color: var(--red); }
+.home-card h2 { margin: 8px 0 12px; font-size: clamp(28px, 3.2vw, 40px); letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 2px 0 var(--shadow-ink); }
+.home-card p { margin: 0 0 8px; color: var(--ink-dim); font-size: 14px; line-height: 1.55; max-width: 38ch; text-shadow: 0 1px 0 var(--shadow-ink); }
 .home-card p:last-child { margin-bottom: 0; }
 .home-card .caveat, .home-card .tally { font-size: 11.5px; color: var(--ink-faint); }
 .home-card .regions { line-height: 1.45; }
@@ -595,6 +595,18 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .hero-sub { font-size: 14.5px !important; color: var(--ink) !important; }
 
 .home-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,0.08); }
+/* One hand-lettered line and a drawn arrow at the subject, gone after the
+   first touch. The only element on the stage not set in the UI face. */
+.home-hint {
+  position: absolute; left: 58%; top: 16%; pointer-events: none;
+  font-family: 'Caveat', 'Patrick Hand', 'Segoe Print', cursive;
+  font-size: 28px; color: var(--ink); text-shadow: 0 1px 0 var(--shadow-ink);
+  transform: rotate(-4deg); opacity: 1; transition: opacity 0.6s;
+}
+.home-hint.gone { opacity: 0; }
+.home-hint svg { display: block; width: 72px; height: 54px; margin: -2px 0 0 38px; overflow: visible; }
+.home-hint path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 900px) { .home-hint { display: none; } }
 .home-progress-bar { height: 100%; width: 0; background: var(--accent); }
 
 .home-controls {

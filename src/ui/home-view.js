@@ -323,6 +323,9 @@ export async function renderHome(root) {
       <div class="home-vignette" aria-hidden="true"></div>
       <div class="home-thermal" aria-hidden="true"></div>
       <div class="home-caption"></div>
+      <div class="home-hint" aria-hidden="true">drag to turn it
+        <svg viewBox="0 0 72 54"><path d="M4 4 C 30 2, 58 14, 62 44 M 52 36 L 62 46 L 70 34"/></svg>
+      </div>
       <div class="home-progress"><div class="home-progress-bar"></div></div>
       <div class="home-scene-note" role="note"></div>
     </div>
@@ -491,7 +494,10 @@ export async function renderHome(root) {
   /* --- input --- */
 
   let drag = null;
+  const hint = homeEl.querySelector('.home-hint');
+  const dismissHint = () => hint?.classList.add('gone');
   const down = (e) => {
+    dismissHint();
     drag = { x: e.clientX, y: e.clientY };
     canvas.setPointerCapture?.(e.pointerId);
   };
@@ -514,6 +520,7 @@ export async function renderHome(root) {
 
   homeEl.addEventListener('click', (e) => {
     if (e.target.closest('[data-play]')) {
+      dismissHint();
       if (playing) stop();
       else play();
       return;
