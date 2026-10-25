@@ -484,6 +484,10 @@ function buildMolecule(mol, { scale = 1 } = {}) {
 /* ---------- the stage ---------- */
 
 export function createFoundryScene(canvas) {
+  // Ask a throwaway canvas first: a browser without WebGL answers null here
+  // quietly, where asking the renderer to build one logs an error.
+  const probe = document.createElement('canvas');
+  if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) return { ok: false, reason: 'no WebGL' };
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
