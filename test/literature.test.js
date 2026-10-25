@@ -102,7 +102,9 @@ test('there is one retrieval path, and the literature panel uses it', () => {
 
 test('the panel leads with the deterministic verdict and denies having a score', () => {
   const panel = readFileSync(`${root}/src/ui/literature.js`, 'utf8');
-  assert.match(panel, /CARTOON_PHYSICS_NOTE/, 'the cartoon note belongs beside a retrieved explanation too');
+  // The standing cartoon-physics paragraph came off every screen at severo's
+  // request. What the panel still has to say is what it decided and did not
+  // decide, which is the rest of this test.
   assert.match(panel, /rejected this/, 'the panel must name the filter that decided');
   assert.match(panel, /no viability\s*\n?\s*number in this app/, 'the panel must say there is no score and why');
   assert.match(panel, /did not\s*\n?\s*decide this rejection/, 'the panel must say the model did not decide');

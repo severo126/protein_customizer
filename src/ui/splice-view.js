@@ -4,7 +4,7 @@
 import { state, setState, entry, laneEntries } from './app.js';
 import { constructPiece, domainMap, escapeText } from './cartoon.js';
 import { runFilters, spliceFunnel, LINKER_CHOICES } from '../model/splice.js';
-import { PASS_VERDICT, NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
+import { PASS_VERDICT, NOT_CHECKED } from '../model/disclaimers.js';
 import { exportConstruct } from '../model/exportConstruct.js';
 import { download } from './bench-view.js';
 import { explainRejection } from './gemini.js';
@@ -30,7 +30,7 @@ export function renderSplice(root) {
         <div class="panel construct-stage">
           <strong>${escapeText(a.name)} ⟶ ${escapeText(b.name)}</strong>
           ${constructPiece(verdict.geometry, a.domain.label, b.domain.label)}
-          <div class="cartoon-label" title="Cartoon geometry: ${escapeText(a.source.cartoon)} for ${escapeText(a.name)}, ${escapeText(b.source.cartoon)} for ${escapeText(b.name)}. Only the temperature and pH windows come from reference material, as rounded teaching ranges.">cartoon construct — every distance is invented, not a coordinate set</div>
+          <div class="cartoon-label" title="Cartoon geometry: ${escapeText(a.source.cartoon)} for ${escapeText(a.name)}, ${escapeText(b.source.cartoon)} for ${escapeText(b.name)}. Only the temperature and pH windows come from reference material, as rounded teaching ranges.">invented distances, not a coordinate set</div>
         </div>
 
         ${verdictBox(verdict)}
@@ -38,7 +38,6 @@ export function renderSplice(root) {
         <div class="panel" style="padding:13px;display:grid;gap:10px">
           <strong>Filters</strong>
           <div class="filter-list">${verdict.results.map(filterItem).join('')}</div>
-          <div class="score-note">${escapeText(CARTOON_PHYSICS_NOTE)}</div>
         </div>
 
         ${funnelPanel(funnel)}
@@ -86,8 +85,7 @@ function verdictBox(verdict) {
   if (verdict.passed) {
     return `<div class="verdict">
       <h3>${PASS_VERDICT}</h3>
-      <div class="meaning">A pass is the absence of a red flag from a cartoon. Nothing beside it was
-      tested — see the list alongside.</div>
+      <div class="meaning">The absence of a red flag from a cartoon. Nothing beside it was tested.</div>
     </div>`;
   }
   const killer = verdict.results.find((r) => !r.pass);
@@ -145,10 +143,10 @@ function funnelPanel(f) {
 }
 
 function notCheckedPanel() {
-  return `<div class="panel not-checked">
-    <h4>Not checked — ever, on any screen</h4>
+  return `<details class="panel not-checked">
+    <summary>Not checked by any of this</summary>
     <ul>${NOT_CHECKED.map((l) => `<li>${escapeText(l)}</li>`).join('')}</ul>
-  </div>`;
+  </details>`;
 }
 
 function wire(root) {

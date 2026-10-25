@@ -15,7 +15,6 @@
 import { runPipeline } from '../model/pipeline.js';
 import { starter, groupMeta, prettyCore, describe } from '../model/molecules.js';
 import { buildStructure, formulaTally } from '../model/structure.js';
-import { CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { reactionScene, REACTION_NOTE } from './reaction.js';
 import { escapeText } from './cartoon.js';
 import { state, setState, laneEntries } from './app.js';
@@ -377,9 +376,7 @@ export async function renderHome(root) {
 
   const empty = () => {
     captionEl.innerHTML = `<div class="home-card">
-      <h1 class="hero-title">Nano Foundry</h1>
       <p class="hero-sub">Load a route below, then press Play.</p>
-      <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p>
     </div>`;
   };
 
@@ -409,15 +406,13 @@ export async function renderHome(root) {
     if (lastStage && !lastStage.result.ok) {
       captionEl.insertAdjacentHTML(
         'beforeend',
-        `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div>
-          <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
+        `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div></div>`,
       );
     } else if (lastStage) {
       captionEl.insertAdjacentHTML(
         'beforeend',
         `<div class="home-card"><div class="beat-step">End of the run</div>
-          <h2>Out comes ${escapeText(describe(run.product ?? lastStage.result.product))}</h2>
-          <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
+          <h2>Out comes ${escapeText(describe(run.product ?? lastStage.result.product))}</h2></div>`,
       );
     }
   }

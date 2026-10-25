@@ -6,7 +6,7 @@ import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
 import { renderWorkstation } from './workstation-view.js';
 import { renderHome, unmountHome } from './home-view.js';
-import { NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
+import { NOT_CHECKED } from '../model/disclaimers.js';
 import { closeReaction } from './reaction.js';
 
 export const state = {
@@ -78,15 +78,11 @@ document.getElementById('tabs').addEventListener('click', (e) => {
 const dialog = document.getElementById('limits-dialog');
 dialog.innerHTML = `<div class="body">
   <h2 id="limits-title">What this can't tell you</h2>
-  <p>${CARTOON_PHYSICS_NOTE}</p>
-  <p>Nano Foundry is a teaching toy over a fixed list of about 40 commonplace metabolic and
-  industrial enzymes. It has no connection to any protein database, no way to add an entry, and it
-  emits no sequence of any kind — not in the interface, not in an export, not in its storage.</p>
   <h3 style="font-size:14px">Never checked, on any screen</h3>
   <ul>${NOT_CHECKED.map((l) => `<li>${l}</li>`).join('')}</ul>
   <p style="font-size:12.5px;color:var(--ink-faint)">A pass is the absence of a red flag from a
-  cartoon. There is no "validated" or "approved" state in this app, and a construct that clears every
-  filter is only ever reported as "Nothing here ruled this out".</p>
+  cartoon. There is no "validated" or "approved" state here: a construct that clears every filter is
+  only ever reported as "Nothing here ruled this out".</p>
   <div class="close-row"><button class="btn primary" id="limits-close">Back to the workshop</button></div>
 </div>`;
 document.getElementById('limits-button').addEventListener('click', () => dialog.showModal());

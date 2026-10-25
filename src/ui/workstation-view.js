@@ -16,7 +16,7 @@ import { download } from './bench-view.js';
 import { escapeText, windowBars, domainMap, enzymePiece, FAMILY_STYLE } from './cartoon.js';
 import { behaviourVocabulary, composeBuilds, wantId, WANT_QUESTIONS } from '../model/behaviours.js';
 import { exportBuild } from '../model/exportConstruct.js';
-import { NOT_CHECKED, CARTOON_PHYSICS_NOTE, PASS_VERDICT } from '../model/disclaimers.js';
+import { NOT_CHECKED, PASS_VERDICT } from '../model/disclaimers.js';
 import { logEvent } from './telemetry.js';
 
 const LIGHT_LABELS = { temp: 'Temperature', ph: 'pH', cofactor: 'Cofactors', inhibition: 'Product inhibition' };
@@ -45,7 +45,7 @@ export function renderWorkstation(root) {
       </section>
 
       <section class="workstation-results">
-        ${picked.length ? askedPanel(result) : emptyPanel(vocabulary)}
+        ${picked.length ? askedPanel(result) : emptyPanel()}
         ${result.impossible.length ? impossiblePanel(result) : ''}
         ${result.builds.map((b, i) => buildCard(b, i)).join('')}
         ${picked.length && !result.builds.length ? `<div class="panel"><p class="empty">Nothing in the catalogue covers any of this.</p></div>` : ''}
@@ -112,15 +112,10 @@ function optionText(w) {
 
 /* ---------- the results ---------- */
 
-function emptyPanel(vocabulary) {
+function emptyPanel() {
   return `<div class="panel">
     <strong>Nothing asked for yet</strong>
-    <p class="blurb">Tick a behaviour on the left. ${vocabulary.length} of them are on offer, every one
-    of them a field already committed in the catalogue file. Ask for two that no single entry does and
-    this screen starts looking at pairings instead.</p>
-    <p class="blurb">A worked example: ask for <em>puts a phosphate on</em> and <em>takes a phosphate
-    off</em> together. No single entry does both, so the screen proposes pairs and runs the same
-    temperature, pH, cofactor and product-inhibition checks the bench uses over each one.</p>
+    <p class="blurb">Tick a behaviour on the left.</p>
   </div>`;
 }
 
@@ -197,8 +192,7 @@ function buildCard(build, index) {
       <strong>${escapeText(build.verdict.headline)}</strong>
       <div>${escapeText(build.verdict.detail)}</div>
       ${!short && !ruled
-        ? `<div class="score-note">"${escapeText(PASS_VERDICT)}" is the strongest thing this app says:
-           the absence of a red flag from a cartoon, never a validated or approved state.</div>`
+        ? `<div class="score-note">${escapeText(PASS_VERDICT)} — the absence of a red flag from a cartoon.</div>`
         : ''}
     </div>
 
@@ -217,11 +211,10 @@ function buildCard(build, index) {
 }
 
 function notCheckedPanel() {
-  return `<div class="panel not-checked">
-    <h4>Not checked — here or on any other screen</h4>
+  return `<details class="panel not-checked">
+    <summary>Not checked by any of this</summary>
     <ul>${NOT_CHECKED.map((l) => `<li>${escapeText(l)}</li>`).join('')}</ul>
-    <div class="score-note">${escapeText(CARTOON_PHYSICS_NOTE)}</div>
-  </div>`;
+  </details>`;
 }
 
 /* ---------- wiring ---------- */

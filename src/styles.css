@@ -405,7 +405,9 @@ input[type="range"] { accent-color: var(--accent); }
 .verdict .meaning { font-size: 12.5px; color: var(--ink-dim); }
 
 .not-checked { padding: 13px; display: grid; gap: 7px; }
-.not-checked h4 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); }
+.not-checked h4,
+.not-checked summary { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); }
+.not-checked summary { cursor: pointer; }
 .not-checked ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .not-checked li { font-size: 12px; color: var(--ink-dim); }
 

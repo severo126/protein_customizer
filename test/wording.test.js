@@ -71,7 +71,8 @@ test('the splice screen shows the verdict and the standing list together', () =>
   const view = readFileSync(`${root}/src/ui/splice-view.js`, 'utf8');
   assert.match(view, /PASS_VERDICT/);
   assert.match(view, /NOT_CHECKED/);
-  assert.match(view, /CARTOON_PHYSICS_NOTE/);
+  // The standing cartoon-physics paragraph came off the screens at severo's
+  // request. What a pass means stays on the verdict itself.
   assert.match(view, /absence of a red flag from a cartoon/);
 });
 
