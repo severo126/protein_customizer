@@ -29,7 +29,7 @@ filter service, seeds the funnel history with a sweep, and prints the URLs. Open
 <http://localhost:5173>, type *fructose with a phosphate on it*, and press **Find the routes**.
 
 ```bash
-npm test          # 236 JavaScript tests + 53 Python tests
+npm test          # 269 JavaScript tests + 55 Python tests
 ```
 
 ## What is in it

@@ -75,7 +75,7 @@ export function wantLabel(want) {
     case 'joins':
       return `joins groups into ${g(want.arg)}`;
     case 'rearranges':
-      return `rearranges a ${prettyCore(want.arg)} skeleton`;
+      return `rearranges ${article(prettyCore(want.arg))} skeleton`;
     case 'temp-at':
       return `works at ${want.arg} °C`;
     case 'ph-at':

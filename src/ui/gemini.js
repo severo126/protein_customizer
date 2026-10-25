@@ -12,6 +12,7 @@
 import { state, setState } from './app.js';
 import { escapeText } from './cartoon.js';
 import { logEvent } from './telemetry.js';
+import { sendGemini } from '../model/gemini-request.js';
 
 const KEY_STORE = 'nano-foundry.gemini-key';
 
@@ -303,17 +304,17 @@ async function callGemini(prompt, spec) {
   let res;
   try {
     res = key
-      ? await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: spec.limits.max_output_tokens ?? 1024 },
+      ? await sendGemini(prompt, spec.limits, (body) =>
+          fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify(body),
+            signal: controller.signal,
           }),
-          signal: controller.signal,
-        })
+        )
       : // No key here: the server runs the same agent with its own key. It
-        // looks the model and limits up in the same registry, by this id.
+        // looks the model and limits up in the same registry, by this id, and
+        // builds the request with the same helper.
         await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },

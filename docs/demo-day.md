@@ -9,11 +9,11 @@ HackTX 26 · soft submission Saturday 11:30pm · final Sunday 11:30am · judging
 Have `./deploy/bring-up.sh` already running, on **Make a molecule**, before anyone sits down.
 
 > **What moved, since this script changed.** The app is entered by naming a molecule now. The nav
-> is three tabs: **Make a molecule**, **Collection**, **Splice table**. The bench and the
-> workstation lost their tabs but neither screen changed, and both are one click from the landing
-> screen in the row headed *"Still here, if you would rather drive it yourself"*. The three seeded
-> demo runs this script uses are behind **Build a lane by hand** in that row, unchanged and in the
-> same order. The frozen screenshots in `docs/screenshots/` still match what those buttons show.
+> is five tabs: **Make a molecule**, **Bench**, **Workstation**, **Collection**, **Splice table**.
+> The bench and the workstation briefly lost their tabs and have them back; neither screen changed.
+> The three seeded demo runs this script uses are also on the run screen, as a row of buttons under
+> the playback controls, unchanged and in the same order. The frozen screenshots in
+> `docs/screenshots/` still match what those buttons show.
 
 **0:00 — what this is, in one sentence.** "Nano Foundry is a teaching sandbox for how enzymes chain
 together, plus a toy checker for what would break if you fused two domains. It is a cartoon on
@@ -102,15 +102,16 @@ reason it beats the alternative:
 
 ### 1. Northmark Compute and Cloud — "build the platform behind the agent"
 
-**Pitch.** Nano Foundry has three agents and none of them is hand-wired. `config/agents.json`
+**Pitch.** Nano Foundry has six agents and none of them is hand-wired. `config/agents.json`
 declares each one's tools, model, instructions file and limits; a shared tool registry describes
 every tool; every run writes a trace with per-tool latency and token counts; any trace can be
 replayed, and replay *refuses* to claim it reproduced a model-backed run. One agent has no model at
-all and is declared the same way as the other two, which is the argument: the platform should treat
+all and is declared the same way as the other five, which is the argument: the platform should treat
 a deterministic worker and a model-backed agent identically. The registry's `refuse_fields` list is
 enforced in both the Python service and the browser, so a project-wide safety rule is a platform
-property rather than a convention someone has to remember. The Platform screen is a read-only view
-a judge can read without opening an editor.
+property rather than a convention someone has to remember. There is no Platform screen to show:
+the registry is read from `config/agents.json` and `curl localhost:8000/agents`, as in the 2:15 beat
+above.
 
 **Why this one.** It is the track where the depth is, and the prompt asks for exactly what we built.
 

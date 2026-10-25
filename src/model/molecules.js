@@ -22,6 +22,12 @@ export const GROUPS = {
   ring: { label: 'new ring', symbol: '◇', hue: 320 },
 };
 
+// "a hydroxyl" but "an acyl". Every sentence the bench and the route search
+// build names a group, so the article has to be picked rather than hard-coded.
+export function article(word) {
+  return /^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`;
+}
+
 export function groupMeta(name) {
   return GROUPS[name] ?? { label: name, symbol: '?', hue: 0 };
 }

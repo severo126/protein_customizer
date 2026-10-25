@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "The agent registry. Nano Foundry's three agents are declared here — tools, model, instructions and limits — rather than hand-wired into code paths. The Python service (py/service.py) and the browser both read this file, so changing a model or a limit is a config change, not a code change. Every run writes a trace, and any trace can be replayed. See docs/tracks.md.",
+  "note": "The agent registry. Nano Foundry's six agents are declared here — tools, model, instructions and limits — rather than hand-wired into code paths. The Python service (py/service.py) and the browser both read this file, so changing a model or a limit is a config change, not a code change. Every run writes a trace, and any trace can be replayed. See docs/tracks.md.",
   "defaults": {
     "trace": true,
     "trace_sink": "data/traces",
@@ -72,7 +72,7 @@
       ],
       "instructions": "config/instructions/pipeline-builder.md",
       "limits": {
-        "max_output_tokens": 1024,
+        "max_output_tokens": 2048,
         "timeout_ms": 20000,
         "max_stages": 8,
         "retries": 1
@@ -92,7 +92,7 @@
       ],
       "instructions": "config/instructions/rejection-explainer.md",
       "limits": {
-        "max_output_tokens": 400,
+        "max_output_tokens": 1536,
         "timeout_ms": 15000,
         "retries": 0
       },
@@ -112,7 +112,7 @@
       ],
       "instructions": "config/instructions/literature-explainer.md",
       "limits": {
-        "max_output_tokens": 600,
+        "max_output_tokens": 2048,
         "timeout_ms": 20000,
         "retries": 0
       },
@@ -132,7 +132,7 @@
       ],
       "instructions": "config/instructions/target-parser.md",
       "limits": {
-        "max_output_tokens": 400,
+        "max_output_tokens": 1536,
         "timeout_ms": 15000,
         "retries": 1
       },
@@ -152,7 +152,7 @@
       ],
       "instructions": "config/instructions/route-adviser.md",
       "limits": {
-        "max_output_tokens": 500,
+        "max_output_tokens": 2048,
         "timeout_ms": 20000,
         "retries": 0
       },

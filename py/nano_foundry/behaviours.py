@@ -84,7 +84,7 @@ def want_label(want: dict[str, Any]) -> str:
     if kind == "joins":
         return f"joins groups into {g(arg)}"
     if kind == "rearranges":
-        return f"rearranges a {pretty_core(arg)} skeleton"
+        return f"rearranges {article(pretty_core(arg))} skeleton"
     if kind == "temp-at":
         return f"works at {_num(arg)} °C"
     if kind == "ph-at":

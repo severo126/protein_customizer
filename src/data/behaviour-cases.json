@@ -319,7 +319,7 @@
    "id": "rearranges:aspartate",
    "kind": "rearranges",
    "arg": "aspartate",
-   "label": "rearranges a Aspartate skeleton",
+   "label": "rearranges an Aspartate skeleton",
    "scope": "any",
    "entries": [
     "aspartase"
@@ -13138,7 +13138,7 @@
     "wants": [
      {
       "id": "rearranges:aspartate",
-      "label": "rearranges a Aspartate skeleton",
+      "label": "rearranges an Aspartate skeleton",
       "scope": "any"
      }
     ],
@@ -24756,7 +24756,7 @@
     "wants": [
      {
       "id": "rearranges:aspartate",
-      "label": "rearranges a Aspartate skeleton",
+      "label": "rearranges an Aspartate skeleton",
       "scope": "any"
      },
      {
@@ -24894,7 +24894,7 @@
     "wants": [
      {
       "id": "rearranges:aspartate",
-      "label": "rearranges a Aspartate skeleton",
+      "label": "rearranges an Aspartate skeleton",
       "scope": "any"
      },
      {

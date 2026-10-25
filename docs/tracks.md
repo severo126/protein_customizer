@@ -97,11 +97,14 @@ on wording rather than on something a user can click.
 
 ## Northmark Compute and Cloud — the platform behind the agents
 
-Taken as architecture, not a logo. Nano Foundry has three agents and they are declared in
+Taken as architecture, not a logo. Nano Foundry has six agents and they are declared in
 `config/agents.json` rather than hand-wired: the **pipeline builder** (model-backed, tools
-`catalogue.list` and `lane.validate`, max 8 stages, 20 s), the **rejection explainer** (model-backed,
-tool `filters.explain`, 400 output tokens), and the **filter sweep runner** (no model at all, tools
-`splice.funnel` and `events.write`, max 500 pairs). Tools live in one shared registry with
+`catalogue.list` and `lane.validate`, max 8 stages, 20 s), the **rejection explainer** and the
+**literature explainer** (model-backed, tools `filters.explain` and `sources.search`), the
+**target parser** and the **route adviser** (model-backed, the two from the molecule-first flow:
+the parser is forbidden from naming an enzyme at all, and the adviser may only read back numbers
+the search measured), and the **filter sweep runner** (no model at all, tools `splice.funnel` and
+`events.write`, max 500 pairs). Tools live in one shared registry with
 descriptions a judge can read. Every run writes a trace — per-tool latency, token counts, status —
 and any trace can be replayed; replay refuses to claim it reproduced a model-backed run and says why
 instead. `py/service.py` exposes `/agents`, `/agents/<id>/run`, `/agents/<id>/traces`,
@@ -109,7 +112,7 @@ instead. `py/service.py` exposes `/agents`, `/agents/<id>/run`, `/agents/<id>/tr
 registry's `refuse_fields` list is enforced on both sides of the wire, so the scope rule in
 `docs/scope.md` §2 is a platform property rather than a convention.
 
-**If it were removed:** the three capabilities would still exist, but as three bespoke code paths
+**If it were removed:** the six capabilities would still exist, but as six bespoke code paths
 with their models, prompts and limits inlined — no shared tool registry, no traces, no replay, no
 dashboard, and no single place to change a model. The sweep runner in particular would stop being a
 first-class agent and go back to being a script, which is the thing the registry is arguing against.

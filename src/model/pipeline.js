@@ -3,7 +3,7 @@
 // Everything here is deterministic integer-and-float bookkeeping over the
 // symbolic molecule model. No kinetics, no thermodynamics, no real rates.
 
-import { cloneMolecule, hasGroups, removeGroups, groupMeta, prettyCore, describe } from './molecules.js';
+import { cloneMolecule, hasGroups, removeGroups, groupMeta, prettyCore, describe, article } from './molecules.js';
 
 export const SCORE_DISCLAIMER =
   'Foundry Score is a made-up number with made-up units. It is not a yield, a turnover, a rate or a prediction.';
@@ -15,23 +15,23 @@ export function runStage(mol, entry) {
 
   if (a.op === 'add') {
     if (!hasGroups(input, a.requires)) {
-      return mismatch(entry, input, `needs ${listGroups(a.requires)} on the input to hang a ${groupMeta(a.group).label} onto, and this molecule has none free`);
+      return mismatch(entry, input, `needs ${listGroups(a.requires)} on the input to hang ${article(groupMeta(a.group).label)} onto, and this molecule has none free`);
     }
-    return ok(entry, input, { ...input, groups: [...input.groups, a.group] }, `added a ${groupMeta(a.group).label}`);
+    return ok(entry, input, { ...input, groups: [...input.groups, a.group] }, `added ${article(groupMeta(a.group).label)}`);
   }
 
   if (a.op === 'remove') {
     if (!hasGroups(input, [a.group])) {
-      return mismatch(entry, input, `only cuts off a ${groupMeta(a.group).label}, and this molecule does not carry one`);
+      return mismatch(entry, input, `only cuts off ${article(groupMeta(a.group).label)}, and this molecule does not carry one`);
     }
     const groups = removeGroups(input.groups, [a.group]);
     if (a.yields) groups.push(a.yields);
-    return ok(entry, input, { ...input, groups }, `removed a ${groupMeta(a.group).label}${a.yields ? `, leaving a ${groupMeta(a.yields).label}` : ''}`);
+    return ok(entry, input, { ...input, groups }, `removed ${article(groupMeta(a.group).label)}${a.yields ? `, leaving ${article(groupMeta(a.yields).label)}` : ''}`);
   }
 
   if (a.op === 'rearrange') {
     if (input.core !== a.from) {
-      return mismatch(entry, input, `only rearranges a ${prettyCore(a.from)} skeleton, and this stage handed it ${prettyCore(input.core)}`);
+      return mismatch(entry, input, `only rearranges ${article(prettyCore(a.from))} skeleton, and this stage handed it ${prettyCore(input.core)}`);
     }
     return ok(entry, input, { ...input, core: a.to }, `rearranged the skeleton into ${prettyCore(a.to)}`);
   }
@@ -42,7 +42,7 @@ export function runStage(mol, entry) {
     }
     const groups = removeGroups(input.groups, a.requires);
     groups.push(a.group);
-    return ok(entry, input, { ...input, groups }, `joined ${listGroups(a.requires)} into a ${groupMeta(a.group).label}`);
+    return ok(entry, input, { ...input, groups }, `joined ${listGroups(a.requires)} into ${article(groupMeta(a.group).label)}`);
   }
 
   return mismatch(entry, input, `has no rule this toy knows how to run (op "${a.op}")`);
@@ -67,7 +67,7 @@ function listGroups(groups) {
   const counts = new Map();
   for (const g of groups) counts.set(g, (counts.get(g) ?? 0) + 1);
   return [...counts.entries()]
-    .map(([g, n]) => (n > 1 ? `${n} ${groupMeta(g).label} groups` : `a ${groupMeta(g).label}`))
+    .map(([g, n]) => (n > 1 ? `${n} ${groupMeta(g).label} groups` : article(groupMeta(g).label)))
     .join(' and ');
 }
 
