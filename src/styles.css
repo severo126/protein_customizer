@@ -161,7 +161,10 @@ body::before {
   background: url('assets/field.svg') center / cover no-repeat;
 }
 /* Specks that drift. Four per tile, the tile repeated, the whole layer sliding
-   slowly; the still specks in the SVG give it depth. */
+   slowly; the still specks in the SVG give it depth. The slide is stepped, two
+   thirds of a pixel every half second, so the layer is composited twice a
+   second rather than sixty times: a smooth transform here repainted the whole
+   screen every frame and made every other screen pay for it. */
 body::after {
   inset: -120px 0 0 -120px;
   background-image:
@@ -170,7 +173,7 @@ body::after {
     radial-gradient(circle at 44% 86%, rgba(255, 198, 92, 0.32) 0 1px, transparent 1.6px),
     radial-gradient(circle at 88% 12%, rgba(255, 107, 107, 0.30) 0 1px, transparent 1.6px);
   background-size: 420px 420px;
-  animation: field-drift 90s linear infinite;
+  animation: field-drift 90s steps(180) infinite;
 }
 @keyframes field-drift {
   from { transform: translate(0, 0); }
@@ -571,6 +574,9 @@ input[type="range"] { accent-color: var(--accent); }
 body.home-mode { background: var(--bg); }
 body.home-mode .screen { padding: 0; max-width: none; }
 body.home-mode .standing-note { position: relative; z-index: 6; }
+/* Once the page has scrolled, the stage would slide up under the transparent
+   topbar; a backing keeps the tabs readable over it. */
+body.home-mode.scrolled .topbar { background: rgba(18, 22, 58, 0.88); }
 
 .home {
   position: relative;
@@ -782,6 +788,10 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 }
 .home-run { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.12em; }
 .home-pcts { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Under 1200px the chips sit on their own line always. Left in the dial row
+   they wrapped in and out as the percentages changed during a run, and every
+   wrap moved the whole strip. */
+@media (max-width: 1200px) { .home-pcts { flex-basis: 100%; } }
 .home-pcts .home-chip.over { border-color: rgba(255, 90, 60, 0.6); color: #ffb3a2; }
 .home-pcts .home-chip.under { border-color: rgba(90, 160, 255, 0.5); color: #a8c8ff; }
 .home-climate-line { flex-basis: 100%; margin: 0; font-size: 11.5px; color: var(--ink-dim); }

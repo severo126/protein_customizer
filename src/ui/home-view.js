@@ -95,7 +95,7 @@ function regionLine(entry) {
 function caption(stage, run, beat = null) {
   const { entry, molIn, result } = stage;
   const cof = entry.cofactor && entry.cofactor !== 'none' ? ` Helper: ${escapeText(entry.cofactor)}.` : '';
-  const head = `<div class="beat-step">Stage ${stage.index + 1} of ${run.stages.length} · ${escapeText(entry.name)}</div>
+  const head = `<div class="beat-step">Stage ${stage.index + 1} of ${run.stages.length}</div>
     <h2>${escapeText(entry.name)} ${escapeText(verb(entry))}</h2>`;
   if (!result.ok) {
     return `${head}
@@ -662,6 +662,12 @@ async function renderRun(root) {
     scene?.resize();
   };
   window.addEventListener('resize', onResize);
+  // On a short screen the controls can push the page a little past the fold,
+  // and the stage then scrolls up under the see-through topbar. Mark the
+  // scrolled state so the bar can take a backing only while it is needed.
+  const onScroll = () => document.body.classList.toggle('scrolled', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
   // The controls strip folds away so the animation can fill the frame. The
   // choice is remembered per browser; it starts open.
@@ -772,6 +778,8 @@ async function renderRun(root) {
     },
     cleanup() {
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll);
+      document.body.classList.remove('scrolled');
       if (mountedTimer) clearInterval(mountedTimer);
       mountedTimer = null;
       scene?.dispose();
