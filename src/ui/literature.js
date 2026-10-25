@@ -37,27 +37,19 @@ export async function showLiterature(host, { killer }) {
   let found;
   try {
     found = await retrieve(mode);
-  } catch (err) {
-    host.innerHTML = frame(
-      killer,
-      mode,
-      `<p class="lit-note">The sources API is not answering (${escapeText(String(err.message ?? err))}), so there are no
-      references to show. Start <code>tools/api/server.mjs</code> to turn this panel on. The verdict above does not
-      depend on it.</p>`,
-    );
+  } catch {
+    // No server at all — the published build, or the folder opened over file://.
+    // A reader who clicked this asked where to go and read; telling them to start
+    // a development server answers a question nobody asked. The searches the API
+    // would have run can be written here without it.
+    host.innerHTML = frame(killer, mode, searchLinkList(mode));
     return;
   }
 
   logEvent('literature.retrieve', { filter: killer.id, configured: found.configured, references: found.references.length });
 
   if (!found.configured) {
-    host.innerHTML = frame(
-      killer,
-      mode,
-      `<p class="lit-note">No SerpApi key is configured on the server, so this panel cannot pull references
-      automatically. The searches it would have run:</p>
-      <ul class="lit-links">${found.links.map((l) => linkItem(l.url, l.label)).join('')}</ul>`,
-    );
+    host.innerHTML = frame(killer, mode, searchLinkList(mode));
     return;
   }
 
@@ -109,7 +101,7 @@ async function retrieve(mode) {
   );
 
   if (pages.some((p) => !p.configured)) {
-    return { configured: false, links: pages.flatMap((p) => p.fallback_links ?? []), provider: null, references: [], screenedOut: 0 };
+    return { configured: false, provider: null, references: [], screenedOut: 0 };
   }
 
   const byLink = new Map();
@@ -120,11 +112,24 @@ async function retrieve(mode) {
   }
   return {
     configured: true,
-    links: [],
     provider: pages.find((p) => p.provider)?.provider ?? 'a public reference search',
     references: [...byLink.values()].slice(0, 8),
     screenedOut: pages.reduce((n, p) => n + (p.screened_out ?? 0), 0),
   };
+}
+
+// The same searches the API would run for this failure mode, written in the
+// browser so the panel is never a dead end. Each one is a public catalogue's own
+// search page: nothing is fetched, read or vouched for here. #13 did this for the
+// catalogue cards; the splice panel had the same dead end.
+function searchLinkList(mode) {
+  const links = mode.queries.flatMap((q) => [
+    { label: `Europe PMC — ${q}`, url: `https://europepmc.org/search?query=${encodeURIComponent(q)}` },
+    { label: `Crossref — ${q}`, url: `https://search.crossref.org/?q=${encodeURIComponent(q)}` },
+  ]);
+  return `<p class="lit-note">No reference search answered here, so these are the searches to run for this
+    failure mode. They open at the real literature, which is the point of this panel either way.</p>
+    <ul class="lit-links">${links.map((l) => linkItem(l.url, l.label)).join('')}</ul>`;
 }
 
 function frame(killer, mode, inner) {
