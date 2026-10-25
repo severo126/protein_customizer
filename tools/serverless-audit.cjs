@@ -1,7 +1,10 @@
 // Check the app the way the published link actually runs: no API server.
 //
 //   npm run serve            # static files only, exactly like the published copy
-//   node tools/serverless-audit.cjs
+//   npm run audit:serverless
+//
+// PORT is read the same way tools/serve.mjs reads it, so the two agree by
+// default; PORT=5174 on both if 5173 is taken.
 //
 // The published artifact has no server, so every /api/* call 404s. Twice now a
 // panel has handled that by printing a developer instruction — "Start
@@ -16,15 +19,30 @@
 
 const { chromium } = require('playwright');
 const BAD = /tools\/api\/server\.mjs|is not answering|HTTP 404|\bundefined\b|\bNaN\b|\[object Object\]/;
+// Same default as tools/serve.mjs. Hardcoding a port here once meant the
+// documented invocation could not connect at all.
+const PORT = Number(process.env.PORT ?? 5173);
+const BASE = `http://localhost:${PORT}/`;
 let suspect = 0;
 
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1500, height: 1150 } });
   const errs = [];
+  console.log(`Auditing ${BASE} with no API server behind it.\n`);
   p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message));
   p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
-  await p.goto('http://localhost:5175/', { waitUntil: 'networkidle' });
+  // A page that never loaded is not a clean audit and it is not a caught leak
+  // either. Say which it is, because a gate that cannot tell them apart is worse
+  // than no gate: it cries wolf on a connection error and gets ignored.
+  try {
+    await p.goto(BASE, { waitUntil: 'networkidle' });
+  } catch (err) {
+    console.error(`COULD NOT CHECK: nothing answered at ${BASE} (${err.message.split('\n')[0]}).`);
+    console.error('Start the static server first: npm run serve' + (PORT === 5173 ? '' : ` (PORT=${PORT})`));
+    await b.close();
+    process.exit(2);
+  }
 
   const tabs = ['Vacuum','Collection','Workstation','The bench','Splice table'];
   for (const t of tabs) {
