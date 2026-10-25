@@ -72,8 +72,11 @@ function bodyFor(view) {
       </ul>`;
   }
 
-  return `<p class="empty">The sources API is not answering (${escapeText(view.error ?? 'offline')}).
-    Start <code>tools/api/server.mjs</code> to turn this panel on.</p>`;
+  // Nothing reaches here today — #13 made every caller pass a state this function
+  // handles. It stays neutral anyway, so that adding a state and forgetting a
+  // branch cannot put a developer instruction back in front of a reader.
+  return `<p class="empty">No references to show here. The search links above the fold are the way
+    through to the real literature.</p>`;
 }
 
 // The same searches the API would run, written in the browser so the panel is

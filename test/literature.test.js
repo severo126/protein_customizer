@@ -125,3 +125,26 @@ test('the explainer instructions forbid scoring, fixing and deciding', () => {
     assert.ok(md.includes(rule), `the instructions are missing: "${rule}"`);
   }
 });
+
+test('no citation panel ever dead-ends the reader with a developer instruction', () => {
+  // The published build has no server, so /api/sources 404s and both panels land
+  // in their catch. Telling a reader at a demo to start tools/api/server.mjs
+  // answers a question nobody asked, and it reached all forty cards before it was
+  // caught. Whatever a panel does when nothing answers, it hands over somewhere to
+  // go and read.
+  for (const file of ['src/ui/literature.js', 'src/ui/sources.js']) {
+    const text = readFileSync(`${root}/${file}`, 'utf8');
+    assert.ok(
+      !/Start\s*<code>tools\/api\/server\.mjs<\/code>/.test(text),
+      `${file} tells the reader to start a development server`,
+    );
+    assert.match(text, /https:\/\/(europepmc|pubmed|search\.crossref)/, `${file} has no search link to fall back to`);
+  }
+});
+
+test('the splice panel falls back to searches for the failure mode it is explaining', () => {
+  // Not the enzyme's name, and not a generic literature search: the queries that
+  // belong to the filter that actually rejected this candidate.
+  const panel = readFileSync(`${root}/src/ui/literature.js`, 'utf8');
+  assert.match(panel, /mode\.queries\.flatMap/, 'the fallback should be built from the failure mode queries');
+});
