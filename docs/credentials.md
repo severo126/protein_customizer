@@ -54,7 +54,11 @@ user data. The box clones `main` explicitly, whatever GitHub's default branch is
 If `DATABASE_URL` and `SERPAPI_KEY` are set when you run it, they are written to
 `/etc/nano-foundry.env` on the instance (mode 0600, via its user data, never the repo). The app then
 uses your Tiger Cloud service instead of the box's local TimescaleDB, and the schema is applied to
-it on first boot.
+it on first boot. The URL is written with `sslmode=no-verify`: a free-tier Tiger service has a
+self-signed certificate, and Node's pg driver would otherwise reject it. The connection stays
+encrypted but the server's identity is not checked, which is acceptable for a demo box only.
+
+The box's firewall (ufw, on by default on Vultr's Ubuntu image) is opened for ports 80 and 443.
 
 **Check it worked:** `curl http://<ip>/api/room` returns JSON, and `http://<ip>/` serves the app.
 
