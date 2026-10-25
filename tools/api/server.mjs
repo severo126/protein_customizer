@@ -269,7 +269,12 @@ createServer(async (req, res) => {
   const rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '');
   const path = join(root, rel === '/' ? 'index.html' : rel);
   try {
-    const file = await readFile(path);
+    let file = await readFile(path);
+    // The page only talks to the API when its head says one exists, so this
+    // server's copy of index.html says so; the static copy stays silent.
+    if (path.endsWith('index.html')) {
+      file = file.toString().replace('<head>', '<head>\n    <meta name="telemetry-api" content="/api" />');
+    }
     res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream' });
     res.end(file);
   } catch {
