@@ -29,14 +29,27 @@ if [[ "$MODE" == "vultr" ]]; then
   LABEL="${VULTR_LABEL:-nano-foundry}"
 
   REPO_REF="${REPO_REF:-main}"           # branch the instance clones
+  REPO_URL="${REPO_URL:-https://github.com/severo126/protein_customizer}"
+  # The repo is private: a fine-grained token with read-only Contents access
+  # lets the box clone it. It travels only in the instance's user data.
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    REPO_URL="${REPO_URL/https:\/\//https://x-access-token:${GITHUB_TOKEN}@}"
+  fi
 
   # Credentials ride along in the instance's user data as /etc/nano-foundry.env,
   # never in the repo. Only the variables that are set are written.
+  # Node's pg driver treats sslmode=require as verify-full, and a Tiger Cloud
+  # service on the free tier presents a self-signed certificate, so the app
+  # would silently fall back to the JSONL buffer. no-verify keeps the link
+  # encrypted but skips the identity check: fine for a demo box, not beyond it.
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    DATABASE_URL="${DATABASE_URL/sslmode=require/sslmode=no-verify}"
+  fi
   ENV_LINES=""
   for var in DATABASE_URL SERPAPI_KEY; do
     [[ -n "${!var:-}" ]] && ENV_LINES+="      $var=${!var}"$'\n'
   done
-  CLOUD_INIT=$(sed "s|__REPO_REF__|$REPO_REF|" deploy/cloud-init.yaml)
+  CLOUD_INIT=$(sed -e "s|__REPO_REF__|$REPO_REF|" -e "s|__REPO_URL__|$REPO_URL|" deploy/cloud-init.yaml)
   if [[ -n "$ENV_LINES" ]]; then
     ENV_FILE="  - path: /etc/nano-foundry.env
     permissions: '0600'
