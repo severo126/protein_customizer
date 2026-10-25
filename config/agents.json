@@ -65,7 +65,7 @@
       "id": "pipeline-builder",
       "title": "Pipeline builder",
       "job": "Turn a sentence of English into a candidate lane of catalogue enzymes.",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-flash-latest",
       "tools": [
         "catalogue.list",
         "lane.validate"
@@ -86,7 +86,7 @@
       "id": "rejection-explainer",
       "title": "Rejection explainer",
       "job": "Put a deterministic filter verdict into plain English for a student.",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-flash-latest",
       "tools": [
         "filters.explain"
       ],
@@ -105,7 +105,7 @@
       "id": "literature-explainer",
       "title": "Literature explainer",
       "job": "Read references retrieved about the failure mode a filter already named, and say what they report.",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-flash-latest",
       "tools": [
         "filters.explain",
         "sources.search"
@@ -126,7 +126,7 @@
       "id": "target-parser",
       "title": "Target parser",
       "job": "Read a sentence of English and work out which molecule the person wants to make.",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-flash-latest",
       "tools": [
         "catalogue.list"
       ],
@@ -146,7 +146,7 @@
       "id": "route-adviser",
       "title": "Route adviser",
       "job": "Read the measurements of the routes the search already found and say which one suits what the person asked to optimise for.",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-flash-latest",
       "tools": [
         "routes.measure"
       ],
