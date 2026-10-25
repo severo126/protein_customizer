@@ -671,7 +671,6 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 
 .collection { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 
-.collection-flip { perspective: 1600px; }
 .card-stage {
   position: relative;
   border: 1px solid hsl(var(--arch-hue) 45% 28%);
@@ -753,19 +752,35 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .card-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
 .card-foot-actions { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
 
-/* The flip. Half the turn hides the old card, the view swaps the content at
-   the edge-on moment, and the other half brings the new one round. */
-.collection-flip.flip-out-left { animation: flip-out-left 210ms ease-in forwards; }
-.collection-flip.flip-out-right { animation: flip-out-right 210ms ease-in forwards; }
-.collection-flip.flip-in-right { animation: flip-in-right 210ms ease-out backwards; }
-.collection-flip.flip-in-left { animation: flip-in-left 210ms ease-out backwards; }
-@keyframes flip-out-left { to { transform: rotateY(-90deg) scale(0.94); opacity: 0.25; } }
-@keyframes flip-out-right { to { transform: rotateY(90deg) scale(0.94); opacity: 0.25; } }
-@keyframes flip-in-right { from { transform: rotateY(90deg) scale(0.94); opacity: 0.25; } }
-@keyframes flip-in-left { from { transform: rotateY(-90deg) scale(0.94); opacity: 0.25; } }
+/* The wheel.
+
+   A circle twice as tall as the card, with the card mounted in its top half
+   and the next card mounted upside down in its bottom half. The view shows
+   only the top half and clips the rest, so the mounting point below is never
+   seen. Turning the wheel half a revolution about the axis pointing at the
+   viewer carries the current card up and out of frame and brings the next one
+   in from underneath, the right way up because of the standing 180° on its
+   slot. --wheel-h is the card's measured height, set by collection-view.js. */
+.card-wheel-view {
+  position: relative;
+  height: var(--wheel-h, 560px);
+  overflow: hidden;
+  transition: height 240ms ease;
+}
+.card-wheel {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: calc(var(--wheel-h, 560px) * 2);
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.card-slot { position: absolute; left: 0; right: 0; height: var(--wheel-h, 560px); }
+.card-slot.top { top: 0; }
+/* Mounted upside down, so half a revolution delivers it upright. */
+.card-slot.bottom { top: var(--wheel-h, 560px); transform: rotate(180deg); }
+
 @media (prefers-reduced-motion: reduce) {
-  .collection-flip.flip-out-left, .collection-flip.flip-out-right,
-  .collection-flip.flip-in-right, .collection-flip.flip-in-left { animation-duration: 1ms; }
+  .card-wheel-view { transition: none; }
   .card-disc { animation: none; }
 }
 

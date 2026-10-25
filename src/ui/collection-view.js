@@ -3,8 +3,8 @@
 // This is the catalogue as a deck of cards rather than a scrolling list. The
 // forty are dealt into archetypes (src/model/archetypes.js — the ordinary
 // enzyme classes, hand-curated), each archetype carries a colour theme, and
-// stepping left or right flips the whole stage over to the next card, so a
-// flip into a new archetype visibly lands somewhere else.
+// stepping left or right turns the whole stage like a wheel to the next card,
+// so a turn into a new archetype visibly lands somewhere else.
 //
 // Two things on this screen are load-bearing and are not decoration:
 //
@@ -29,14 +29,16 @@ import { runStage } from '../model/pipeline.js';
 import { openReaction } from './reaction.js';
 import { showSources } from './sources.js';
 
-const FLIP_MS = 420;
+// Half a revolution. Long enough to read as a mechanism turning rather than a
+// cut, short enough to press repeatedly without waiting.
+const TURN_MS = 620;
 
-// The order the deck flips through, and the filter drawer's state, both live
-// here rather than in app state: they are this screen's business and a flip
-// must not re-render the rest of the app.
+// The running order of the deck and the filter drawer's state both live here
+// rather than in app state: they are this screen's business, and turning the
+// wheel must not re-render the rest of the app.
 let deck = [];
 let root = null;
-let flipping = false;
+let turning = false;
 
 export function renderCollection(container) {
   root = container;
@@ -51,9 +53,15 @@ export function renderCollection(container) {
   if (state.cardIndex >= deck.length) state.cardIndex = 0;
 
   root.innerHTML = `<div class="collection">
-    <div class="collection-flip" id="collection-flip">${stage(deck[state.cardIndex])}</div>
+    <div class="card-wheel-view" id="card-wheel-view">
+      <div class="card-wheel" id="card-wheel">
+        <div class="card-slot top" id="card-slot-top">${stage(deck[state.cardIndex])}</div>
+        <div class="card-slot bottom" id="card-slot-bottom" aria-hidden="true"></div>
+      </div>
+    </div>
     ${drawer()}
   </div>`;
+  fitWheel();
   wire();
 }
 
@@ -87,7 +95,7 @@ function vocabulary() {
 
 /* ---------- the stage ---------- */
 
-function stage(e) {
+function stage(e, index = state.cardIndex) {
   const a = archetypeOf(e);
   const theme = a ?? { hue: 220, accent: 220, label: 'Unfiled', epithet: 'not in any archetype', ec: '', does: '', glyph: '?' };
   const group = a ? deal(state.catalogue.entries).groups.find((g) => g.archetype.id === a.id) : null;
@@ -102,7 +110,7 @@ function stage(e) {
         <h2>${escapeText(theme.label)} <small>${escapeText(theme.epithet)}</small></h2>
         <p title="${escapeText(ARCHETYPE_NOTE)}">${escapeText(theme.ec)}${theme.does ? ` · ${escapeText(theme.does)}` : ''}</p>
       </div>
-      <span class="card-count">${state.cardIndex + 1} / ${deck.length}${group ? ` · ${inGroup} of ${group.entries.length} in class` : ''}</span>
+      <span class="card-count">${index + 1} / ${deck.length}${group ? ` · ${inGroup} of ${group.entries.length} in class` : ''}</span>
     </header>
 
     <div class="card-body">
@@ -314,7 +322,7 @@ function drawer() {
 function wire() {
   root.onclick = (e) => {
     const step = e.target.closest('[data-step]');
-    if (step) return flip(Number(step.dataset.step));
+    if (step) return turn(Number(step.dataset.step));
 
     const handle = e.target.closest('#drawer-handle');
     if (handle) return setState({ cardDrawer: !state.cardDrawer });
@@ -361,8 +369,11 @@ function wire() {
       state.cardQuery = search.value;
       deck = buildDeck();
       state.cardIndex = 0;
-      const stageEl = root.querySelector('#collection-flip');
-      if (stageEl && deck.length) stageEl.innerHTML = stage(deck[state.cardIndex]);
+      const top = slotTop();
+      if (top && deck.length) {
+        top.innerHTML = stage(deck[state.cardIndex]);
+        fitWheel();
+      }
       const stateEl = root.querySelector('.drawer-state');
       if (stateEl) stateEl.textContent = `${deck.length} of ${state.catalogue.entries.length} · filtered`;
     };
@@ -371,34 +382,105 @@ function wire() {
   document.onkeydown = (ev) => {
     if (state.screen !== 'collection') return;
     if (ev.target.matches('input, textarea')) return;
-    if (ev.key === 'ArrowRight') flip(1);
-    if (ev.key === 'ArrowLeft') flip(-1);
+    if (ev.key === 'ArrowRight') turn(1);
+    if (ev.key === 'ArrowLeft') turn(-1);
   };
 }
 
-// The flip: the stage turns away, the next card is built while it is edge-on,
-// and it turns back. Nothing outside the stage re-renders, so the drawer keeps
-// its scroll position and the rest of the app is untouched.
-function flip(step) {
-  if (flipping || deck.length < 2) return;
-  const el = root.querySelector('#collection-flip');
-  if (!el) return;
-  flipping = true;
+/* ---------- the wheel ---------- */
 
-  const outClass = step > 0 ? 'flip-out-left' : 'flip-out-right';
-  const inClass = step > 0 ? 'flip-in-right' : 'flip-in-left';
-  el.classList.add(outClass);
+// The transition is a wheel, not a page flip. Picture a circle twice as tall
+// as the card, with a horizontal line across its middle: the card you are
+// looking at is mounted in the top half the right way up, and the next card is
+// mounted in the bottom half upside down. Only the top half of the circle is
+// ever visible. Turning the wheel half a revolution carries the current card
+// up and out of frame while the next one swings in from below, and because it
+// was mounted upside down it arrives the right way up.
+//
+// Everything below is in service of that one idea. The view is the top half
+// and clips; the wheel is the whole circle and is what rotates; the two slots
+// are the two mounting points, and the bottom one carries a standing 180° so
+// its card is upside down while it waits out of sight.
 
-  window.setTimeout(() => {
-    state.cardIndex = (state.cardIndex + step + deck.length) % deck.length;
-    el.innerHTML = stage(deck[state.cardIndex]);
-    el.classList.remove(outClass);
-    el.classList.add(inClass);
-    window.setTimeout(() => {
-      el.classList.remove(inClass);
-      flipping = false;
-    }, FLIP_MS / 2);
-  }, FLIP_MS / 2);
+const wheelEl = () => root?.querySelector('#card-wheel');
+const viewEl = () => root?.querySelector('#card-wheel-view');
+const slotTop = () => root?.querySelector('#card-slot-top');
+const slotBottom = () => root?.querySelector('#card-slot-bottom');
+
+function cardHeight(slot) {
+  const card = slot?.firstElementChild;
+  return card ? card.offsetHeight : 0;
+}
+
+// The circle's radius is set by the card's own height, because the visible
+// half has to be exactly the card. Measured rather than guessed: cards differ
+// in height, and a wrong radius puts the join between the halves on screen.
+function fitWheel(height) {
+  const view = viewEl();
+  if (!view) return;
+  const h = height ?? cardHeight(slotTop());
+  if (h > 0) view.style.setProperty('--wheel-h', `${h}px`);
+}
+
+function reducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+}
+
+function turn(step) {
+  const view = viewEl();
+  const wheel = wheelEl();
+  const top = slotTop();
+  const bottom = slotBottom();
+  if (turning || deck.length < 2 || !wheel || !top || !bottom) return;
+  turning = true;
+
+  const nextIndex = (state.cardIndex + step + deck.length) % deck.length;
+  bottom.innerHTML = stage(deck[nextIndex], nextIndex);
+
+  // While the wheel is moving both halves are partly on screen, so the circle
+  // has to be big enough for the taller of the two or the shorter card's half
+  // would show its edge. It settles back to the new card's own height after.
+  const travelling = Math.max(cardHeight(top), cardHeight(bottom));
+  fitWheel(travelling);
+
+  const land = () => {
+    // Put the wheel back at rest with the card that came up now mounted in
+    // the top half. Nothing moves on screen: the same card is in the same
+    // place, it is only mounted somewhere else.
+    wheel.style.transition = 'none';
+    wheel.style.transform = 'rotate(0deg)';
+    top.innerHTML = bottom.innerHTML;
+    bottom.innerHTML = '';
+    void wheel.offsetHeight;
+    wheel.style.transition = '';
+    state.cardIndex = nextIndex;
+    fitWheel();
+    turning = false;
+  };
+
+  if (reducedMotion()) {
+    land();
+    return;
+  }
+
+  // Right turns the wheel one way, left the other, so the card you came from
+  // goes back the way it left.
+  const angle = step > 0 ? -180 : 180;
+  let landed = false;
+  const once = () => {
+    if (landed) return;
+    landed = true;
+    land();
+  };
+
+  requestAnimationFrame(() => {
+    wheel.style.transition = `transform ${TURN_MS}ms cubic-bezier(0.62, 0.02, 0.22, 1)`;
+    wheel.style.transform = `rotate(${angle}deg)`;
+  });
+  wheel.addEventListener('transitionend', once, { once: true });
+  // transitionend does not fire if the element is hidden mid-turn (a tab
+  // change), and a wheel stuck at 180° would leave the next card upside down.
+  window.setTimeout(once, TURN_MS + 150);
 }
 
 // The Play button needs something for the enzyme to act on. Same rule the flat
