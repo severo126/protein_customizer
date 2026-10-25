@@ -29,7 +29,6 @@
 
 import { runPipeline } from '../model/pipeline.js';
 import { starter, groupMeta, prettyCore, describe, STARTERS } from '../model/molecules.js';
-import { buildStructure, formulaTally } from '../model/structure.js';
 import { reactionScene, REACTION_NOTE } from './reaction.js';
 import { escapeText } from './cartoon.js';
 import { state, setState, laneEntries } from './app.js';
@@ -104,11 +103,9 @@ function caption(stage, run, beat = null) {
       <p class="refused">${escapeText(result.stallReason)}</p>
       ${beat && (beat.pastWindow || beat.underWindow) ? `<p class="home-thermal-line ${beat.pastWindow ? 'over' : 'under'}">${escapeText(beat.note)}</p>` : ''}`;
   }
-  const tally = formulaTally(buildStructure(result.product));
   return `${head}
     ${regionLine(entry)}
     <p>In: ${escapeText(describe(molIn))}. Out: ${escapeText(describe(result.product))}.${cof}</p>
-    <p class="tally">Drawn as ${escapeText(tally)}.</p>
     ${beat ? beatLines(beat) : ''}`;
 }
 
@@ -134,7 +131,6 @@ function flowHead() {
   if (!state.target) {
     return `<div class="home-flow-head">
       <button class="btn small ghost" data-step="ask">Ask for a molecule</button>
-      <p class="home-flow-note">This lane was put together by hand rather than found by the search.</p>
     </div>`;
   }
   const result = state.routeResult;
@@ -169,8 +165,6 @@ function controls(run, entries) {
       ${(state.demo?.routes ?? [])
         .map((r) => `<button class="btn small ghost" data-demo="${r.id}">${escapeText(r.title)}</button>`)
         .join('')}
-      <button class="btn small" data-go="bench">Edit the lane on the bench</button>
-      <button class="btn small" data-go="workstation">Look the catalogue up by behaviour</button>
     </div>
     <p class="home-playback-note">${escapeText(PLAYBACK_NOTE)}</p>
   </div>`;
