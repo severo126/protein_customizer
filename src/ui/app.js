@@ -26,6 +26,10 @@ export const state = {
   pickerLog: [],
   pickerDraft: { core: null, groups: [], match: 'carries' },
   pickerAsk: null,
+  // A chip the picker is holding back because pressing it would leave nothing
+  // reachable: {kind, id, label}. One press arms it and shows why, a second
+  // press goes through. Cleared by any other change to the draft.
+  pickerDare: null,
   // routes: the target the search is run for, its cached result, what the grid
   // is ordered by, which route was chosen, and Gemini's reading of the numbers.
   target: null,
@@ -85,33 +89,17 @@ export function render() {
   else if (state.screen === 'bench') renderBench(screenEl);
   else renderSplice(screenEl);
 
-  // The bench and the workstation lost their tabs when the flow took over the
-  // front door, so each needs a way back that the nav no longer provides.
-  // Done here rather than inside either view, so neither screen changed.
-  if (state.screen === 'bench' || state.screen === 'workstation') {
-    const back = document.createElement('div');
-    back.className = 'folded-back';
-    back.innerHTML = `<button class="btn small ghost" data-back-to-flow>‹ Back to making a molecule</button>
-      <span>${
-        state.screen === 'bench'
-          ? 'The bench is still here, unchanged: build a lane by hand and press the run.'
-          : 'Still here, unchanged: look the catalogue up by the behaviour you want.'
-      }</span>`;
-    screenEl.prepend(back);
-  }
+  // The bench and the workstation used to get a "back to making a molecule"
+  // bar prepended here, because neither had a tab. Both have one again, so the
+  // bar was a second way to do what the nav already does, one line of text
+  // above every view of those two screens. Gone.
 }
 
 document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-back-to-flow]')) {
-    setState({ screen: 'home' });
-    return;
-  }
-  // The folded-ways row is on the picker and the grid as well as the run step,
-  // and those two steps mount no listener of their own for it. Handled here so
-  // the bench and the workstation are reachable from the front door rather than
-  // only from a step you have to finish a search to get to. The run step has
-  // its own handler for these, which does the same thing, so a double hit is
-  // two identical setState calls rather than two different ones.
+  // The landing row's one remaining link jumps into a step of the flow rather
+  // than to another screen; the picker and the grid mount no listener of their
+  // own for it, so it is handled here. The run step has its own handler that
+  // does the same thing, so a double hit is two identical setState calls.
   const go = e.target.closest('[data-go]');
   if (go) {
     setState({ screen: go.dataset.go });

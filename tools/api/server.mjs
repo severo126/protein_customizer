@@ -13,6 +13,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { extname, join, normalize } from 'node:path';
 import { screenReferences } from './sourceFilter.mjs';
+import { searchQueries, searchWithFallback } from './sourceQuery.mjs';
 
 const root = process.cwd();
 const port = Number(process.env.PORT ?? 5173);
@@ -191,6 +192,42 @@ async function viaCrossref(query) {
   return { provider: 'Crossref', results };
 }
 
+// Gemini, held server-side. The browser-side key keeps working exactly as it
+// did; this leg exists so one deployed box can carry a key for every visitor
+// (GEMINI_API_KEY in its environment, see docs/credentials.md). The browser
+// names an agent and sends a prompt; the model, token cap and timeout come
+// from config/agents.json here, so a visitor cannot pick a model or spend
+// more than the registry allows, and the key itself is never sent back.
+const PROMPT_CAP = 40_000;
+let agentRegistry = null;
+
+async function registeredAgent(id) {
+  if (!agentRegistry) agentRegistry = JSON.parse(await readFile(join(root, 'config', 'agents.json'), 'utf8'));
+  const spec = agentRegistry.agents.find((a) => a.id === id && a.model);
+  if (!spec) throw new Error(`no agent ${id} in the registry`);
+  return spec;
+}
+
+async function viaGemini({ agent, prompt }) {
+  if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt is required');
+  if (prompt.length > PROMPT_CAP) throw new Error(`prompt is over ${PROMPT_CAP} characters`);
+  const spec = await registeredAgent(String(agent));
+  const out = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: spec.limits?.max_output_tokens ?? 1024 },
+    }),
+    signal: AbortSignal.timeout(spec.limits?.timeout_ms ?? 20000),
+  });
+  if (!out.ok) throw new Error(`Gemini HTTP ${out.status}`);
+  const data = await out.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';
+  if (!text) throw new Error('empty reply');
+  return { model: spec.model, text };
+}
+
 async function body(req) {
   const chunks = [];
   for await (const c of req) chunks.push(c);
@@ -234,15 +271,15 @@ createServer(async (req, res) => {
     const topic = url.searchParams.get('topic') === 'failure-mode' ? 'failure-mode' : 'enzyme';
     if (!q) return json(res, 400, { error: 'q is required' });
 
-    // A catalogue card is one enzyme, so the name alone is ambiguous and gets a
-    // nudge. A failure-mode query is already a full phrase; appending to it only
-    // narrows it to nothing.
-    const query = topic === 'failure-mode' ? q : `${q} enzyme`;
+    // Usually one query, but a decorated enzyme name falls back to the bare one
+    // when it finds nothing — see sourceQuery.mjs for why that happens.
+    const attempts = searchQueries(q, topic);
+    const search = process.env.SERPAPI_KEY ? viaSerpApi : viaCrossref;
 
     try {
-      const { provider, results } = process.env.SERPAPI_KEY ? await viaSerpApi(query) : await viaCrossref(query);
+      const { provider, results, asked } = await searchWithFallback(attempts, search);
       const { kept, dropped } = screenReferences(results);
-      return json(res, 200, { configured: true, provider, topic, query: q, results: kept, screened_out: dropped });
+      return json(res, 200, { configured: true, provider, topic, query: q, asked, results: kept, screened_out: dropped });
     } catch (err) {
       // Nothing answered, so hand over somewhere to look rather than pretending
       // to have found sources.
@@ -255,6 +292,21 @@ createServer(async (req, res) => {
         ],
         note: `No reference search answered (${err.message}). Set SERPAPI_KEY for the Scholar backend, or check this box can reach api.crossref.org.`,
       });
+    }
+  }
+
+  // GET says whether this box holds a key, so the UI can hide its key box.
+  // POST runs one registered agent with the box's key. No key → 404, and the
+  // browser falls back to asking for one, as on a plain static server.
+  if (url.pathname === '/api/gemini') {
+    const configured = Boolean(process.env.GEMINI_API_KEY);
+    if (req.method === 'GET') return json(res, 200, { configured });
+    if (req.method !== 'POST') return json(res, 405, { error: 'POST a prompt, or GET the status' });
+    if (!configured) return json(res, 404, { configured, error: 'no server-side Gemini key' });
+    try {
+      return json(res, 200, { configured, ...(await viaGemini(await body(req))) });
+    } catch (err) {
+      return json(res, 502, { configured, error: err.message });
     }
   }
 

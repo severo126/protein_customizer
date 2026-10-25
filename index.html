@@ -18,11 +18,15 @@
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
       </div>
-      <!-- The bench and the workstation deliberately have no tab any more. Their
-           screens still exist and still render unchanged; they are reached from
-           inside the make-a-molecule flow, which is what asks for them. -->
+      <!-- Five screens, five tabs. The bench and the workstation briefly had no
+           tab of their own and were reached from a row on the landing page
+           instead; having a screen exist with no tab pointing at it read as a
+           missing page rather than as a tidier nav, so they are back. Make a
+           molecule stays first and stays the screen the app opens on. -->
       <nav class="tabs" id="tabs" aria-label="Screens">
         <button class="tab" data-screen="home" aria-current="page">Make a molecule</button>
+        <button class="tab" data-screen="bench">Bench</button>
+        <button class="tab" data-screen="workstation">Workstation</button>
         <button class="tab" data-screen="collection">Collection</button>
         <button class="tab" data-screen="splice">Splice table</button>
       </nav>

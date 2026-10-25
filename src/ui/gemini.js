@@ -15,6 +15,24 @@ import { logEvent } from './telemetry.js';
 
 const KEY_STORE = 'nano-foundry.gemini-key';
 
+// A deployed box can hold one key for every visitor (GEMINI_API_KEY on the
+// server, see docs/credentials.md). That key never reaches the browser: when
+// there is no key in local storage, calls go to /api/gemini and the server adds
+// its own. On a plain static server the probe 404s and nothing changes.
+const SERVER_KEY = 'held by the server';
+let serverHasKey = false;
+(async () => {
+  try {
+    const res = await fetch('/api/gemini');
+    if (res.ok && (await res.json()).configured) {
+      serverHasKey = true;
+      setState({});
+    }
+  } catch {
+    /* static server, or offline: the browser-side key is the only kind */
+  }
+})();
+
 // Model, instructions and limits come from the agent registry — see
 // config/agents.json and docs/tracks.md. Changing a model is a config change.
 let registry = null;
@@ -27,12 +45,18 @@ async function agentSpec(id) {
   return { ...spec, instructionText: instructions };
 }
 
-export function geminiKey() {
+function localKey() {
   try {
     return localStorage.getItem(KEY_STORE) ?? '';
   } catch {
     return '';
   }
+}
+
+// The browser's own key, or a marker when the server holds one. Every screen
+// uses this as "can a model be asked at all"; only callGemini reads the value.
+export function geminiKey() {
+  return localKey() || (serverHasKey ? SERVER_KEY : '');
 }
 
 function setKey(k) {
@@ -56,7 +80,8 @@ export function renderGeminiBox() {
     <textarea id="gemini-prompt" placeholder="Put a sugar on a scaffold and then trim it back off"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="btn small primary" id="gemini-go">Build me a candidate lane</button>
-      ${hasKey ? `<button class="btn small ghost" id="gemini-forget">Forget API key</button>` : `<input type="password" id="gemini-key" placeholder="Gemini API key (kept in this browser only)" style="flex:1;min-width:220px" />`}
+      ${localKey() ? `<button class="btn small ghost" id="gemini-forget">Forget API key</button>` : ''}
+      ${hasKey ? '' : `<input type="password" id="gemini-key" placeholder="Gemini API key (kept in this browser only)" style="flex:1;min-width:220px" />`}
     </div>
     <div class="gemini-status" id="gemini-status">${
       hasKey
@@ -274,17 +299,27 @@ async function callGemini(prompt, spec) {
   const started = performance.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), spec.limits.timeout_ms ?? 20000);
+  const key = localKey();
   let res;
   try {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': geminiKey() },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: spec.limits.max_output_tokens ?? 1024 },
-      }),
-      signal: controller.signal,
-    });
+    res = key
+      ? await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: spec.limits.max_output_tokens ?? 1024 },
+          }),
+          signal: controller.signal,
+        })
+      : // No key here: the server runs the same agent with its own key. It
+        // looks the model and limits up in the same registry, by this id.
+        await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ agent: spec.id, prompt }),
+          signal: controller.signal,
+        });
   } finally {
     clearTimeout(timer);
   }
@@ -292,7 +327,7 @@ async function callGemini(prompt, spec) {
   logEvent('agent.trace', { agent: spec.id, model: spec.model, latency_ms: Math.round(performance.now() - started), status: res.ok ? 'ok' : `http_${res.status}` });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';
+  const text = key ? (data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '') : (data?.text ?? '');
   if (!text) throw new Error('empty reply');
   return text;
 }

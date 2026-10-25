@@ -154,6 +154,17 @@ name I would take — and add an **A record** pointing at the Vultr instance's a
 the placeholder line at the top of the README. HackTX usually hands out a free `.tech` voucher at
 the sponsor table; worth asking before paying.
 
-**The Gemini key** is different from the three above: it is pasted into the browser on the bench
-screen and stays in that browser's local storage, so it never goes in `.env` and never reaches our
-server. Get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+**The Gemini key** can live in either of two places. Get one at
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+
+* *In the browser.* Pasted on the bench or picker screen, it stays in that browser's local storage
+  and calls go straight from the browser to Google. This is the default and needs nothing on the
+  server.
+* *On the server.* Set `GEMINI_API_KEY` in `.env` (or `/etc/nano-foundry.env` on the Vultr box) and
+  the API answers `GET /api/gemini` with `configured: true`, the key boxes disappear, and calls
+  go through `POST /api/gemini`, which runs the named agent from `config/agents.json` with the
+  server's key. The key is never sent to the browser. A visitor can only run a registered agent
+  with the registry's model, token cap and timeout. Mind that on a public site every visitor's
+  requests spend this key's quota; the free tier is rate-limited rather than billed.
+
+A browser key, when one is set, is used in preference to the server's.

@@ -702,8 +702,18 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .home.folded .home-stage { min-height: 0; }
 
 @media (max-width: 900px) {
-  .tabs { max-width: 100%; overflow-x: auto; margin-left: 0; }
-  .tab { flex: none; }
+  /* Five tabs do not fit one narrow row. They used to scroll sideways, which
+     hid the last two behind an edge with nothing to say they were there. They
+     wrap instead: a taller bar, and every screen visible. */
+  .tabs { max-width: 100%; flex-wrap: wrap; margin-left: 0; }
+  .tab { flex: none; padding: 8px 13px; font-size: 13px; }
+  /* Wrapped, the bar is two rows of tabs plus the brand and the limits button.
+     Stuck to the top that is a fifth of a phone screen held permanently, so on
+     a narrow screen it scrolls away with the page like anything else. Still
+     positioned, because the field behind the app is a fixed pseudo-element at
+     z-index 0 and a static header would paint underneath it. */
+  .topbar { position: relative; gap: 10px; padding: 10px 14px; }
+  .limits-button { margin-left: auto; }
   /* On a phone the story card becomes a sheet over the bottom of the stage,
      with the standing note under it so it stays on screen. */
   .home-stage { min-height: 300px; }
@@ -1030,6 +1040,37 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .pick-x { color: var(--ink-faint); font-size: 14px; }
 .pick-chip.group:hover .pick-x { color: var(--red); }
 .pick-dot { width: 9px; height: 9px; border-radius: 50%; background: hsl(var(--hue) 78% 62%); flex: none; }
+/* Every chip says what pressing it would leave. The number is how many
+   molecules the catalogue can still reach; a chip marked with the empty set
+   would leave none, and is drawn dashed in the warning colour rather than
+   greyed, because grey reads as "not yet" and this is "not at all". Armed is
+   the state between the first press, which explains, and the second, which
+   goes through anyway. Moot is every chip once the draft itself already
+   matches nothing: dimmed together, since the next press is not what closed
+   the door. */
+.pick-count {
+  font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink-faint);
+  background: var(--well); border-radius: 999px; padding: 1px 6px; margin-left: 1px;
+}
+.pick-chip.mode.on .pick-count { color: var(--on-accent); background: rgba(27, 18, 64, 0.16); }
+.pick-none { font-size: 12px; color: var(--red); margin-left: 1px; }
+.pick-chip.dead { border-style: dashed; border-color: var(--red); color: var(--ink-faint); }
+.pick-chip.dead .pick-dot { opacity: 0.45; }
+.pick-chip.dead:hover:not(:disabled) { border-color: var(--red); background: rgba(255, 133, 133, 0.1); }
+.pick-chip.armed {
+  border-style: solid; border-color: var(--red); color: var(--ink);
+  background: rgba(255, 133, 133, 0.16); font-weight: 600;
+}
+.pick-chip.moot { opacity: 0.5; }
+
+.pick-dare, .pick-stuck {
+  margin: 2px 0 0; font-size: 12.5px; line-height: 1.55; padding: 9px 11px;
+  border-radius: var(--radius-sm);
+}
+.pick-dare { color: var(--ink); background: rgba(255, 133, 133, 0.12); border: 1px solid var(--red); }
+.pick-stuck { color: var(--ink-dim); background: var(--panel-2); border: 1px dashed var(--edge-bright); }
+.pick-legend { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-faint); }
+
 .pick-reading { margin: 4px 0 0; font-size: 14px; line-height: 1.5; }
 .pick-origin { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
 .pick-go { justify-self: stretch; }

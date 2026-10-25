@@ -44,43 +44,102 @@ let suspect = 0;
     process.exit(2);
   }
 
-  const tabs = ['Vacuum','Collection','Workstation','The bench','Splice table'];
-  for (const t of tabs) {
-    await p.locator('header button, nav button').filter({ hasText: t }).first().click();
-    await p.waitForTimeout(700);
-    const txt = await p.locator('main, #screen, body').first().innerText();
-    const hits = txt.split('\n').filter(l => BAD.test(l));
-    if (hits.length) suspect++;
-    console.log(`${t}: ${hits.length ? 'SUSPECT → ' + JSON.stringify(hits.slice(0, 3)) : 'clean'}`);
+  // Tabs are read off the page, never listed here. A hardcoded list silently
+  // stopped matching when the screens were renamed, so this gate passed nothing
+  // and failed loudly only by luck — exactly the "looks like it ran" failure the
+  // exit codes below exist to prevent.
+  const tabs = await p.$$eval('#tabs button', (els) =>
+    els.map((e) => ({ label: e.textContent.trim(), screen: e.dataset.screen })).filter((t) => t.label),
+  );
+  if (!tabs.length) {
+    console.error('COULD NOT CHECK: no tabs found in #tabs — the page loaded but is not the app.');
+    await b.close();
+    process.exit(2);
   }
 
-  // The two panels that reach /api/sources, exercised rather than just rendered.
-  await p.locator('header button, nav button').filter({ hasText: 'Collection' }).first().click();
-  await p.waitForTimeout(500);
-  const src = p.locator('button', { hasText: /^Sources/ }).first();
-  if (await src.count()) {
-    await src.click(); await p.waitForTimeout(1500);
-    const d = await p.locator('#limits-dialog').innerText();
-    if (BAD.test(d)) suspect++;
-  console.log('card Sources:', BAD.test(d) ? 'SUSPECT → ' + d.slice(0,200) : 'clean');
-    await p.keyboard.press('Escape');
+  // A control that has moved or been renamed means this audit did not look at
+  // what it claims to look at. That is a "could not check", not a pass.
+  const missing = [];
+
+  for (const t of tabs) {
+    await p.locator(`#tabs button[data-screen="${t.screen}"]`).click();
+    await p.waitForTimeout(700);
+    const txt = await p.locator('main, #screen, body').first().innerText();
+    const hits = txt.split('\n').filter((l) => BAD.test(l));
+    if (hits.length) suspect++;
+    console.log(`${t.label}: ${hits.length ? 'SUSPECT → ' + JSON.stringify(hits.slice(0, 3)) : 'clean'}`);
   }
-  await p.locator('header button, nav button').filter({ hasText: 'Splice table' }).first().click();
-  await p.waitForTimeout(500);
-  const s = p.locator('#linker'); await s.fill(await s.getAttribute('min')); await s.dispatchEvent('input');
-  await p.waitForTimeout(300);
-  await p.locator('#explain-literature').click(); await p.waitForTimeout(1500);
-  const lit = await p.locator('.lit-panel').innerText();
-  if (BAD.test(lit)) suspect++;
-  console.log('literature panel:', BAD.test(lit) ? 'SUSPECT → ' + lit.slice(0,200) : 'clean');
-  await p.locator('#explain').click(); await p.waitForTimeout(1200);
-  const pe = await p.locator('#plain-english').innerText();
-  if (BAD.test(pe)) suspect++;
-  console.log('plain-English (no key):', BAD.test(pe) ? 'SUSPECT → ' + pe.slice(0,160) : 'clean');
+
+  const goTo = async (screen) => {
+    const tab = tabs.find((t) => t.screen === screen);
+    if (!tab) return false;
+    await p.locator(`#tabs button[data-screen="${screen}"]`).click();
+    await p.waitForTimeout(500);
+    return true;
+  };
+
+  // The panels that reach /api/sources, exercised rather than merely rendered.
+  if (await goTo('collection')) {
+    const src = p.locator('button', { hasText: /^Sources/ }).first();
+    if (await src.count()) {
+      await src.click();
+      await p.waitForTimeout(1500);
+      const d = await p.locator('#limits-dialog').innerText();
+      if (BAD.test(d)) suspect++;
+      console.log('card Sources:', BAD.test(d) ? 'SUSPECT → ' + d.slice(0, 200) : 'clean');
+      await p.keyboard.press('Escape');
+    } else {
+      missing.push('the Sources button on a collection card');
+    }
+  } else {
+    missing.push('the collection screen');
+  }
+
+  if (await goTo('splice')) {
+    const slider = p.locator('#linker');
+    if (await slider.count()) {
+      await slider.fill(await slider.getAttribute('min'));
+      await slider.dispatchEvent('input');
+      await p.waitForTimeout(300);
+    } else {
+      missing.push('the linker slider');
+    }
+
+    const litBtn = p.locator('#explain-literature');
+    if (await litBtn.count()) {
+      await litBtn.click();
+      await p.waitForTimeout(1500);
+      const lit = await p.locator('.lit-panel').innerText();
+      if (BAD.test(lit)) suspect++;
+      console.log('literature panel:', BAD.test(lit) ? 'SUSPECT → ' + lit.slice(0, 200) : 'clean');
+    } else {
+      missing.push('the "what does the literature say" button (is the verdict a rejection?)');
+    }
+
+    const explain = p.locator('#explain');
+    if (await explain.count()) {
+      await explain.click();
+      await p.waitForTimeout(1200);
+      const pe = await p.locator('#plain-english').innerText();
+      if (BAD.test(pe)) suspect++;
+      console.log('plain-English (no key):', BAD.test(pe) ? 'SUSPECT → ' + pe.slice(0, 160) : 'clean');
+    } else {
+      missing.push('the plain-English button');
+    }
+  } else {
+    missing.push('the splice screen');
+  }
+
   // 404s on /api/* are expected here and are the point of the exercise: what
   // matters is that none of them reached the page as text.
   console.log('CONSOLE ERRORS (404s on /api/* are expected):', errs.length ? errs.slice(0, 5) : 'none');
   await b.close();
+
+  if (missing.length) {
+    console.error(`\nCOULD NOT CHECK: this audit never reached ${missing.join(', ')}.`);
+    console.error('Whatever it did check says nothing about those. Update the selectors in this file.');
+    process.exit(2);
+  }
   console.log(suspect ? `\nFAILED: ${suspect} place(s) leaked server-side wording to the reader.` : '\nOK: nothing leaked server-side wording to the reader.');
   process.exit(suspect ? 1 : 0);
 })();
