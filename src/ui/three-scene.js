@@ -97,6 +97,30 @@ function glowTexture() {
   return tex;
 }
 
+// An out-of-focus clump: a few overlapping discs in two or three of the
+// palette's hues, blurred in the canvas so the sprite needs no shader work.
+const clumpTextures = [];
+function clumpTexture(i) {
+  if (clumpTextures[i]) return clumpTextures[i];
+  const c = document.createElement('canvas');
+  c.width = c.height = 160;
+  const g = c.getContext('2d');
+  const rnd = (k) => ((Math.sin(i * 31.7 + k * 17.3) * 43758.5453) % 1 + 1) % 1;
+  const hues = [[8, 78, 66], [178, 52, 44], [28, 86, 60], [340, 70, 62]];
+  g.filter = 'blur(9px)';
+  for (let k = 0; k < 6; k++) {
+    const [h, sat, l] = hues[(i + k) % hues.length];
+    g.fillStyle = `hsl(${h} ${sat}% ${l}%)`;
+    g.beginPath();
+    g.arc(52 + rnd(k) * 56, 52 + rnd(k + 9) * 56, 22 + rnd(k + 20) * 20, 0, Math.PI * 2);
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  clumpTextures[i] = tex;
+  return tex;
+}
+
 /* ---------- the cartoon look ---------- */
 
 // Three flat bands of light instead of a smooth falloff, so a body reads as a
@@ -104,7 +128,7 @@ function glowTexture() {
 let toonRamp = null;
 function toonGradient() {
   if (toonRamp) return toonRamp;
-  const data = new Uint8Array([70, 70, 70, 255, 90, 90, 90, 255, 225, 225, 225, 255, 255, 255, 255, 255]);
+  const data = new Uint8Array([96, 96, 96, 255, 118, 118, 118, 255, 220, 220, 220, 255, 255, 255, 255, 255]);
   toonRamp = new THREE.DataTexture(data, 4, 1, THREE.RGBAFormat);
   toonRamp.minFilter = THREE.LinearFilter;
   toonRamp.magFilter = THREE.LinearFilter;
@@ -257,6 +281,37 @@ function buildEnzyme(entry) {
   const lower = new THREE.Mesh(lowerShape.geo, lowerSkin);
   lower.position.y = -radius * 0.46;
 
+  // The clump: a spread of rounded bumps over the outside of each half, in
+  // three hues from the entry's own (its hue, a cooler opposite and a warmer
+  // neighbour), so the piece reads as a bundle of parts rather than two eggs.
+  // Where each bump sits is invented, as the note says.
+  const bumpHues = [hue, (hue + 0.47) % 1, (hue + 0.09) % 1];
+  const bumpSkins = bumpHues.map((h, i) => cartoonMaterial(flat(h, 0.68, i === 1 ? 0.5 : 0.6), { rimStrength: 0.5 }));
+  const bumps = (shape, outward, seedOffset) => {
+    const out = [];
+    for (let i = 0; i < 14; i++) {
+      const rnd = (k) => ((Math.sin((seed + seedOffset) * 12.9898 + (i * 4 + k) * 78.233) * 43758.5453) % 1 + 1) % 1;
+      const r1 = rnd(1);
+      const r2 = rnd(2);
+      const r3 = rnd(3);
+      // Anywhere on the half except the face that makes the cleft.
+      const lat = outward * (0.05 + r1 * 0.9);
+      const lon = r2 * Math.PI * 2;
+      const c = Math.sqrt(Math.max(0.05, 1 - lat * lat));
+      const n = new THREE.Vector3(Math.sin(lon) * c, lat, Math.cos(lon) * c).normalize();
+      if (n.x > 0.75) continue;
+      const size = radius * (0.22 + r3 * 0.2);
+      const geo = welded(new THREE.IcosahedronGeometry(size, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, bumpSkins[(i + Math.floor(r2 * 3)) % 3]);
+      mesh.position.copy(shape.surface(n, -size * 0.45));
+      out.push(mesh);
+    }
+    return out;
+  };
+  bumps(upperShape, 1, 0.11).forEach((m) => upper.add(m));
+  bumps(lowerShape, -1, 0.23).forEach((m) => lower.add(m));
+
   const jawTop = new THREE.Group();
   const jawBottom = new THREE.Group();
   jawTop.add(upper);
@@ -306,6 +361,28 @@ function buildEnzyme(entry) {
   halo.position.copy(ring.position);
   group.add(halo);
   group.userData.parts.siteHalo = halo;
+
+  // Two dotted orbits around the site, turning slowly: the reference frames
+  // mark "where it happens" with rings rather than an arrow.
+  const orbits = new THREE.Group();
+  orbits.position.copy(ring.position);
+  [1.05, 1.45].forEach((k, i) => {
+    const pts = [];
+    for (let a = 0; a < 40; a++) {
+      const t = (a / 40) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(t) * radius * k, Math.sin(t) * radius * k, 0));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const line = new THREE.Points(
+      geo,
+      new THREE.PointsMaterial({ color: siteColour, map: glowTexture(), size: radius * (0.09 - i * 0.02), transparent: true, opacity: 0.8 - i * 0.25, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    line.rotation.set(i ? 0.5 : -0.3, Math.PI / 2 + (i ? 0.4 : 0), 0);
+    line.userData.orbit = i ? -0.25 : 0.4;
+    orbits.add(line);
+  });
+  group.add(orbits);
+  group.userData.parts.orbits = orbits;
 
   group.userData.radius = radius;
   return group;
@@ -484,21 +561,21 @@ export function createFoundryScene(canvas) {
      sharp. They are flat discs of the glow texture tinted in muted versions
      of the palette, inside the fog, at low contrast — nothing a reader tracks. */
   const bokeh = new THREE.Group();
-  const bokehHues = [0.72, 0.58, 0.45, 0.62, 0.8];
   const bokehRand = (i, k) => ((Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
   for (let i = 0; i < 18; i++) {
     const near = i >= 14;
-    const colour = flat(bokehHues[i % bokehHues.length], 0.5, near ? 0.42 : 0.5);
     const disc = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: glowTexture(), color: colour, transparent: true, opacity: near ? 0.1 : 0.14, depthWrite: false }),
+      new THREE.SpriteMaterial({ map: clumpTexture(i % 4), transparent: true, opacity: near ? 0.12 : 0.22, depthWrite: false, fog: false }),
     );
     const spread = near ? 9 : 16;
+    // Pushed out of the middle so the subject sits in clear ground.
+    const side = bokehRand(i, 1) < 0.5 ? -1 : 1;
     disc.position.set(
-      (bokehRand(i, 1) - 0.5) * spread * 2,
-      (bokehRand(i, 2) - 0.5) * (near ? 7 : 9),
+      side * (spread * 0.45 + bokehRand(i, 5) * spread * 0.55),
+      (bokehRand(i, 2) - 0.5) * (near ? 9 : 11),
       near ? 5.5 + bokehRand(i, 3) * 2 : -9 - bokehRand(i, 3) * 14,
     );
-    disc.scale.setScalar(near ? 5 + bokehRand(i, 4) * 4 : 3 + bokehRand(i, 4) * 5);
+    disc.scale.setScalar(near ? 4 + bokehRand(i, 4) * 3 : 3 + bokehRand(i, 4) * 4);
     disc.userData.seed = i;
     bokeh.add(disc);
   }
@@ -843,6 +920,9 @@ export function createFoundryScene(canvas) {
     orbitTarget.el *= 1 - Math.min(1, dt * 0.35);
 
     dust.rotation.y += dt * 0.012;
+    stage.traverse((o) => {
+      if (o.userData.orbit) o.rotation.z += dt * o.userData.orbit;
+    });
     // The far clumps drift slower than anything in front of them.
     for (const disc of bokeh.children) {
       const s = disc.userData.seed;

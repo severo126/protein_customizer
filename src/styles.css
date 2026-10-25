@@ -43,8 +43,8 @@
   --radius: 18px;
   --radius-sm: 12px;
   --shadow-ink: #0c0f33;
-  --shadow-flat: 0 6px 0 var(--shadow-ink);
-  --shadow-flat-sm: 0 3px 0 var(--shadow-ink);
+  --shadow-flat: 0 8px 0 var(--shadow-ink);
+  --shadow-flat-sm: 0 4px 0 var(--shadow-ink);
   --shadow: var(--shadow-flat), 0 24px 48px -20px rgba(8, 6, 40, 0.7);
   --shadow-soft: 0 24px 48px -24px rgba(8, 6, 40, 0.8);
   font-synthesis: none;
@@ -135,6 +135,8 @@ h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -0.01em; font-weight: 
   padding-left: 13px; border-left: 4px solid var(--accent); border-radius: 2px;
 }
 .section-head h2 { font-size: 23px; }
+/* Panel titles in bold caps, the way the reference dashboards label a block. */
+.section-head h2, .family-header h3, .build-head h3, .palette h3 { text-transform: uppercase; letter-spacing: 0.06em; }
 .section-head p { margin: 0; color: var(--ink-faint); font-size: 13px; }
 
 .panel {
@@ -204,8 +206,10 @@ input[type="range"] { accent-color: var(--accent); }
 
 .window-bars { display: grid; gap: 5px; }
 .window-bar { display: grid; grid-template-columns: 54px 1fr; gap: 8px; align-items: center; font-size: 11px; color: var(--ink-faint); }
-.window-track { height: 9px; border-radius: 999px; background: var(--well); border: 1px solid var(--edge); position: relative; overflow: hidden; }
-.window-fill { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent-2), var(--green)); }
+.window-track { height: 11px; border-radius: 4px; background: var(--well); position: relative; overflow: hidden; box-shadow: inset 0 2px 0 var(--shadow-ink); }
+.window-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--accent-2); }
+/* Segments, so a window reads as a row of blocks rather than a smooth gauge. */
+.window-track::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 8px, var(--well) 8px 10px); pointer-events: none; }
 
 .transform-row { display: flex; align-items: center; gap: 8px; justify-content: center; padding: 6px 0; }
 .transform-arrow { color: var(--accent); font-weight: 700; }
