@@ -46,6 +46,11 @@ behind nginx and seeds the funnel history. Optional overrides: `VULTR_REGION` (d
 Dallas, closest to Austin), `VULTR_PLAN`, `VULTR_OS_ID`, `VULTR_LABEL`, and `REPO_REF` (the
 branch the box clones, default `main`).
 
+The repo is private, so the box needs a way to clone it: either make the repo public, or set
+`GITHUB_TOKEN` to a fine-grained personal access token with read-only Contents access to this repo
+(GitHub → Settings → Developer settings → Fine-grained tokens). It travels only in the instance's
+user data. The box clones `main` explicitly, whatever GitHub's default branch is.
+
 If `DATABASE_URL` and `SERPAPI_KEY` are set when you run it, they are written to
 `/etc/nano-foundry.env` on the instance (mode 0600, via its user data, never the repo). The app then
 uses your Tiger Cloud service instead of the box's local TimescaleDB, and the schema is applied to

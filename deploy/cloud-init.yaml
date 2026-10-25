@@ -50,21 +50,30 @@ write_files:
 runcmd:
   - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   - apt-get install -y nodejs
+  # The box's own TimescaleDB is only set up when no Tiger Cloud DATABASE_URL
+  # was passed in. Jammy ships PostgreSQL 14, so that is the extension build.
   - |
-    echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/timescaledb.list
-    curl -fsSL https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
-    apt-get update && apt-get install -y timescaledb-2-postgresql-16 || true
-  - timescaledb-tune --quiet --yes || true
-  - systemctl restart postgresql
-  - sudo -u postgres psql -c "CREATE USER foundry WITH PASSWORD 'foundry';" || true
-  - sudo -u postgres psql -c "CREATE DATABASE foundry OWNER foundry;" || true
-  - sudo -u postgres psql -d foundry -c "CREATE EXTENSION IF NOT EXISTS timescaledb;" || true
-  - git clone --branch __REPO_REF__ https://github.com/severo126/protein_customizer /opt/nano-foundry
+    if ! grep -q '^DATABASE_URL=' /etc/nano-foundry.env 2>/dev/null; then
+      echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/timescaledb.list
+      curl -fsSL https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
+      apt-get update && apt-get install -y timescaledb-2-postgresql-14 || true
+      timescaledb-tune --quiet --yes || true
+      systemctl restart postgresql
+      sudo -u postgres psql -c "CREATE USER foundry WITH PASSWORD 'foundry';" || true
+      sudo -u postgres psql -c "CREATE DATABASE foundry OWNER foundry;" || true
+      sudo -u postgres psql -d foundry -c "CREATE EXTENSION IF NOT EXISTS timescaledb;" || true
+    fi
+  # The repo is private, so bring-up.sh fills in a URL that carries a read-only
+  # token (GITHUB_TOKEN) when one is set. Without the code nothing below works.
+  - |
+    git clone --branch __REPO_REF__ __REPO_URL__ /opt/nano-foundry \
+      || { echo "CLONE FAILED - is the repo public, or GITHUB_TOKEN set?"; exit 1; }
   - cd /opt/nano-foundry && npm ci --omit=dev || npm install --omit=dev || true
-  - sudo -u postgres psql -d foundry -f /opt/nano-foundry/tools/api/schema.sql || true
   - |
     if grep -q '^DATABASE_URL=' /etc/nano-foundry.env 2>/dev/null; then
       psql "$(sed -n 's/^DATABASE_URL=//p' /etc/nano-foundry.env)" -f /opt/nano-foundry/tools/api/schema.sql || true
+    else
+      sudo -u postgres psql -d foundry -f /opt/nano-foundry/tools/api/schema.sql || true
     fi
   - ln -sf /etc/nginx/sites-available/nano-foundry /etc/nginx/sites-enabled/default
   - systemctl restart nginx
