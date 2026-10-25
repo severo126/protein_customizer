@@ -232,8 +232,8 @@ export function reactionScene(entry, molIn, { freeze = null, width = W } = {}) {
       ]),
     );
     donor = `<g style="${anim(`${id}-donor`)}" transform="translate(${DONOR.x} ${DONOR.y})">
-      <rect x="-74" y="-15" width="148" height="30" rx="15" fill="#20283c" stroke="#3d4560" stroke-width="2"/>
-      <text y="4.5" text-anchor="middle" font-size="12" fill="#cbd3e8">${escapeText(plan.cofactor)}</text>
+      <rect x="-96" y="-15" width="170" height="30" rx="15" fill="#0f1333" stroke="#4652a8" stroke-width="1.5"/>
+      <text x="-40" y="4.5" text-anchor="middle" font-size="12" fill="#eceefb">${escapeText(plan.cofactor)}</text>
     </g>`;
   }
 
@@ -293,7 +293,7 @@ export function reactionScene(entry, molIn, { freeze = null, width = W } = {}) {
   <div class="reaction-scene" id="${id}">
     <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
       aria-label="Stylised animation: ${escapeText(prettyCore(molIn.core))} meeting ${escapeText(entry.name)}. ${plan.ok ? 'The rule runs.' : 'The stage refuses it.'} Cartoon, not a trajectory.">
-      <line x1="0" y1="${TRACK_Y}" x2="${DOCK.x}" y2="${TRACK_Y}" stroke="#2a3044" stroke-width="2" stroke-dasharray="7 9"/>
+      <line x1="0" y1="${TRACK_Y}" x2="${DOCK.x}" y2="${TRACK_Y}" stroke="#333d82" stroke-width="2" stroke-dasharray="7 9"/>
       <g transform="${pieceTransform}">${enzymeBody(entry, { detail: true })}</g>
       ${donor}
       <g transform="translate(${DOCK.x} ${TRACK_Y})">
@@ -309,13 +309,13 @@ export function reactionScene(entry, molIn, { freeze = null, width = W } = {}) {
       ${flyer}
       <g style="${anim(`${id}-in`)}">${glyphAt(molIn, 74)}</g>
       ${plan.ok ? `<g style="${anim(`${id}-out`)}">${glyphAt(result.product, 74)}</g>` : ''}
-      <text x="18" y="22" font-size="11.5" fill="#727b94">in · ${escapeText(describe(molIn))}</text>
+      <text x="18" y="22" font-size="11.5" fill="#9298cf">in · ${escapeText(describe(molIn))}</text>
       ${
         plan.ok
-          ? `<text x="${W - 18}" y="22" text-anchor="end" font-size="11.5" fill="#727b94">out · ${escapeText(describe(result.product))}</text>`
+          ? `<text x="${W - 18}" y="22" text-anchor="end" font-size="11.5" fill="#9298cf">out · ${escapeText(describe(result.product))}</text>`
           : `<text x="${W - 18}" y="22" text-anchor="end" font-size="11.5" fill="#ff8f8f">no product · the stage stalls</text>`
       }
-      <rect x="18" y="${H - 12}" width="${W - 36}" height="5" rx="2.5" fill="#20283c"/>
+      <rect x="18" y="${H - 12}" width="${W - 36}" height="5" rx="2.5" fill="#0f1333"/>
       <rect x="18" y="${H - 12}" width="${W - 36}" height="5" rx="2.5" fill="#ffc65c"
         style="${anim(`${id}-bar`)};transform-origin:18px 0;transform-box:view-box"/>
     </svg>
