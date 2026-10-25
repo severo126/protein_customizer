@@ -14,6 +14,7 @@ import { createInterface } from 'node:readline';
 import { extname, join, normalize } from 'node:path';
 import { screenReferences } from './sourceFilter.mjs';
 import { searchQueries, searchWithFallback } from './sourceQuery.mjs';
+import { makeSpendGuard, clientAddress } from './spendGuard.mjs';
 
 const root = process.cwd();
 const port = Number(process.env.PORT ?? 5173);
@@ -200,6 +201,12 @@ async function viaCrossref(query) {
 // more than the registry allows, and the key itself is never sent back.
 const PROMPT_CAP = 40_000;
 let agentRegistry = null;
+// The key costs money and the box is public: a few calls a minute per visitor
+// and a daily allowance for the box, both overridable from the environment.
+const spendGuard = makeSpendGuard({
+  perMinute: Number(process.env.GEMINI_PER_MINUTE) || 10,
+  perDay: Number(process.env.GEMINI_PER_DAY) || 500,
+});
 
 async function registeredAgent(id) {
   if (!agentRegistry) agentRegistry = JSON.parse(await readFile(join(root, 'config', 'agents.json'), 'utf8'));
@@ -221,7 +228,12 @@ async function viaGemini({ agent, prompt }) {
     }),
     signal: AbortSignal.timeout(spec.limits?.timeout_ms ?? 20000),
   });
-  if (!out.ok) throw new Error(`Gemini HTTP ${out.status}`);
+  if (!out.ok) {
+    // Google's reason (wrong model, no free tier, quota) is what anyone
+    // debugging this needs, and the key is never part of it.
+    const reason = await out.json().then((d) => d?.error?.message).catch(() => '');
+    throw new Error(`Gemini HTTP ${out.status}${reason ? `: ${reason.slice(0, 300)}` : ''}`);
+  }
   const data = await out.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';
   if (!text) throw new Error('empty reply');
@@ -303,6 +315,8 @@ createServer(async (req, res) => {
     if (req.method === 'GET') return json(res, 200, { configured });
     if (req.method !== 'POST') return json(res, 405, { error: 'POST a prompt, or GET the status' });
     if (!configured) return json(res, 404, { configured, error: 'no server-side Gemini key' });
+    const allowed = spendGuard.check(clientAddress(req));
+    if (!allowed.ok) return json(res, allowed.status, { configured, error: allowed.error });
     try {
       return json(res, 200, { configured, ...(await viaGemini(await body(req))) });
     } catch (err) {

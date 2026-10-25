@@ -165,6 +165,10 @@ the sponsor table; worth asking before paying.
   go through `POST /api/gemini`, which runs the named agent from `config/agents.json` with the
   server's key. The key is never sent to the browser. A visitor can only run a registered agent
   with the registry's model, token cap and timeout. Mind that on a public site every visitor's
-  requests spend this key's quota; the free tier is rate-limited rather than billed.
+  requests spend this key's quota, and a prepaid key spends real money. The route therefore refuses
+  past a few calls a minute per visitor and a daily allowance for the box (defaults 10 and 500;
+  `GEMINI_PER_MINUTE` and `GEMINI_PER_DAY` in the same env file change them). Counters are in
+  memory, so a restart clears them. nginx passes the visitor's address in `X-Forwarded-For`, which
+  is what the per-visitor count keys on; without that header every visitor counts as one.
 
 A browser key, when one is set, is used in preference to the server's.
