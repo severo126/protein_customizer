@@ -19,7 +19,7 @@
   /* ink */
   --ink: #eceefb;
   --ink-dim: #a7add8;
-  --ink-faint: #7a82b8;
+  --ink-faint: #9298cf;
   --on-accent: #1b1240;     /* indigo text on the warm accent, not black */
   /* the palette: one warm accent for "this is happening now", and a small set
      of flat, saturated hues for everything that needs its own colour */
@@ -129,6 +129,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -0.01em; font-weight: 
 .screen { padding: 22px 20px 80px; max-width: 1400px; margin: 0 auto; }
 
 /* ---------- generic bits ---------- */
+small { font-size: 11px; }
 
 .section-head {
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
@@ -214,7 +215,7 @@ input[type="range"] { accent-color: var(--accent); }
 .transform-row { display: flex; align-items: center; gap: 8px; justify-content: center; padding: 6px 0; }
 .transform-arrow { color: var(--accent); font-weight: 700; }
 
-.cartoon-label { font-size: 10px; color: var(--ink-faint); text-align: center; letter-spacing: 0.04em; text-transform: uppercase; }
+.cartoon-label { font-size: 11px; color: var(--ink-faint); text-align: center; letter-spacing: 0.04em; text-transform: uppercase; }
 
 .nf-enzyme, .nf-molecule { overflow: visible; transition: transform 0.16s ease; }
 .enzyme-card:hover .nf-enzyme, .palette-item:hover .nf-enzyme { transform: translateY(-2px) scale(1.04); }
@@ -240,7 +241,7 @@ input[type="range"] { accent-color: var(--accent); }
 .palette-toggle input { accent-color: var(--accent); width: 15px; height: 15px; }
 
 .fit-badge {
-  justify-self: start; font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
+  justify-self: start; font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
   text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid;
 }
 .fit-badge.fits { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, var(--panel)); background: color-mix(in srgb, var(--green) 12%, var(--panel)); }
@@ -262,7 +263,7 @@ input[type="range"] { accent-color: var(--accent); }
 .palette { padding: 13px; display: grid; gap: 11px; max-height: 82vh; overflow: auto; align-content: start; }
 .palette h3 { font-size: 15px; }
 .palette-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.palette-head .chip { margin-left: auto; font-size: 10.5px; }
+.palette-head .chip { margin-left: auto; font-size: 11px; }
 .palette-note { font-size: 11.5px; color: var(--ink-faint); line-height: 1.45; }
 
 .palette-bucket { display: grid; gap: 7px; }
@@ -285,7 +286,7 @@ input[type="range"] { accent-color: var(--accent); }
 .bucket-dot.blocked { background: color-mix(in srgb, var(--red) 45%, var(--panel)); }
 .palette-list { display: grid; gap: 6px; }
 .palette-family {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em;
   color: var(--ink-faint); padding: 4px 2px 0;
 }
 
@@ -330,7 +331,7 @@ input[type="range"] { accent-color: var(--accent); }
 .stage-card.mismatch { border-color: var(--red); box-shadow: 0 5px 0 color-mix(in srgb, var(--red) 45%, var(--shadow-ink)); }
 .stage-card.unreached { opacity: 0.45; }
 .stage-card h5 { margin: 0; font-size: 13.5px; }
-.stage-card .stage-index { font-size: 10.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.stage-card .stage-index { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
 .stage-card .did { font-size: 11.5px; color: var(--green); }
 .stage-card .stall { font-size: 11.5px; color: var(--red); }
 
@@ -569,7 +570,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .home-label span { display: block; line-height: 1.35; }
 .home-scene-note {
   position: absolute; left: clamp(12px, 3vw, 40px); bottom: 14px; width: min(400px, 40vw);
-  font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.02em;
+  font-size: 11px; color: var(--ink-faint); letter-spacing: 0.02em;
   text-transform: uppercase; line-height: 1.5;
 }
 .home-caption { position: absolute; left: 6%; top: 0; bottom: 56px; width: min(440px, 40vw);
@@ -651,7 +652,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   .home-card p { font-size: 12.5px; }
   .home-card .regions { display: none; }
   .hero-title { font-size: 34px; }
-  .home-scene-note { left: 10px; right: 10px; bottom: 6px; width: auto; font-size: 9px; }
+  .home-scene-note { left: 10px; right: 10px; bottom: 6px; width: auto; font-size: 10px; }
   .home-label span { display: none; }
   .home-label { width: auto; max-width: 150px; }
   .home-fallback { padding: 12px; }
@@ -680,7 +681,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .home-dial { display: grid; gap: 4px; min-width: 240px; flex: 1 1 260px; }
 .home-dial-head { display: flex; align-items: baseline; gap: 8px; }
 .home-dial-head strong { font-size: 16px; font-variant-numeric: tabular-nums; }
-.home-dial-span { font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.04em; }
+.home-dial-span { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
 .home-dial input[type='range'] {
   width: 100%;
   accent-color: hsl(calc(28 - max(var(--warmth, 0), 0) * 28) 90% 58%);
