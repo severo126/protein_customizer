@@ -1,4 +1,19 @@
-// The home screen: the bench, played inside the vacuum.
+// Step three of the flow: the chosen chain, played inside the vacuum.
+//
+// The molecule-first flow lives on this screen. `renderHome` dispatches on
+// state.homeStep — 'ask' is the picker, 'routes' is the grid of chains the
+// search found, and 'run' is this file's own stage. The bench and the
+// workstation no longer have tabs; they are reachable from the controls here,
+// and both still render exactly as they did, so the one-press chain run and
+// the mid-run refusal that the pitch is built around are unchanged.
+//
+// What is new in the playing itself: the pace and the wobble come from
+// src/ui/route-playback.js, which reads them off the activity curve in
+// src/model/activity.js per stage rather than averaging the lane. Held cold
+// every stage slows; held past one enzyme's stated window that stage alone
+// plays slow and unsteady and the enzyme is named. And where the group one
+// stage frees is the group the next stage needs, the handoff is labelled as
+// one, read off the two rules rather than asserted.
 //
 // It shows the lane the bench holds — the same `state.lane` and starter — and
 // one press of Play runs the whole thing: the first enzyme acts on the
@@ -13,13 +28,18 @@
 // cartoons. When WebGL is missing, the same chain plays as the flat cartoon.
 
 import { runPipeline } from '../model/pipeline.js';
-import { starter, groupMeta, prettyCore, describe } from '../model/molecules.js';
+import { starter, groupMeta, prettyCore, describe, STARTERS } from '../model/molecules.js';
 import { buildStructure, formulaTally } from '../model/structure.js';
 import { reactionScene, REACTION_NOTE } from './reaction.js';
 import { escapeText } from './cartoon.js';
 import { state, setState, laneEntries } from './app.js';
 import { RUN_LENGTHS, DEFAULT_RUN } from '../model/activity.js';
 import { laneClimate, climateFor, climateLine, tempRange, bestTemp, CLIMATE_NOTE, CLIMATE_DISCLAIMER } from './climate.js';
+import { renderPicker } from './picker-view.js';
+import { renderRoutes } from './route-grid.js';
+import { laneTimeline, timelineHeadline, PLAYBACK_NOTE, STAGE_MS } from './route-playback.js';
+import { describeTarget, coreLabel } from '../model/routes.js';
+import { article } from '../model/behaviours.js';
 
 // How long one stage takes to play, in seconds.
 const STAGE_SECONDS = 5.5;
@@ -31,12 +51,22 @@ const IDLE_AT = 0.2;
 let mounted = null;
 let mountedTimer = null;
 
+// The 3D module, kept after the first successful load. Importing it on every
+// mount made each remount asynchronous, which is the other half of the lost-run
+// race: a Play click arriving while a lane change was remounting landed on the
+// instance being torn down. Only the very first mount in a session awaits
+// anything now; every remount after it is synchronous.
+let sceneModule = null;
+let sceneModuleFailed = false;
+
 function verb(entry) {
   const a = entry.action;
   const g = groupMeta(a.group).label;
-  if (a.op === 'add') return `puts a ${g} on`;
-  if (a.op === 'remove') return `takes a ${g} off`;
-  if (a.op === 'join') return `joins groups into a ${g}`;
+  // article() rather than a bare "a", because the group labels include acyl and
+  // amine and "a acyl" is the kind of thing a judge reads out loud.
+  if (a.op === 'add') return `puts ${article(g)} on`;
+  if (a.op === 'remove') return `takes ${article(g)} off`;
+  if (a.op === 'join') return `joins groups into ${article(g)}`;
   return 'rearranges the skeleton';
 }
 
@@ -62,7 +92,7 @@ function regionLine(entry) {
     .join(' · ')}</p>`;
 }
 
-function caption(stage, run) {
+function caption(stage, run, beat = null) {
   const { entry, molIn, result } = stage;
   const cof = entry.cofactor && entry.cofactor !== 'none' ? ` Helper: ${escapeText(entry.cofactor)}.` : '';
   const head = `<div class="beat-step">Stage ${stage.index + 1} of ${run.stages.length} · ${escapeText(entry.name)}</div>
@@ -70,13 +100,51 @@ function caption(stage, run) {
   if (!result.ok) {
     return `${head}
       ${regionLine(entry)}
-      <p class="refused">${escapeText(result.stallReason)}</p>`;
+      <p class="refused">${escapeText(result.stallReason)}</p>
+      ${beat && (beat.pastWindow || beat.underWindow) ? `<p class="home-thermal-line ${beat.pastWindow ? 'over' : 'under'}">${escapeText(beat.note)}</p>` : ''}`;
   }
   const tally = formulaTally(buildStructure(result.product));
   return `${head}
     ${regionLine(entry)}
     <p>In: ${escapeText(describe(molIn))}. Out: ${escapeText(describe(result.product))}.${cof}</p>
-    <p class="tally">Drawn as ${escapeText(tally)}.</p>`;
+    <p class="tally">Drawn as ${escapeText(tally)}.</p>
+    ${beat ? beatLines(beat) : ''}`;
+}
+
+// What the timeline knows about this stage that the pipeline result does not:
+// which group is moving, whether the next enzyme is waiting for it, and where
+// the dial has put this enzyme against its own stated window.
+function beatLines(beat) {
+  const out = [`<p class="home-change">${escapeText(beat.change.label)}.</p>`];
+  if (beat.handoff) {
+    out.push(`<p class="home-handoff"><strong>Handed on:</strong> ${escapeText(beat.handoff.label)}.</p>`);
+  }
+  if (beat.pastWindow || beat.underWindow) {
+    out.push(`<p class="home-thermal-line ${beat.pastWindow ? 'over' : 'under'}">${escapeText(beat.note)}</p>`);
+  }
+  return out.join('');
+}
+
+// The line above the stage: what was asked for and which chain is playing.
+// Present only when the lane came from the route search; a lane edited on the
+// bench or loaded from a demo has no target behind it, and says so by omission
+// rather than by inventing one.
+function flowHead() {
+  if (!state.target) {
+    return `<div class="home-flow-head">
+      <button class="btn small ghost" data-step="ask">Ask for a molecule</button>
+      <p class="home-flow-note">This lane was put together by hand rather than found by the search.</p>
+    </div>`;
+  }
+  const result = state.routeResult;
+  const route = (result?.routes ?? []).find((r) => r.id === state.chosenRoute);
+  return `<div class="home-flow-head">
+    <button class="btn small ghost" data-step="routes">‹ Back to the routes</button>
+    <p class="home-flow-target">Making <strong>${escapeText(describeTarget(state.target))}</strong>${
+      route ? ` · ${route.stages.length} stage${route.stages.length === 1 ? '' : 's'} from ${escapeText(coreLabel(route.molecules[0].core))}` : ''
+    }</p>
+    <button class="btn small ghost" data-step="ask">Change the molecule</button>
+  </div>`;
 }
 
 function controls(run, entries) {
@@ -100,8 +168,10 @@ function controls(run, entries) {
       ${(state.demo?.routes ?? [])
         .map((r) => `<button class="btn small ghost" data-demo="${r.id}">${escapeText(r.title)}</button>`)
         .join('')}
-      <button class="btn small" data-go="bench">Edit on the bench</button>
+      <button class="btn small" data-go="bench">Edit the lane on the bench</button>
+      <button class="btn small" data-go="workstation">Look the catalogue up by behaviour</button>
     </div>
+    <p class="home-playback-note">${escapeText(PLAYBACK_NOTE)}</p>
   </div>`;
 }
 
@@ -137,14 +207,19 @@ function climateRow(entries, runId, temp) {
     <button class="btn small ghost" data-best ${entries.length ? '' : 'disabled'}>Best point</button>
     <div class="home-pcts" data-pcts>${chips}</div>
     <p class="home-climate-line" data-climate-line></p>
+    <p class="home-timeline-line" data-timeline-line></p>
   </div>`;
 }
 
+// molecules.js owns the list; this only needs id and label. Built once at
+// module load rather than awaited on every render: the await used to make the
+// remount after a lane change asynchronous, so a Play click arriving during it
+// landed on the instance being torn down and the run was silently lost.
+const STARTERS_CACHE = STARTERS.map((s) => ({ id: s.id, label: s.label }));
+
 function STARTER_OPTIONS() {
-  // molecules.js owns the list; this only needs id and label.
   return STARTERS_CACHE;
 }
-let STARTERS_CACHE = [];
 
 export function unmountHome() {
   if (!mounted) return;
@@ -155,7 +230,7 @@ export function unmountHome() {
 
 /* ---------- labels, drawn over the canvas with leader lines ---------- */
 
-function labelSet(stage, t, sub, scene) {
+function labelSet(stage, t, sub, scene, beat = null) {
   const anchors = scene.labelAnchors();
   const a = stage.entry.action;
   const g = groupMeta(a.group).label;
@@ -180,19 +255,35 @@ function labelSet(stage, t, sub, scene) {
     if (an.id === 'site' && t >= 0.44 && t < 0.86) out.push(an);
   }
   if (sub.flyer?.visible) {
+    // When the group this stage frees is the one the next stage needs, say so
+    // on the group itself. That pairing is read off the two catalogue rules by
+    // route-playback.js, so the label cannot claim a handoff that is not there.
+    const handoffGroup = beat?.handoff ? groupMeta(beat.handoff.group).label : null;
     out.push({
       id: 'flyer',
-      text: a.op === 'add' ? `${g} going on` : `${g} coming off`,
-      detail: a.op === 'add' ? 'Handed over and fixed to the molecule.' : 'Cut free and released into the vacuum.',
+      text: a.op === 'add' ? `${g} going on` : handoffGroup ? `${g} off — the next enzyme wants it` : `${g} coming off`,
+      detail: a.op === 'add'
+        ? 'Handed over and fixed to the molecule.'
+        : beat?.handoff
+          ? `${beat.handoff.label}.`
+          : 'Cut free and released into the vacuum.',
       object: sub.flyer,
       hot: true,
     });
   }
-  if (stage.result.ok && sub.product?.visible) {
+  // The product mesh becomes visible while it is still sitting in the cleft, so
+  // offering its label then puts it on the same anchor as the active-site label
+  // and the two cards overlap. 0.86 is where the site label stops, above, so
+  // the two hand over at one boundary rather than sharing the anchor.
+  if (stage.result.ok && sub.product?.visible && t >= 0.86) {
     out.push({
       id: 'product',
       text: `Product · ${prettyCore(stage.result.product.core)}`,
-      detail: stage.last ? describe(stage.result.product) : 'On its way to the next enzyme.',
+      detail: stage.last
+        ? describe(stage.result.product)
+        : beat?.handoff
+          ? `${beat.handoff.label}.`
+          : 'On its way to the next enzyme.',
       object: sub.product,
     });
   }
@@ -208,7 +299,7 @@ function labelSet(stage, t, sub, scene) {
   return out;
 }
 
-function drawLabels(stage, t) {
+function drawLabels(stage, t, beat = null) {
   const { scene, root } = mounted;
   const sub = scene.subject;
   const layer = root.querySelector('.home-labels');
@@ -222,7 +313,7 @@ function drawLabels(stage, t) {
   const placed = [];
   const minX = w > 900 ? Math.min(470, w * 0.33) : 8;
 
-  for (const an of labelSet(stage, t, sub, scene)) {
+  for (const an of labelSet(stage, t, sub, scene, beat)) {
     const p = scene.project(an.object);
     // Offstage anchors (a molecule parked outside the frame) would leave a
     // label on the edge with its leader running off the canvas.
@@ -264,21 +355,34 @@ function drawLabels(stage, t) {
   // Anything past the cap is not placed this frame, so it must not stay shown
   // at the position it held in the last one.
   for (const dropped of placed.splice(3)) seen.delete(dropped.el.dataset.label);
-  for (let i = 0; i < placed.length; i++) {
-    const m = placed[i];
-    m.ly = Math.max(16, m.ly);
-    for (let j = 0; j < i; j++) {
-      const n = placed[j];
+  // Measure, clamp, then separate — in that order. Separating first and
+  // clamping after put a card that had just been pushed down back up into the
+  // one above it, which is how two callouts ended up sharing a line for a
+  // frame or two at the boundary where one anchor stops and the next starts.
+  for (const m of placed) {
+    m.hgt = m.el.offsetHeight || m.hgt;
+    m.floor = Math.max(8, h - m.hgt - 12);
+    m.ly = Math.min(Math.max(16, m.ly), m.floor);
+  }
+  const kept = [];
+  for (const m of placed) {
+    for (const n of kept) {
       if (Math.abs(n.lx - m.lx) < 205 && m.ly < n.ly + n.hgt + 8) m.ly = n.ly + n.hgt + 8;
     }
+    // No room left below without hanging past the bottom edge, which the
+    // stage's overflow:hidden would cut in half. Drop the card for this frame
+    // rather than stacking it on the one above: a callout nobody can read is
+    // worse than one callout fewer.
+    if (m.ly > m.floor) {
+      seen.delete(m.el.dataset.label);
+      continue;
+    }
+    kept.push(m);
   }
+
   let lines = '';
-  for (const m of placed) {
-    // Measure rather than trust the cached height, and keep the whole card
-    // inside the stage: it has overflow:hidden, so a card hanging past the
-    // bottom edge is cut in half against the controls below it.
-    const hgt = m.el.offsetHeight || m.hgt;
-    const ly = Math.min(Math.max(8, m.ly), Math.max(8, h - hgt - 12));
+  for (const m of kept) {
+    const ly = m.ly;
     m.el.style.transform = `translate(${m.lx}px, ${ly}px)`;
     const ex = m.left ? m.lx + 200 : m.lx;
     lines += `<line x1="${m.p.x.toFixed(1)}" y1="${m.p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${(ly + 16).toFixed(1)}"/>
@@ -293,16 +397,29 @@ function drawLabels(stage, t) {
 
 /* ---------- the screen ---------- */
 
-export async function renderHome(root) {
+// The flow's router. Only the run step owns a WebGL scene, so the other two
+// unmount it rather than leaving a canvas running behind a different screen.
+export function renderHome(root) {
+  if (state.homeStep === 'ask') {
+    unmountHome();
+    renderPicker(root);
+    return undefined;
+  }
+  if (state.homeStep === 'routes') {
+    unmountHome();
+    renderRoutes(root);
+    return undefined;
+  }
+  return renderRun(root);
+}
+
+async function renderRun(root) {
   const entries = laneEntries();
   const signature = `${state.starterId}|${state.lane.join(',')}`;
   if (mounted && mounted.signature === signature && root.contains(mounted.root)) return;
   const wasPlaying = mounted?.playing;
   unmountHome();
   document.body.classList.add('home-mode');
-
-  const { STARTERS } = await import('../model/molecules.js');
-  STARTERS_CACHE = STARTERS.map((s) => ({ id: s.id, label: s.label }));
 
   const run = runPipeline(starter(state.starterId), entries);
   const stages = playable(run);
@@ -329,6 +446,7 @@ export async function renderHome(root) {
       <div class="home-progress"><div class="home-progress-bar"></div></div>
       <div class="home-scene-note" role="note"></div>
     </div>
+    ${flowHead()}
     ${controls(run, entries)}
   </div>`;
 
@@ -349,16 +467,25 @@ export async function renderHome(root) {
   setTop();
 
   let scene = null;
-  try {
-    const mod = await import('./three-scene.js');
-    const made = mod.createFoundryScene(canvas);
-    if (made.ok) {
-      scene = made;
-      note.textContent = mod.SCENE_NOTE;
-      note.title = `${mod.SCENE_NOTE_LONG} ${REACTION_NOTE}`;
+  if (!sceneModule && !sceneModuleFailed) {
+    try {
+      sceneModule = await import('./three-scene.js');
+    } catch (err) {
+      sceneModuleFailed = true;
+      console.warn('3D scene unavailable, falling back to the flat cartoon', err);
     }
-  } catch (err) {
-    console.warn('3D scene unavailable, falling back to the flat cartoon', err);
+  }
+  if (sceneModule) {
+    try {
+      const made = sceneModule.createFoundryScene(canvas);
+      if (made.ok) {
+        scene = made;
+        note.textContent = sceneModule.SCENE_NOTE;
+        note.title = `${sceneModule.SCENE_NOTE_LONG} ${REACTION_NOTE}`;
+      }
+    } catch (err) {
+      console.warn('3D scene could not be created, falling back to the flat cartoon', err);
+    }
   }
   if (!root.contains(homeEl)) {
     scene?.dispose();
@@ -377,6 +504,19 @@ export async function renderHome(root) {
   let playing = false;
   let current = -1;
 
+  // The timeline route-playback.js computes from the activity curve: how long
+  // each stage takes at this temperature and run length, how hard it wobbles,
+  // and where a group one stage frees is the group the next one needs. Rebuilt
+  // when the dial moves, so turning the heat up slows the stage being watched
+  // mid-run rather than at the next stage boundary.
+  let timeline = laneTimeline(entries, run, { temp: state.temp, runId: state.runId });
+  const rebuildTimeline = () => {
+    timeline = laneTimeline(entries, run, { temp: state.temp, runId: state.runId });
+    const head = homeEl.querySelector('[data-timeline-line]');
+    if (head) head.textContent = stages.length ? timelineHeadline(timeline) : '';
+    return timeline;
+  };
+
   const empty = () => {
     captionEl.innerHTML = `<div class="home-card">
       <p class="hero-sub">Load a route below, then press Play.</p>
@@ -387,7 +527,7 @@ export async function renderHome(root) {
     const stage = stages[i];
     if (!stage) return;
     current = i;
-    captionEl.innerHTML = `<div class="home-card">${caption(stage, run)}</div>`;
+    captionEl.innerHTML = `<div class="home-card">${caption(stage, run, timeline.stages[i])}</div>`;
     if (scene) {
       const prev = stages[i - 1];
       scene.setSubject(stage.entry, stage.molIn, stage.result, {
@@ -440,17 +580,26 @@ export async function renderHome(root) {
   // crawls, and nothing about that is a failure. Read fresh every frame so the
   // dial takes effect mid-run.
   function applyClimate() {
-    const stage = stages[Math.min(stages.length - 1, Math.max(0, Math.floor(at)))];
+    const i = Math.min(stages.length - 1, Math.max(0, Math.floor(at)));
+    const stage = stages[i];
     const c = laneClimate(entries, state.temp, state.runId, stage?.entry ?? null);
+    // The wobble is this stage's own, from its own stated window, so one
+    // enzyme being held past its edge shakes while the others do not.
+    const own = timeline.stages[i];
     homeEl.style.setProperty('--warmth', c.warmth.toFixed(3));
-    scene?.setClimate({ warmth: c.warmth, agitation: c.agitation });
+    homeEl.style.setProperty('--agitation', String(own?.agitation ?? c.agitation));
+    scene?.setClimate({ warmth: c.warmth, agitation: own?.agitation ?? c.agitation });
     return c;
   }
 
   function tick(dt) {
-    const c = applyClimate();
+    applyClimate();
     if (!playing) return;
-    at = Math.min(stages.length, at + (dt * c.pace) / STAGE_SECONDS);
+    // Each stage runs on its own clock, because the stage on screen is the one
+    // being held hot or cold and averaging the lane would hide exactly that.
+    const here = Math.min(stages.length - 1, Math.max(0, Math.floor(at)));
+    const seconds = (timeline.stages[here]?.durationMs ?? STAGE_MS) / 1000;
+    at = Math.min(stages.length, at + dt / Math.max(0.2, seconds));
     const i = Math.min(stages.length - 1, Math.floor(at));
     if (i !== current) showStage(i);
     const t = Math.min(1, at - i);
@@ -483,7 +632,7 @@ export async function renderHome(root) {
       lastNow = now;
       tick(dt);
       const i = Math.min(stages.length - 1, Math.floor(at));
-      if (stages[i]) drawLabels(stages[i], Math.min(1, at - i));
+      if (stages[i]) drawLabels(stages[i], Math.min(1, at - i), timeline.stages[i]);
     });
   } else {
     // No WebGL: step the flat cartoon through the same chain on a timer.
@@ -525,6 +674,11 @@ export async function renderHome(root) {
       else play();
       return;
     }
+    const step = e.target.closest('[data-step]');
+    if (step) {
+      setState({ homeStep: step.dataset.step });
+      return;
+    }
     const go = e.target.closest('[data-go]');
     if (go) {
       setState({ screen: go.dataset.go });
@@ -559,6 +713,9 @@ export async function renderHome(root) {
     const stage = stages[Math.min(stages.length - 1, Math.max(0, Math.floor(at)))];
     const line = homeEl.querySelector('[data-climate-line]');
     if (line) line.textContent = climateLine(stage, state.temp, state.runId);
+    // The dial changes how long every stage takes, so the timeline is rebuilt
+    // before anything is drawn from it.
+    rebuildTimeline();
     applyClimate();
   }
 

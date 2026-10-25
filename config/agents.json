@@ -4,8 +4,19 @@
   "defaults": {
     "trace": true,
     "trace_sink": "data/traces",
-    "redact": ["api_key", "authorization"],
-    "refuse_fields": ["sequence", "fasta", "codon", "oligo", "primer", "aa_seq", "nt_seq"]
+    "redact": [
+      "api_key",
+      "authorization"
+    ],
+    "refuse_fields": [
+      "sequence",
+      "fasta",
+      "codon",
+      "oligo",
+      "primer",
+      "aa_seq",
+      "nt_seq"
+    ]
   },
   "tools": {
     "catalogue.list": {
@@ -37,6 +48,16 @@
       "kind": "sink",
       "impl": "nano_foundry.tools:write_event",
       "description": "Append a time-series row to the event store (Timescale hypertable, or the JSONL buffer when no database is configured)."
+    },
+    "routes.search": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.routes:search_routes",
+      "description": "Search the fixed catalogue for every chain of enzymes that makes a named molecule, breadth-first over molecules from each starting molecule in turn. This is what decides which routes exist — not the model. It also decides that none exists, and reports how far it got, which is why the walk is exhaustive within its stage limit rather than budget-limited."
+    },
+    "routes.measure": {
+      "kind": "deterministic",
+      "impl": "nano_foundry.routes:route_metrics",
+      "description": "Measure one route against committed catalogue fields: stage count, distinct cofactor pools plus host needs, and the arithmetic intersection of the stated temperature and pH windows. Every number the adviser is allowed to quote comes from here."
     }
   },
   "agents": [
@@ -45,7 +66,10 @@
       "title": "Pipeline builder",
       "job": "Turn a sentence of English into a candidate lane of catalogue enzymes.",
       "model": "gemini-2.5-flash",
-      "tools": ["catalogue.list", "lane.validate"],
+      "tools": [
+        "catalogue.list",
+        "lane.validate"
+      ],
       "instructions": "config/instructions/pipeline-builder.md",
       "limits": {
         "max_output_tokens": 1024,
@@ -63,7 +87,9 @@
       "title": "Rejection explainer",
       "job": "Put a deterministic filter verdict into plain English for a student.",
       "model": "gemini-2.5-flash",
-      "tools": ["filters.explain"],
+      "tools": [
+        "filters.explain"
+      ],
       "instructions": "config/instructions/rejection-explainer.md",
       "limits": {
         "max_output_tokens": 400,
@@ -80,7 +106,10 @@
       "title": "Literature explainer",
       "job": "Read references retrieved about the failure mode a filter already named, and say what they report.",
       "model": "gemini-2.5-flash",
-      "tools": ["filters.explain", "sources.search"],
+      "tools": [
+        "filters.explain",
+        "sources.search"
+      ],
       "instructions": "config/instructions/literature-explainer.md",
       "limits": {
         "max_output_tokens": 600,
@@ -94,11 +123,55 @@
       ]
     },
     {
+      "id": "target-parser",
+      "title": "Target parser",
+      "job": "Read a sentence of English and work out which molecule the person wants to make.",
+      "model": "gemini-2.5-flash",
+      "tools": [
+        "catalogue.list"
+      ],
+      "instructions": "config/instructions/target-parser.md",
+      "limits": {
+        "max_output_tokens": 400,
+        "timeout_ms": 15000,
+        "retries": 1
+      },
+      "guarantees": [
+        "Every skeleton and group it names is checked against the catalogue's own derived vocabulary and rejected if it is not there.",
+        "It is forbidden to name an enzyme, and any sentence it returns that names one is discarded before it reaches the screen, because which enzymes could make a molecule is routes.search's answer and not the model's.",
+        "If it is unavailable the screen falls back to a deterministic keyword match over the same vocabulary, so the picker works with no key at all."
+      ]
+    },
+    {
+      "id": "route-adviser",
+      "title": "Route adviser",
+      "job": "Read the measurements of the routes the search already found and say which one suits what the person asked to optimise for.",
+      "model": "gemini-2.5-flash",
+      "tools": [
+        "routes.measure"
+      ],
+      "instructions": "config/instructions/route-adviser.md",
+      "limits": {
+        "max_output_tokens": 500,
+        "timeout_ms": 20000,
+        "retries": 0
+      },
+      "guarantees": [
+        "It chooses from the routes the deterministic search returned; a route id it invents is discarded.",
+        "Every number it is shown was computed by routes.measure from committed catalogue fields, and it is given nothing else to draw a figure from.",
+        "It cannot add a stage to a route or propose an enzyme the search did not find.",
+        "If it is unavailable the grid is still ordered by the chosen criterion in deterministic code, which is what the ordering has always been."
+      ]
+    },
+    {
       "id": "sweep-runner",
       "title": "Filter sweep runner",
       "job": "Walk catalogue pairs, run the funnel over every candidate, and write each verdict to the event store.",
       "model": null,
-      "tools": ["splice.funnel", "events.write"],
+      "tools": [
+        "splice.funnel",
+        "events.write"
+      ],
       "instructions": "config/instructions/sweep-runner.md",
       "limits": {
         "max_pairs": 500,

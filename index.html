@@ -18,11 +18,12 @@
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
       </div>
+      <!-- The bench and the workstation deliberately have no tab any more. Their
+           screens still exist and still render unchanged; they are reached from
+           inside the make-a-molecule flow, which is what asks for them. -->
       <nav class="tabs" id="tabs" aria-label="Screens">
-        <button class="tab" data-screen="home" aria-current="page">Vacuum</button>
+        <button class="tab" data-screen="home" aria-current="page">Make a molecule</button>
         <button class="tab" data-screen="collection">Collection</button>
-        <button class="tab" data-screen="workstation">Workstation</button>
-        <button class="tab" data-screen="bench">The bench</button>
         <button class="tab" data-screen="splice">Splice table</button>
       </nav>
       <button class="limits-button" id="limits-button" aria-haspopup="dialog">
