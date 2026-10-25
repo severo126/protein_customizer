@@ -771,8 +771,11 @@ export function createFoundryScene(canvas) {
     tmpA.fromArray(a.pos);
     tmpB.fromArray(b.pos);
     // A tall phone screen is narrow, so stand further back to keep it all in.
-    const pos = tmpA.lerp(tmpB, k).multiplyScalar(Math.max(1, 0.9 / camera.aspect));
+    const pos = tmpA.lerp(tmpB, k).multiplyScalar(1.05 * Math.max(1, 0.9 / camera.aspect));
     lookAt.fromArray(a.look).lerp(tmpB.fromArray(b.look), k);
+    // Aim a little under the subject so it sits higher in the frame and the
+    // pool of light beneath it is not cut off by the bottom edge.
+    lookAt.y -= 0.4;
 
     // The drag offset rides on top of the shot rather than replacing it, so a
     // reader can look around without losing the choreography.
