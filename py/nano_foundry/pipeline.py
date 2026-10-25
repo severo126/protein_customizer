@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .numbers import js_round, to_fixed
-from .molecules import Molecule, describe, group_meta, has_groups, pretty_core, remove_groups
+from .molecules import Molecule, article, describe, group_meta, has_groups, pretty_core, remove_groups
 
 SCORE_DISCLAIMER = (
     "Foundry Score is a made-up number with made-up units. It is not a yield, a turnover, "
@@ -18,7 +18,7 @@ def _list_groups(groups: list[str]) -> str:
     for g in groups:
         counts[g] = counts.get(g, 0) + 1
     parts = [
-        f"{n} {group_meta(g)['label']} groups" if n > 1 else f"a {group_meta(g)['label']}"
+        f"{n} {group_meta(g)['label']} groups" if n > 1 else article(group_meta(g)["label"])
         for g, n in counts.items()
     ]
     return " and ".join(parts)
@@ -35,30 +35,30 @@ def run_stage(mol: Molecule, entry: dict[str, Any]) -> dict[str, Any]:
     if op == "add":
         if not has_groups(mol, a["requires"]):
             return mismatch(
-                f"needs {_list_groups(a['requires'])} on the input to hang a "
-                f"{group_meta(a['group'])['label']} onto, and this molecule has none free"
+                f"needs {_list_groups(a['requires'])} on the input to hang "
+                f"{article(group_meta(a['group'])['label'])} onto, and this molecule has none free"
             )
         product = mol.with_groups([*mol.groups, a["group"]])
         return {"ok": True, "enzyme_id": entry["id"], "input": mol, "product": product,
-                "what": f"added a {group_meta(a['group'])['label']}"}
+                "what": f"added {article(group_meta(a['group'])['label'])}"}
 
     if op == "remove":
         if not has_groups(mol, [a["group"]]):
             return mismatch(
-                f"only cuts off a {group_meta(a['group'])['label']}, and this molecule does not carry one"
+                f"only cuts off {article(group_meta(a['group'])['label'])}, and this molecule does not carry one"
             )
         groups = remove_groups(mol.groups, [a["group"]])
         if a.get("yields"):
             groups.append(a["yields"])
-        what = f"removed a {group_meta(a['group'])['label']}"
+        what = f"removed {article(group_meta(a['group'])['label'])}"
         if a.get("yields"):
-            what += f", leaving a {group_meta(a['yields'])['label']}"
+            what += f", leaving {article(group_meta(a['yields'])['label'])}"
         return {"ok": True, "enzyme_id": entry["id"], "input": mol, "product": mol.with_groups(groups), "what": what}
 
     if op == "rearrange":
         if mol.core != a["from"]:
             return mismatch(
-                f"only rearranges a {pretty_core(a['from'])} skeleton, and this stage handed it "
+                f"only rearranges {article(pretty_core(a['from']))} skeleton, and this stage handed it "
                 f"{pretty_core(mol.core)}"
             )
         return {"ok": True, "enzyme_id": entry["id"], "input": mol, "product": mol.with_core(a["to"]),
@@ -73,7 +73,7 @@ def run_stage(mol: Molecule, entry: dict[str, Any]) -> dict[str, Any]:
         groups = remove_groups(mol.groups, a["requires"])
         groups.append(a["group"])
         return {"ok": True, "enzyme_id": entry["id"], "input": mol, "product": mol.with_groups(groups),
-                "what": f"joined {_list_groups(a['requires'])} into a {group_meta(a['group'])['label']}"}
+                "what": f"joined {_list_groups(a['requires'])} into {article(group_meta(a['group'])['label'])}"}
 
     return mismatch(f'has no rule this toy knows how to run (op "{op}")')
 

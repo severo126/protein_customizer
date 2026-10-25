@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { byId, catalogue } from './helpers.js';
-import { starter, hasGroups, STARTERS } from '../src/model/molecules.js';
+import { starter, hasGroups, STARTERS, article } from '../src/model/molecules.js';
 import { runStage, runPipeline } from '../src/model/pipeline.js';
 
 test('a kinase adds a phosphate to a molecule with a free hydroxyl', () => {
@@ -68,5 +68,35 @@ test('every catalogue entry can be reached by at least one starting molecule', (
   for (const entry of catalogue.entries) {
     const runnable = STARTERS.some((s) => runStage(starter(s.id), entry).ok);
     assert.ok(runnable, `${entry.id} has no starting molecule it will accept`);
+  }
+});
+
+// Every sentence the bench and the route search build names a group, and three
+// of the fourteen group labels begin with a vowel. The article used to be
+// hard-coded, so the ruled-out list read "needs a amine" and "only cuts off a
+// acyl" in a dozen rows at once.
+test('a group label beginning with a vowel takes "an", in every sentence a stage builds', () => {
+  assert.equal(article('hydroxyl'), 'a hydroxyl');
+  assert.equal(article('acyl'), 'an acyl');
+  assert.equal(article('amine'), 'an amine');
+  assert.equal(article('amide'), 'an amide');
+
+  // ...and the sentences themselves, one per branch of runStage.
+  const refusedAdd = runStage(starter('glucose'), byId('gnmt'));
+  assert.match(refusedAdd.stallReason, /needs an amine on the input/);
+
+  const refusedRemove = runStage(starter('glucose'), byId('lipase'));
+  assert.match(refusedRemove.stallReason, /only cuts off an acyl/);
+
+  const ranAdd = runStage(starter('tributyrin'), byId('lipase'));
+  assert.equal(ranAdd.ok, true);
+  assert.match(ranAdd.what, /removed an acyl/);
+
+  for (const entry of catalogue.entries) {
+    for (const s of STARTERS) {
+      const r = runStage(starter(s.id), entry);
+      const sentence = r.ok ? r.what : r.stallReason;
+      assert.doesNotMatch(sentence, / a [aeiou]/i, `${entry.id} + ${s.id}: ${sentence}`);
+    }
   }
 });

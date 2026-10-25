@@ -29,6 +29,11 @@ GROUPS = {
 }
 
 
+def article(word: str) -> str:
+    """"a hydroxyl" but "an acyl". Mirrors article() in src/model/molecules.js."""
+    return f"an {word}" if word[:1].lower() in "aeiou" else f"a {word}"
+
+
 def group_meta(name: str) -> dict:
     return GROUPS.get(name, {"label": name, "symbol": "?"})
 

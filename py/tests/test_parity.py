@@ -109,3 +109,31 @@ class NoSequences(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArticlesMatchJavaScript(unittest.TestCase):
+    """The article in front of a group label is picked, not hard-coded, on both sides."""
+
+    def test_vowel_labels_take_an(self) -> None:
+        from nano_foundry.molecules import article
+
+        self.assertEqual(article("hydroxyl"), "a hydroxyl")
+        self.assertEqual(article("acyl"), "an acyl")
+        self.assertEqual(article("amine"), "an amine")
+        self.assertEqual(article("amide"), "an amide")
+
+    def test_no_stage_sentence_says_a_before_a_vowel(self) -> None:
+        import re
+
+        from nano_foundry.molecules import STARTERS, starter
+        from nano_foundry.pipeline import run_stage
+
+        catalogue = json.loads((ROOT / "src/data/catalogue.json").read_text())
+        for entry in catalogue["entries"]:
+            for starter_id in STARTERS:
+                r = run_stage(starter(starter_id), entry)
+                sentence = r["what"] if r["ok"] else r["stall_reason"]
+                self.assertIsNone(
+                    re.search(r" a [aeiou]", sentence, re.IGNORECASE),
+                    f"{entry['id']} + {starter_id}: {sentence}",
+                )

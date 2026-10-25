@@ -15261,7 +15261,7 @@
     ],
     "stall_reasons": [
      null,
-     "Glycine N-methyltransferase needs a amine on the input to hang a methyl onto, and this molecule has none free."
+     "Glycine N-methyltransferase needs an amine on the input to hang a methyl onto, and this molecule has none free."
     ],
     "product": null,
     "product_description": null,
@@ -15567,7 +15567,7 @@
     ],
     "stall_reasons": [
      null,
-     "Malate synthase needs a acyl and a carboxyl on the same molecule to form a new new bond."
+     "Malate synthase needs an acyl and a carboxyl on the same molecule to form a new new bond."
     ],
     "product": null,
     "product_description": null,
@@ -15778,7 +15778,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -15843,7 +15843,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -15900,7 +15900,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -15950,7 +15950,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16000,7 +16000,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16058,7 +16058,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16122,7 +16122,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16172,7 +16172,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16223,7 +16223,7 @@
    "expect": {
     "stalled": false,
     "reason": null,
-    "what": "removed a acyl, leaving a hydroxyl",
+    "what": "removed an acyl, leaving a hydroxyl",
     "product": {
      "core": "tributyrin",
      "groups": [
@@ -16279,7 +16279,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16329,7 +16329,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16379,7 +16379,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16429,7 +16429,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16479,7 +16479,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16529,7 +16529,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16560,7 +16560,7 @@
    "expect": {
     "stalled": false,
     "reason": null,
-    "what": "removed a peptide link, leaving a amine",
+    "what": "removed a peptide link, leaving an amine",
     "product": {
      "core": "protein-stain",
      "groups": [
@@ -16587,7 +16587,7 @@
    "expect": {
     "stalled": false,
     "reason": null,
-    "what": "removed a acyl, leaving a hydroxyl",
+    "what": "removed an acyl, leaving a hydroxyl",
     "product": {
      "core": "acetoacetate",
      "groups": [
@@ -16651,7 +16651,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
@@ -16709,7 +16709,7 @@
    "enzyme": "lipase",
    "expect": {
     "stalled": true,
-    "reason": "Triacylglycerol lipase only cuts off a acyl, and this molecule does not carry one.",
+    "reason": "Triacylglycerol lipase only cuts off an acyl, and this molecule does not carry one.",
     "what": null,
     "product": null
    }
