@@ -517,8 +517,13 @@ async function renderRun(root) {
   };
 
   const empty = () => {
-    captionEl.innerHTML = `<div class="home-card">
-      <p class="hero-sub">Load a route below, then press Play.</p>
+    captionEl.innerHTML = `<div class="home-card vacant">
+      <svg class="state-glyph" viewBox="0 0 44 44" aria-hidden="true">
+        <circle cx="22" cy="22" r="15" stroke-dasharray="3 5" /><path class="lit" d="M18 15l12 7-12 7z" />
+      </svg>
+      <div class="beat-step">Nothing on the stage</div>
+      <h2>Load a route to play it</h2>
+      <p class="hero-sub">Pick a chain from the routes, or press one of the three lanes below.</p>
     </div>`;
   };
 
@@ -627,6 +632,7 @@ async function renderRun(root) {
   if (!stages.length) {
     empty();
     playBtn.disabled = true;
+    playBtn.classList.remove('primary');
   } else {
     showStage(0);
     at = IDLE_AT;
