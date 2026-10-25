@@ -15,7 +15,7 @@ import { suggestNext, byFamily, FIT_NOTE } from '../model/suggest.js';
 import { exportPipeline } from '../model/exportConstruct.js';
 import { renderGeminiBox, wireGeminiBox } from './gemini.js';
 import { reactionPanel, wireReaction } from './reaction.js';
-import { logEvent, roomPanel, localEvents, telemetryState } from './telemetry.js';
+import { logEvent, roomPanel } from './telemetry.js';
 
 const FAMILY_LABEL = { adds: 'Adds a group', removes: 'Removes a group', creates: 'Creates / rearranges' };
 
@@ -28,8 +28,6 @@ export function renderBench(root) {
   root.innerHTML = `
     <div class="section-head">
       <h2>The bench</h2>
-      <p>Drag an enzyme onto the lane. Each stage transforms the molecule; a stage that has no rule
-      for the previous product shows the mismatch instead of passing it along.</p>
     </div>
 
     <div class="bench-grid">
@@ -43,7 +41,7 @@ export function renderBench(root) {
           ${(state.demo?.routes ?? [])
             .map((r) => `<button class="btn small" data-demo="${r.id}">${escapeText(r.title)}</button>`)
             .join('')}
-          <span class="score-note" id="demo-note">${escapeText(state.demoNote ?? 'One route that runs clean, two that fail in different, instructive ways.')}</span>
+          <span class="score-note" id="demo-note">${escapeText(state.demoNote ?? '')}</span>
         </div>
         <div class="panel lane" id="lane">
           <div class="lane-slot">
@@ -73,12 +71,11 @@ export function renderBench(root) {
           <div class="panel box">
             <div class="score-value">${run.score.value}</div>
             <div><strong>Foundry Score</strong></div>
-            <div class="score-note">${escapeText(run.score.basis)}</div>
-            <div class="score-note" style="color:var(--amber)">${escapeText(run.scoreDisclaimer)}</div>
+            <div class="score-note" title="${escapeText(run.score.basis)}" style="color:var(--amber)">${escapeText(run.scoreDisclaimer)}</div>
           </div>
           <div class="panel box">
             <strong>Running product</strong>
-            <div class="score-note">${run.stalled ? 'The lane stalls, so there is no product to preview.' : escapeText(run.productDescription)}</div>
+            <div class="score-note">${run.stalled ? '—' : escapeText(run.productDescription)}</div>
             ${run.stalled ? `<div class="stall" style="color:var(--red);font-size:12.5px">${escapeText(run.stages[run.stalledAt].stallReason)}</div>` : ''}
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn small" id="export-run">Export this run (JSON)</button>
@@ -86,18 +83,16 @@ export function renderBench(root) {
             </div>
           </div>
           <div class="panel lights">
-            <strong>Team compatibility</strong>
+            <strong title="Windows are the rounded teaching ranges in the catalogue, intersected arithmetically. A cartoon of one pot, not a model of a reaction.">Team compatibility</strong>
             ${team.lights.map(lightRow).join('')}
-            <div class="score-note">Windows are the rounded teaching ranges in the catalogue, intersected
-            arithmetically. A cartoon of one pot, not a model of a reaction.</div>
           </div>
         </div>
 
         ${renderGeminiBox(run, entries)}
 
-        <div class="panel" id="room-panel" style="padding:13px;display:grid;gap:8px">
+        <div class="panel" id="room-panel" hidden style="padding:13px;display:grid;gap:8px">
           <strong>What the room has been building</strong>
-          <div class="score-note" id="room-body">Checking for a telemetry server…</div>
+          <div class="score-note" id="room-body"></div>
         </div>
       </div>
     </div>`;
@@ -118,11 +113,8 @@ function renderPalette(suggestions, entries, run) {
   const blocked = suggestions.items.filter((i) => i.verdict === 'blocked');
 
   const header = context.empty
-    ? `<div class="palette-note">Nothing in the lane yet, so the only check is whether an entry has a rule
-       for the starting molecule. Add a stage and the pot's shared windows and cofactors join in.</div>`
-    : `<div class="palette-note">Filtered against <strong>${escapeText(run.stalled ? 'a stalled lane' : describe(run.product))}</strong>
-       ${context.temp && !context.temp.empty ? ` and a pot at ${context.temp.low}–${context.temp.high} °C, pH ${context.ph.low}–${context.ph.high}` : ''}.
-       ${escapeText(FIT_NOTE)}</div>`;
+    ? ''
+    : `<div class="palette-note" title="${escapeText(FIT_NOTE)}">against <strong>${escapeText(run.stalled ? 'a stalled lane' : describe(run.product))}</strong>${context.temp && !context.temp.empty ? ` · ${context.temp.low}–${context.temp.high} °C · pH ${context.ph.low}–${context.ph.high}` : ''}</div>`;
 
   const toggle = context.empty
     ? ''
@@ -162,8 +154,7 @@ function bucket(kind, label, items, groupByFamily) {
   if (!items.length) {
     return `<div class="palette-bucket ${kind}"><div class="bucket-head">
       <span class="bucket-dot ${kind}"></span>${label} <span class="chip">0</span></div>
-      <p class="palette-note">Nothing in the catalogue lands here for this lane. Open the ruled-out list
-      to add one anyway and watch it refuse.</p></div>`;
+      </div>`;
   }
   const body = groupByFamily
     ? [...byFamily(items).entries()]
@@ -204,8 +195,7 @@ function renderReaction(run) {
   if (!stage || !stage.input) {
     return `<div class="panel reaction-empty">
       <strong>Watch a stage run</strong>
-      <p class="score-note">Add an enzyme to the lane and the cartoon of it meeting the molecule plays
-      here, stage by stage. A stage that refuses its input gets its own ending.</p>
+      <p class="score-note">Add an enzyme to the lane.</p>
     </div>`;
   }
   return reactionPanel(stage.enzyme, stage.input, {
@@ -222,13 +212,14 @@ async function paintRoomPanel(root) {
   const body = root.querySelector('#room-body');
   if (!body) return;
   const data = await roomPanel();
+  const panel = root.querySelector('#room-panel');
   if (!data) {
-    const mine = localEvents();
-    body.innerHTML = `No telemetry server is answering (${telemetryState()}), so there is no room-wide
-      history to show. This browser has logged ${mine.length} event${mine.length === 1 ? '' : 's'} this
-      session. Start <code>tools/api/server.mjs</code> to collect them.`;
+    // With no telemetry server there is no room-wide history, and an apology in
+    // its place is just clutter — leave the panel out.
+    if (panel) panel.hidden = true;
     return;
   }
+  if (panel) panel.hidden = false;
   body.innerHTML = `
     <div>Runs logged: <strong>${data.runs ?? 0}</strong> · filter verdicts: <strong>${data.verdicts ?? 0}</strong></div>
     ${

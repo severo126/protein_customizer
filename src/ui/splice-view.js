@@ -22,8 +22,6 @@ export function renderSplice(root) {
   root.innerHTML = `
     <div class="section-head">
       <h2>Splice table</h2>
-      <p>Two labelled blobs and a linker, laid out with a simple geometric model. Each filter is a
-      hard reject with a reason. Nothing here is a structure prediction.</p>
     </div>
 
     <div class="splice-grid">
@@ -31,18 +29,13 @@ export function renderSplice(root) {
         <div class="panel construct-stage">
           <strong>${escapeText(a.name)} ⟶ ${escapeText(b.name)}</strong>
           ${constructPiece(verdict.geometry, a.domain.label, b.domain.label)}
-          <div class="cartoon-label">stylised cartoon construct — chunky game pieces, not a coordinate set</div>
-          <div class="score-note">Every distance on this screen is derived from invented cartoon
-          geometry (<strong>${escapeText(a.source.cartoon)}</strong> for ${escapeText(a.name)},
-          <strong>${escapeText(b.source.cartoon)}</strong> for ${escapeText(b.name)}). The only numbers
-          taken from reference material are the temperature and pH windows, and those are rounded
-          teaching ranges rather than measurements.</div>
+          <div class="cartoon-label" title="Cartoon geometry: ${escapeText(a.source.cartoon)} for ${escapeText(a.name)}, ${escapeText(b.source.cartoon)} for ${escapeText(b.name)}. Only the temperature and pH windows come from reference material, as rounded teaching ranges.">cartoon construct — every distance is invented, not a coordinate set</div>
         </div>
 
         ${verdictBox(verdict)}
 
         <div class="panel" style="padding:13px;display:grid;gap:10px">
-          <strong>Hard reject filters</strong>
+          <strong>Filters</strong>
           <div class="filter-list">${verdict.results.map(filterItem).join('')}</div>
           <div class="score-note">${escapeText(CARTOON_PHYSICS_NOTE)}</div>
         </div>
@@ -58,11 +51,9 @@ export function renderSplice(root) {
           <div class="picker-row">
             <label for="linker">Linker length — ${state.linker} units (${(state.linker * 0.34).toFixed(2)} nm of reach)</label>
             <input type="range" id="linker" min="${Math.min(...LINKER_CHOICES)}" max="${Math.max(...LINKER_CHOICES)}" step="1" value="${state.linker}" />
-            <div class="score-note">Funnel candidates are enumerated at ${LINKER_CHOICES.join(', ')} units.</div>
           </div>
-          <div class="score-note">${team.length ? `Checked against the ${team.length}-stage lane on the bench as well.` : 'Nothing on the bench, so the operating-window filter only compares the two parents.'}</div>
-          <button class="btn primary" id="export-construct">Export this construct (JSON)</button>
-          <div class="score-note">Exports carry domain names and cartoon geometry only — no sequence, by design.</div>
+          ${team.length ? `<span class="chip">also checked against the ${team.length}-stage lane</span>` : ''}
+          <button class="btn primary" id="export-construct" title="Domain names and cartoon geometry only — no sequence, by design.">Export (JSON)</button>
         </div>
 
         ${notCheckedPanel()}
@@ -94,9 +85,8 @@ function verdictBox(verdict) {
   if (verdict.passed) {
     return `<div class="verdict">
       <h3>${PASS_VERDICT}</h3>
-      <div class="meaning">A pass is the absence of a red flag from a cartoon. It is not a statement
-      that this construct is stable, viable, correct, or designed — none of those were tested, and
-      this app has no such state. See the standing list beside this verdict.</div>
+      <div class="meaning">A pass is the absence of a red flag from a cartoon. Nothing beside it was
+      tested — see the list alongside.</div>
     </div>`;
   }
   const killer = verdict.results.find((r) => !r.pass);
@@ -119,10 +109,7 @@ function funnelPanel(f) {
   const total = f.went_in || 1;
   const worst = f.funnel.reduce((a, b) => (b.killed > a.killed ? b : a), f.funnel[0]);
   return `<div class="panel funnel">
-    <strong>Candidate funnel — ${f.went_in} splice points in, ${f.survivors.length} out</strong>
-    <div class="score-note">Every site of ${escapeText(f.pairLabel.split(' + ')[0])} against every site of
-    ${escapeText(f.pairLabel.split(' + ')[1])}, at each linker length. Filters run in order, so a
-    candidate is counted against the first filter that killed it.</div>
+    <strong title="Every site of ${escapeText(f.pairLabel.split(' + ')[0])} against every site of ${escapeText(f.pairLabel.split(' + ')[1])}, at linker lengths ${LINKER_CHOICES.join(', ')}. Filters run in order, so a candidate is counted against the first one that killed it.">Candidate funnel — ${f.went_in} in, ${f.survivors.length} out</strong>
     ${f.funnel
       .map((s) => {
         const remainPct = (s.leaving / total) * 100;
@@ -146,9 +133,9 @@ function funnelPanel(f) {
                 <button class="btn small" data-pick-survivor="${s.siteA.id}|${s.siteB.id}|${s.linkerUnits}">${s.linkerUnits} units — show</button></div>`,
             )
             .join('')}</div>`
-        : `<div class="empty">Every candidate for this pair was rejected. ${escapeText(worst.label)} killed the most.</div>`
+        : `<div class="empty">Every candidate was rejected.</div>`
     }
-    <div class="score-note">Biggest killer for this pair: <strong>${escapeText(worst.label)}</strong> (${worst.killed}).</div>
+    <span class="chip">biggest killer <strong>${escapeText(worst.label)}</strong> (${worst.killed})</span>
   </div>`;
 }
 
@@ -156,8 +143,6 @@ function notCheckedPanel() {
   return `<div class="panel not-checked">
     <h4>Not checked — ever, on any screen</h4>
     <ul>${NOT_CHECKED.map((l) => `<li>${escapeText(l)}</li>`).join('')}</ul>
-    <div class="score-note">This list sits beside the verdict rather than under it, because it is the
-    larger part of the truth.</div>
   </div>`;
 }
 

@@ -56,9 +56,9 @@ function playable(run) {
 function regionLine(entry) {
   const sites = entry.domain?.sites ?? [];
   if (!sites.length) return '';
-  return `<p class="tally regions">Ribbons on the body: ${sites
+  return `<p class="tally regions" title="Ribbons on the cartoon body: helices red, sheets amber, loops green.">${sites
     .map((x) => `${escapeText(x.label)} (${x.region})`)
-    .join(', ')} — helices red, sheets amber, loops green.</p>`;
+    .join(' · ')}</p>`;
 }
 
 function caption(stage, run) {
@@ -69,8 +69,7 @@ function caption(stage, run) {
   if (!result.ok) {
     return `${head}
       ${regionLine(entry)}
-      <p class="refused">${escapeText(result.stallReason)}</p>
-      <p>Nothing docks. The jaw never shuts, and the run stops here rather than passing the molecule along.</p>`;
+      <p class="refused">${escapeText(result.stallReason)}</p>`;
   }
   const tally = formulaTally(buildStructure(result.product));
   return `${head}
@@ -94,12 +93,12 @@ function controls(run, entries) {
           .join('')}
       </select>
     </label>
-    <div class="home-lane" aria-label="The lane">${entries.length ? chips : '<span class="home-chip empty">The lane is empty</span>'}</div>
+    <div class="home-lane" aria-label="The lane">${entries.length ? chips : '<span class="home-chip empty">empty lane</span>'}</div>
     <div class="home-control-actions">
       ${(state.demo?.routes ?? [])
         .map((r) => `<button class="btn small ghost" data-demo="${r.id}">${escapeText(r.title)}</button>`)
         .join('')}
-      <button class="btn small" data-go="bench">Edit this lane on the bench</button>
+      <button class="btn small" data-go="bench">Edit on the bench</button>
     </div>
   </div>`;
 }
@@ -198,9 +197,11 @@ function drawLabels(stage, t) {
       layer.appendChild(el);
     }
     el.classList.toggle('hot', !!an.hot);
-    const html = `<strong>${escapeText(an.text)}</strong><span>${escapeText(an.detail)}</span>`;
+    // Name only; the explanation sits in the tooltip so the stage stays clear.
+    const html = `<strong>${escapeText(an.text)}</strong>`;
     if (el._html !== html) {
       el.innerHTML = html;
+      el.title = an.detail ?? '';
       el._html = html;
       el._h = el.offsetHeight;
     }
@@ -322,11 +323,8 @@ export async function renderHome(root) {
 
   const empty = () => {
     captionEl.innerHTML = `<div class="home-card">
-      <div class="hero-kicker">A classroom cartoon, in 3D</div>
       <h1 class="hero-title">Nano Foundry</h1>
-      <p class="hero-sub">Put enzymes in a lane and press Play once: the molecule goes down the chain,
-      each enzyme acting on what the one before it left.</p>
-      <p>The lane is empty. Load one of the seeded routes below, or build your own on the bench.</p>
+      <p class="hero-sub">Load a route below, then press Play.</p>
       <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p>
     </div>`;
   };
@@ -358,7 +356,7 @@ export async function renderHome(root) {
       captionEl.insertAdjacentHTML(
         'beforeend',
         `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div>
-          <p>Stages after this one never got the molecule. ${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
+          <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
       );
     } else if (lastStage) {
       captionEl.insertAdjacentHTML(

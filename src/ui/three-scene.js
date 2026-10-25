@@ -16,8 +16,7 @@ import * as THREE from 'three';
 import { groupMeta } from '../model/molecules.js';
 import { buildStructure, buildGroupFragment, elementMeta, STRUCTURE_NOTE } from '../model/structure.js';
 
-export const SCENE_NOTE =
-  'Enzyme bodies are invented geometry — not a structure, not a coordinate set. Molecules are a ball-and-stick cartoon: real atoms and bonds, drawn positions, and drawn far too big beside the enzyme so you can see them.';
+export const SCENE_NOTE = 'Invented geometry — not a structure. Molecules drawn oversized.';
 
 export const SCENE_NOTE_LONG =
   `The enzyme is a noise-displaced blob with a carved cleft and ribbons laid on by hand: not a coordinate set, not a structure, not a trajectory. ${STRUCTURE_NOTE}`;
