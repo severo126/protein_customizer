@@ -26,7 +26,10 @@ export async function showSources(entry) {
         : { state: 'unconfigured', links: data.fallback_links ?? [] },
     );
   } catch (err) {
-    dialog.innerHTML = panel(entry, { state: 'offline', error: String(err.message ?? err) });
+    // No server at all — the published build, or the folder opened over file://.
+    // The panel still has somewhere to send the reader, because the searches it
+    // would have run can be written here without one.
+    dialog.innerHTML = panel(entry, { state: 'unconfigured', links: searchLinks(entry) });
   }
   wireClose();
 }
@@ -62,8 +65,8 @@ function bodyFor(view) {
   }
 
   if (view.state === 'unconfigured') {
-    return `<p class="empty">No reference search answered, so this panel cannot pull references
-      automatically. The searches it would have run:</p>
+    return `<p class="empty">No reference search answered, so these are the searches to run. They open
+      at the real literature, which is the point of this panel either way.</p>
       <ul style="padding-left:18px;display:grid;gap:6px">
         ${view.links.map((l) => `<li><a href="${escapeText(l.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-2)">${escapeText(l.label)}</a></li>`).join('')}
       </ul>`;
@@ -71,6 +74,19 @@ function bodyFor(view) {
 
   return `<p class="empty">The sources API is not answering (${escapeText(view.error ?? 'offline')}).
     Start <code>tools/api/server.mjs</code> to turn this panel on.</p>`;
+}
+
+// The same searches the API would run, written in the browser so the panel is
+// never a dead end. Each one is a public catalogue's own search page: nothing is
+// fetched, read or vouched for here.
+function searchLinks(entry) {
+  const q = encodeURIComponent(entry.name);
+  return [
+    { label: `PubMed — ${entry.name}`, url: `https://pubmed.ncbi.nlm.nih.gov/?term=${q}` },
+    { label: `Europe PMC — ${entry.name}`, url: `https://europepmc.org/search?query=${q}` },
+    { label: `Crossref — ${entry.name}`, url: `https://search.crossref.org/?q=${q}` },
+    { label: `BRENDA — ${entry.name}`, url: `https://www.brenda-enzymes.org/search_result.php?quicksearch=1&noOfResults=50&a=13&W%5Bspecies%5D=${q}` },
+  ];
 }
 
 function wireClose() {
