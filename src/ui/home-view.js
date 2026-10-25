@@ -19,6 +19,8 @@ import { CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { reactionScene, REACTION_NOTE } from './reaction.js';
 import { escapeText } from './cartoon.js';
 import { state, setState, laneEntries } from './app.js';
+import { RUN_LENGTHS, DEFAULT_RUN } from '../model/activity.js';
+import { laneClimate, climateFor, climateLine, tempRange, bestTemp, CLIMATE_NOTE, CLIMATE_DISCLAIMER } from './climate.js';
 
 // How long one stage takes to play, in seconds.
 const STAGE_SECONDS = 5.5;
@@ -94,12 +96,48 @@ function controls(run, entries) {
       </select>
     </label>
     <div class="home-lane" aria-label="The lane">${entries.length ? chips : '<span class="home-chip empty">empty lane</span>'}</div>
+    ${climateRow(entries, state.runId, state.temp)}
     <div class="home-control-actions">
       ${(state.demo?.routes ?? [])
         .map((r) => `<button class="btn small ghost" data-demo="${r.id}">${escapeText(r.title)}</button>`)
         .join('')}
       <button class="btn small" data-go="bench">Edit on the bench</button>
     </div>
+  </div>`;
+}
+
+// Where the dial starts: the best shared point for this lane and run length,
+// so the first thing the screen shows is the compromise rather than an
+// arbitrary number. activity.js finds it; this only reads it.
+function startingTemp(entries, runId) {
+  return entries.length ? bestTemp(entries, runId) : 37;
+}
+
+function climateRow(entries, runId, temp) {
+  const range = tempRange(entries);
+  const chips = entries
+    .map((e) => {
+      const c = climateFor(e, temp, runId);
+      return `<span class="home-chip ${c.over ? 'over' : c.under ? 'under' : ''}">${escapeText(e.name)} ${Math.round(c.activity * 100)}%</span>`;
+    })
+    .join('');
+  return `<div class="home-climate" title="${escapeText(`${CLIMATE_NOTE} ${CLIMATE_DISCLAIMER}`)}">
+    <label class="home-dial">
+      <span class="home-dial-head">
+        <strong data-temp-read>${temp} °C</strong>
+        <span class="home-dial-span">${range.min}–${range.max} °C</span>
+      </span>
+      <input type="range" data-temp min="${range.min}" max="${range.max}" step="0.5" value="${temp}"
+        aria-label="Temperature" ${entries.length ? '' : 'disabled'} />
+    </label>
+    <label class="home-run">Run
+      <select data-run ${entries.length ? '' : 'disabled'}>
+        ${RUN_LENGTHS.map((r) => `<option value="${r.id}" ${r.id === runId ? 'selected' : ''}>${escapeText(r.label)}</option>`).join('')}
+      </select>
+    </label>
+    <button class="btn small ghost" data-best ${entries.length ? '' : 'disabled'}>Best point</button>
+    <div class="home-pcts" data-pcts>${chips}</div>
+    <p class="home-climate-line" data-climate-line></p>
   </div>`;
 }
 
@@ -270,6 +308,13 @@ export async function renderHome(root) {
   const run = runPipeline(starter(state.starterId), entries);
   const stages = playable(run);
 
+  // The dial persists across remounts, but a lane it was set for may be gone.
+  if (!state.runId) state.runId = DEFAULT_RUN;
+  if (state.temp == null || state.tempLane !== signature) {
+    state.temp = startingTemp(entries, state.runId);
+    state.tempLane = signature;
+  }
+
   root.innerHTML = `<div class="home">
     <div class="home-stage">
       <canvas class="home-canvas" aria-label="3D cartoon of the lane running"></canvas>
@@ -277,6 +322,7 @@ export async function renderHome(root) {
       <svg class="home-leaders" aria-hidden="true"></svg>
       <div class="home-labels"></div>
       <div class="home-vignette" aria-hidden="true"></div>
+      <div class="home-thermal" aria-hidden="true"></div>
       <div class="home-caption"></div>
       <div class="home-progress"><div class="home-progress-bar"></div></div>
       <div class="home-scene-note" role="note"></div>
@@ -392,9 +438,21 @@ export async function renderHome(root) {
     playBtn.textContent = stages.length ? '▶ Play the run' : '▶ Play the run';
   }
 
+  // The run's own pace follows the curve: held under its window the lane
+  // crawls, and nothing about that is a failure. Read fresh every frame so the
+  // dial takes effect mid-run.
+  function applyClimate() {
+    const stage = stages[Math.min(stages.length - 1, Math.max(0, Math.floor(at)))];
+    const c = laneClimate(entries, state.temp, state.runId, stage?.entry ?? null);
+    homeEl.style.setProperty('--warmth', c.warmth.toFixed(3));
+    scene?.setClimate({ warmth: c.warmth, agitation: c.agitation });
+    return c;
+  }
+
   function tick(dt) {
+    const c = applyClimate();
     if (!playing) return;
-    at = Math.min(stages.length, at + dt / STAGE_SECONDS);
+    at = Math.min(stages.length, at + (dt * c.pace) / STAGE_SECONDS);
     const i = Math.min(stages.length - 1, Math.floor(at));
     if (i !== current) showStage(i);
     const t = Math.min(1, at - i);
@@ -415,6 +473,8 @@ export async function renderHome(root) {
     at = IDLE_AT;
     if (scene) scene.setProgress(IDLE_AT);
   }
+
+  paintClimate();
 
   let lastNow = performance.now();
   if (scene) {
@@ -468,6 +528,13 @@ export async function renderHome(root) {
       setState({ screen: go.dataset.go });
       return;
     }
+    if (e.target.closest('[data-best]')) {
+      state.temp = bestTemp(entries, state.runId);
+      const dial = homeEl.querySelector('[data-temp]');
+      if (dial) dial.value = String(state.temp);
+      paintClimate();
+      return;
+    }
     const demo = e.target.closest('[data-demo]');
     if (demo) {
       const route = (state.demo?.routes ?? []).find((r) => r.id === demo.dataset.demo);
@@ -475,9 +542,43 @@ export async function renderHome(root) {
     }
   });
 
+  function paintClimate() {
+    const el = homeEl.querySelector('[data-temp-read]');
+    if (el) el.textContent = `${state.temp} °C`;
+    const pcts = homeEl.querySelector('[data-pcts]');
+    if (pcts) {
+      pcts.innerHTML = entries
+        .map((e) => {
+          const c = climateFor(e, state.temp, state.runId);
+          return `<span class="home-chip ${c.over ? 'over' : c.under ? 'under' : ''}">${escapeText(e.name)} ${Math.round(c.activity * 100)}%</span>`;
+        })
+        .join('');
+    }
+    const stage = stages[Math.min(stages.length - 1, Math.max(0, Math.floor(at)))];
+    const line = homeEl.querySelector('[data-climate-line]');
+    if (line) line.textContent = climateLine(stage, state.temp, state.runId);
+    applyClimate();
+  }
+
+  homeEl.addEventListener('input', (e) => {
+    const dial = e.target.closest('[data-temp]');
+    if (dial) {
+      state.temp = Number(dial.value);
+      paintClimate();
+    }
+  });
+
   homeEl.addEventListener('change', (e) => {
     const sel = e.target.closest('[data-starter]');
-    if (sel) setState({ starterId: sel.value });
+    if (sel) {
+      setState({ starterId: sel.value });
+      return;
+    }
+    const runSel = e.target.closest('[data-run]');
+    if (runSel) {
+      state.runId = runSel.value;
+      paintClimate();
+    }
   });
 
   mounted = {

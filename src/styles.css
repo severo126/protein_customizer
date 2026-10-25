@@ -496,11 +496,19 @@ body.home-mode { background: #020306; }
 body.home-mode .screen { padding: 0; max-width: none; }
 body.home-mode .standing-note { position: relative; z-index: 6; }
 
-.home { position: relative; }
+.home {
+  position: relative;
+  /* The stage takes whatever the controls leave, so adding a row under it
+     (the dial) cannot push the page into a scroll or clip the readout. */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--topbar-h, 64px));
+  min-height: 520px;
+}
 .home-stage {
   position: relative;
-  height: calc(100vh - var(--topbar-h, 64px) - 132px);
-  min-height: 420px;
+  flex: 1 1 auto;
+  min-height: 300px;
   overflow: hidden;
   background:
     radial-gradient(1200px 700px at 62% 50%, #0d1220 0%, #05070c 55%, #010103 100%);
@@ -597,7 +605,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   .tab { flex: none; }
   /* On a phone the story card becomes a sheet over the bottom of the stage,
      with the standing note under it so it stays on screen. */
-  .home-stage { height: 64vh; min-height: 360px; }
+  .home-stage { min-height: 300px; }
   .home-caption {
     position: absolute; left: 8px; right: 8px; bottom: 44px; top: auto; width: auto;
     max-height: 52%; overflow: auto; justify-content: flex-end;
@@ -613,4 +621,41 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   .home-fallback { padding: 12px; }
   .home-control-actions { margin-left: 0; }
   .home-controls { gap: 8px; }
+}
+
+/* ---------- the temperature dial and what heat and cold do to the stage ---------- */
+
+/* --warmth runs from -1 (held under the stated window) to 1 (well over it).
+   The 3D scene warms its own fog and lights; this overlay is what the flat
+   fallback and the stage chrome ride on, so both agree. */
+.home-thermal {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 62% 52%, rgba(255, 74, 34, calc(max(var(--warmth, 0), 0) * 0.3)), transparent 70%),
+    radial-gradient(900px 600px at 62% 52%, rgba(70, 150, 255, calc(max(var(--warmth, 0) * -1, 0) * 0.22)), transparent 70%);
+  transition: background 0.25s linear;
+}
+
+.home-climate {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 0 clamp(12px, 3vw, 24px) 10px;
+  background: linear-gradient(var(--panel), var(--bg-2));
+}
+.home-dial { display: grid; gap: 4px; min-width: 240px; flex: 1 1 260px; }
+.home-dial-head { display: flex; align-items: baseline; gap: 8px; }
+.home-dial-head strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.home-dial-span { font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.04em; }
+.home-dial input[type='range'] {
+  width: 100%;
+  accent-color: hsl(calc(28 - max(var(--warmth, 0), 0) * 28) 90% 58%);
+}
+.home-run { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.12em; }
+.home-pcts { display: flex; gap: 6px; flex-wrap: wrap; }
+.home-pcts .home-chip.over { border-color: rgba(255, 90, 60, 0.6); color: #ffb3a2; }
+.home-pcts .home-chip.under { border-color: rgba(90, 160, 255, 0.5); color: #a8c8ff; }
+.home-climate-line { flex-basis: 100%; margin: 0; font-size: 11.5px; color: var(--ink-dim); }
+
+@media (max-width: 900px) {
+  .home-climate { padding-bottom: 8px; }
+  .home-dial { min-width: 160px; }
 }
