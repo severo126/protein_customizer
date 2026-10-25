@@ -2,7 +2,7 @@
 
 Nano Foundry runs with none of these. Each one turns a panel from "not configured, here is what
 it would have done" into the live thing. Nothing here is needed to demo the catalogue, the bench,
-the splice funnel or the platform screen.
+the splice funnel or the vacuum.
 
 Copy `.env.example` to `.env` at the repo root and fill it in. `.env` is gitignored, and
 `./deploy/bring-up.sh` sources it automatically, so no key ever needs to be pasted into a command

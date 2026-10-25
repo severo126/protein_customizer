@@ -34,8 +34,9 @@ the standing list of what was never checked beside it. Drag the linker to 2: the
 to 20: the compactness band rejects the dumbbell. Then point at the funnel: 36 candidate splice
 points in, which filter killed how many, and how few come out.
 
-**1:45 — the platform.** One click to the Platform tab: three agents declared in config with their
-tools, models and limits, traces with per-step latency, and a Replay button. "The filters are
+**1:45 — the platform, from the terminal.** There is no Platform tab any more; show it from
+`config/agents.json` and `curl localhost:8000/agents`: three agents declared in config with their
+tools, models and limits, traces with per-step latency, and `/traces/<id>/replay`. "The filters are
 deterministic code, the model only parses and explains, and the registry is what keeps that honest."
 
 **1:55 — close.** "Every number on screen says where it came from, and the ones we invented are

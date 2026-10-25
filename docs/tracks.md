@@ -105,7 +105,7 @@ tool `filters.explain`, 400 output tokens), and the **filter sweep runner** (no 
 descriptions a judge can read. Every run writes a trace — per-tool latency, token counts, status —
 and any trace can be replayed; replay refuses to claim it reproduced a model-backed run and says why
 instead. `py/service.py` exposes `/agents`, `/agents/<id>/run`, `/agents/<id>/traces`,
-`/traces/<id>/replay` and `/metrics`, and the Platform screen is a read-only view of all of it. The
+`/traces/<id>/replay` and `/metrics`. The
 registry's `refuse_fields` list is enforced on both sides of the wire, so the scope rule in
 `docs/scope.md` §2 is a platform property rather than a convention.
 

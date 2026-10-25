@@ -19,7 +19,11 @@ const OUT = join(__dirname, '..', 'docs', 'screenshots');
   const demo = JSON.parse(readFileSync(join(__dirname, '..', 'src', 'data', 'demo.json'), 'utf8'));
   mkdirSync(OUT, { recursive: true });
 
-  const browser = await chromium.launch();
+  // The home screen is WebGL, so the captures need a software GL backend to
+  // show the 3D vacuum rather than the flat-cartoon fallback.
+  const browser = await chromium.launch({
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  });
   const page = await browser.newPage({ viewport: { width: 1440, height: 980 }, deviceScaleFactor: 1 });
 
   const errors = [];
@@ -49,7 +53,15 @@ const OUT = join(__dirname, '..', 'docs', 'screenshots');
     }, ms);
 
   await page.goto(BASE, { waitUntil: 'networkidle' });
+  console.log('The vacuum — the home screen, mid-run');
+  await page.click('[data-demo="clean"]');
+  await page.waitForTimeout(300);
+  await page.click('[data-play]');
+  await page.waitForTimeout(2600);
+  await shot('0-vacuum');
+
   console.log('Catalogue');
+  await page.click('[data-screen="catalogue"]');
   await shot('1-catalogue');
 
   console.log('Bench — the seeded demo');
@@ -91,10 +103,6 @@ const OUT = join(__dirname, '..', 'docs', 'screenshots');
   await page.fill('#linker', '20');
   await page.dispatchEvent('#linker', 'input');
   await shot('5-splice-compactness');
-
-  console.log('Platform');
-  await page.click('[data-screen="platform"]');
-  await shot('6-platform', true);
 
   console.log('Limits panel');
   await page.click('#limits-button');
