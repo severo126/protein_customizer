@@ -26,18 +26,37 @@ git clone https://github.com/severo126/protein_customizer && cd protein_customiz
 That is the whole setup: no install step, no build step, no dependencies to fetch. It uses
 TimescaleDB in Docker if Docker is there and a local JSONL buffer if it is not, starts the Python
 filter service, seeds the funnel history with a sweep, and prints the URLs. Open
-<http://localhost:5173> and press **A team that gets along** on the bench.
+<http://localhost:5173>, type *fructose with a phosphate on it*, and press **Find the routes**.
 
 ```bash
-npm test          # 70 JavaScript tests + the Python parity suite
+npm test          # 215 JavaScript tests + 52 Python tests
 ```
 
 ## What is in it
 
-**The vacuum** — the home screen. The lane from the bench, run as one chain in a dark metallic 3D
-scene: press Play once and each enzyme in turn takes the molecule, acts on it, and hands the product
-to the next. Enzyme bodies are invented geometry; molecules are ball-and-stick, with the atoms and
-bonds of their composition and drawn positions.
+**Make a molecule** — the way in. Say what you want to make, in a sentence; a picker goes back and
+forth until the target is pinned down, in the catalogue's own vocabulary of skeletons and groups.
+Then a grid shows the chains of catalogue entries that could make it, and the chain you pick is what
+plays.
+
+**The search is code, not a model.** `src/model/routes.js` walks the catalogue's own `requires` and
+`yields` fields breadth-first over *molecules*, once per starting molecule, recording the fewest
+stages that reach each one and every edge that reaches it in exactly that many. Chains are read back
+out of those edges, so every route listed is one the walk traversed, and `test/routes.test.js`
+re-runs each of them through the bench and checks the molecules match stage for stage. Because the
+walk is over molecules rather than paths it finishes, which is what makes the other half of the
+answer affordable: **when nothing reaches the target, the app says so and shows how far it got** —
+the closest molecule it ever stood in, how many stages in, and what it was still short of. If the
+scan ever runs out of budget, it says *that* instead, because an unfinished search is not a dead
+end. The model's part is parsing what you meant and explaining what the search returned; it cannot
+add a stage or name an enzyme the search did not find, and the whole flow works with no API key.
+
+**The chain, playing** — the chosen route run in a dark metallic 3D scene: press Play once and each
+enzyme in turn takes the molecule, acts on it, and hands the product to the next. The pace and the
+unsteadiness come from the same activity curve the temperature dial shows, so holding the pot cold
+slows every stage and holding one enzyme past its stated window makes that stage slow and shaken,
+and names it. Enzyme bodies are invented geometry; molecules are ball-and-stick, with the atoms and
+bonds of their composition and drawn positions. Nothing here models denaturation or aggregation.
 
 **Catalogue** — forty enzymes in three columns by what they do to a molecule: *adds*, *removes*,
 *creates / rearranges*. Each card shows the group it moves, a cartoon of substrate in and product
@@ -45,7 +64,9 @@ out, its cofactor, its temperature and pH window, and a schematic loop/helix/she
 card says which of its numbers came from reference material and which were invented for the cartoon,
 and has a button out to real references.
 
-**The bench** — drag enzymes into a lane and watch the molecule change stage by stage. A stage that
+**The bench** — no longer a tab, and unchanged: one click from the landing screen, under *"Still
+here, if you would rather drive it yourself"*. Drag enzymes into a lane and watch the molecule
+change stage by stage. A stage that
 has no rule for the previous product shows the mismatch and explains it instead of silently passing
 it along. A traffic-light row checks whether the whole team could sit in one pot: overlapping
 temperature windows, overlapping pH, whether a stage eats a cofactor a later stage needs, and
@@ -71,7 +92,7 @@ that went in, which filter killed how many, and the few that came out.
 src/model/      the filters, the lane and the molecule model, in JavaScript
 py/nano_foundry/ the same filters, the same lane, in Python
 src/data/       the fixed catalogue, the seeded demo, and the parity contract
-src/ui/         the four screens (vanilla ES modules, no build step)
+src/ui/         the screens (vanilla ES modules, no build step)
 py/service.py   the Python filter + agent API
 tools/api/      the event API, the Timescale schema, the sweep and the warehouse export
 config/         the agent registry and each agent's instructions
@@ -79,6 +100,10 @@ deploy/         one-command bring-up, locally or onto Vultr
 ```
 
 The filters exist twice, in JavaScript for the browser and in Python behind the API, and
+`src/data/route-cases.json` does the same for the route search: 31 targets, every molecule along
+every chain, the metrics, the orderings including their tie-breaks, and each headline character for
+character, asserted by `test/routes.test.js` and `py/tests/test_routes_parity.py`.
+
 `src/data/parity-cases.json` holds 393 cases — 288 splice candidates, 15 lanes, 90 single stages —
 with the expected verdict, the expected numbers and the expected sentence. Both test suites assert
 that file, so if one implementation drifts, one suite goes red and names the case. Change a filter
@@ -98,7 +123,8 @@ the results are reproducible and testable.
 | `npm run api` | app + event API (`DATABASE_URL` to use Timescale) |
 | `npm run filters` | the Python filter service on :8000 |
 | `npm run sweep` | seed the funnel history |
-| `npm run parity:build` | regenerate the parity contract |
+| `npm run parity:build` | regenerate the filter parity contract |
+| `npm run routes:build` | regenerate the route-search parity contract |
 | `npm run snowflake:export` | batch-export the run history |
 | `node tools/screenshots.cjs` | regenerate `docs/screenshots/` |
 

@@ -24,6 +24,7 @@
 // and nothing here says an enzyme was damaged or destroyed.
 
 import { groupMeta, describe } from '../model/molecules.js';
+import { article } from '../model/behaviours.js';
 import { laneClimate, climateFor, phOf, CLIMATE_NOTE, CLIMATE_DISCLAIMER } from './climate.js';
 import { runLength } from '../model/activity.js';
 
@@ -54,7 +55,7 @@ export const MAX_WOBBLE = 0.42;
 export function stageChange(entry) {
   const a = entry.action;
   if (a.op === 'add') {
-    return { kind: 'add', moves: [a.group], frees: [], needs: [...(a.requires ?? [])], label: `a ${groupMeta(a.group).label} arrives and is put on` };
+    return { kind: 'add', moves: [a.group], frees: [], needs: [...(a.requires ?? [])], label: `${article(groupMeta(a.group).label)} arrives and is put on` };
   }
   if (a.op === 'remove') {
     return {
@@ -63,8 +64,8 @@ export function stageChange(entry) {
       frees: a.yields ? [a.yields] : [],
       needs: [a.group],
       label: a.yields
-        ? `a ${groupMeta(a.group).label} is cut off, leaving a ${groupMeta(a.yields).label} behind`
-        : `a ${groupMeta(a.group).label} is cut off`,
+        ? `${article(groupMeta(a.group).label)} is cut off, leaving ${article(groupMeta(a.yields).label)} behind`
+        : `${article(groupMeta(a.group).label)} is cut off`,
     };
   }
   if (a.op === 'join') {
@@ -73,7 +74,7 @@ export function stageChange(entry) {
       moves: [...(a.requires ?? [])],
       frees: [a.group],
       needs: [...(a.requires ?? [])],
-      label: `${(a.requires ?? []).map((g) => groupMeta(g).label).join(' and ')} are brought together into a ${groupMeta(a.group).label}`,
+      label: `${(a.requires ?? []).map((g) => groupMeta(g).label).join(' and ')} are brought together into ${article(groupMeta(a.group).label)}`,
     };
   }
   return { kind: 'rearrange', moves: [], frees: [], needs: [], label: 'the skeleton is rearranged, with nothing added or taken away' };
@@ -91,7 +92,7 @@ export function handoffBetween(from, to) {
     if (available.includes(g)) {
       return {
         group: g,
-        label: `${from.name} frees a ${groupMeta(g).label}, and that is exactly what ${to.name} needs to work on`,
+        label: `${from.name} frees ${article(groupMeta(g).label)}, and that is exactly what ${to.name} needs to work on`,
       };
     }
   }

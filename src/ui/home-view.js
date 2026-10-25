@@ -355,21 +355,34 @@ function drawLabels(stage, t, beat = null) {
   // Anything past the cap is not placed this frame, so it must not stay shown
   // at the position it held in the last one.
   for (const dropped of placed.splice(3)) seen.delete(dropped.el.dataset.label);
-  for (let i = 0; i < placed.length; i++) {
-    const m = placed[i];
-    m.ly = Math.max(16, m.ly);
-    for (let j = 0; j < i; j++) {
-      const n = placed[j];
+  // Measure, clamp, then separate — in that order. Separating first and
+  // clamping after put a card that had just been pushed down back up into the
+  // one above it, which is how two callouts ended up sharing a line for a
+  // frame or two at the boundary where one anchor stops and the next starts.
+  for (const m of placed) {
+    m.hgt = m.el.offsetHeight || m.hgt;
+    m.floor = Math.max(8, h - m.hgt - 12);
+    m.ly = Math.min(Math.max(16, m.ly), m.floor);
+  }
+  const kept = [];
+  for (const m of placed) {
+    for (const n of kept) {
       if (Math.abs(n.lx - m.lx) < 205 && m.ly < n.ly + n.hgt + 8) m.ly = n.ly + n.hgt + 8;
     }
+    // No room left below without hanging past the bottom edge, which the
+    // stage's overflow:hidden would cut in half. Drop the card for this frame
+    // rather than stacking it on the one above: a callout nobody can read is
+    // worse than one callout fewer.
+    if (m.ly > m.floor) {
+      seen.delete(m.el.dataset.label);
+      continue;
+    }
+    kept.push(m);
   }
+
   let lines = '';
-  for (const m of placed) {
-    // Measure rather than trust the cached height, and keep the whole card
-    // inside the stage: it has overflow:hidden, so a card hanging past the
-    // bottom edge is cut in half against the controls below it.
-    const hgt = m.el.offsetHeight || m.hgt;
-    const ly = Math.min(Math.max(8, m.ly), Math.max(8, h - hgt - 12));
+  for (const m of kept) {
+    const ly = m.ly;
     m.el.style.transform = `translate(${m.lx}px, ${ly}px)`;
     const ex = m.left ? m.lx + 200 : m.lx;
     lines += `<line x1="${m.p.x.toFixed(1)}" y1="${m.p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${(ly + 16).toFixed(1)}"/>

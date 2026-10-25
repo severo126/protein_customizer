@@ -27,6 +27,7 @@ import {
 } from '../model/picker.js';
 import { makeTarget, describeTarget, validateTarget, SEARCH_LIMITS } from '../model/routes.js';
 import { groupMeta } from '../model/molecules.js';
+import { foldedWays } from './folded-ways.js';
 import { geminiKey, setGeminiKey, parseTarget } from './gemini.js';
 
 /* ------------------------------ the transcript ---------------------------- */
@@ -171,6 +172,8 @@ export function renderPicker(root) {
         off the forty entries rather than written out by hand.</p>
       </div>
     </div>
+
+    ${foldedWays()}
   </div>`;
 
   wire(root, opts);

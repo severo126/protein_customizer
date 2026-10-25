@@ -102,7 +102,25 @@ export function render() {
 }
 
 document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-back-to-flow]')) setState({ screen: 'home' });
+  if (e.target.closest('[data-back-to-flow]')) {
+    setState({ screen: 'home' });
+    return;
+  }
+  // The folded-ways row is on the picker and the grid as well as the run step,
+  // and those two steps mount no listener of their own for it. Handled here so
+  // the bench and the workstation are reachable from the front door rather than
+  // only from a step you have to finish a search to get to. The run step has
+  // its own handler for these, which does the same thing, so a double hit is
+  // two identical setState calls rather than two different ones.
+  const go = e.target.closest('[data-go]');
+  if (go) {
+    setState({ screen: go.dataset.go });
+    return;
+  }
+  if (state.screen === 'home' && state.homeStep !== 'run') {
+    const step = e.target.closest('[data-step]');
+    if (step) setState({ homeStep: step.dataset.step });
+  }
 });
 
 document.getElementById('tabs').addEventListener('click', (e) => {

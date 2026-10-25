@@ -26,6 +26,7 @@ import {
 } from '../model/routes.js';
 import { groupMeta, describe, STARTERS } from '../model/molecules.js';
 import { geminiKey, adviseRoute } from './gemini.js';
+import { foldedWays } from './folded-ways.js';
 import { screenAdviceText } from '../model/picker.js';
 import { NOT_CHECKED } from '../model/disclaimers.js';
 
@@ -167,7 +168,7 @@ export function renderRoutes(root) {
   const crit = criterionById(state.criterion ?? 'stages');
 
   if (!result.reachable) {
-    root.innerHTML = `<div class="rg">${head(target, result, crit, false)}${deadEnd(result)}</div>`;
+    root.innerHTML = `<div class="rg">${head(target, result, crit, false)}${deadEnd(result)}${foldedWays()}</div>`;
     wire(root);
     return;
   }
@@ -207,6 +208,7 @@ export function renderRoutes(root) {
         </details>
       </aside>
     </div>
+    ${foldedWays()}
   </div>`;
   wire(root);
 }
