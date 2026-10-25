@@ -19,6 +19,11 @@ export const state = {
   // bench
   starterId: 'glucose',
   lane: [],
+  // how the vacuum is being run: the dial's temperature in °C, which run length
+  // the activity curve is read for, and the lane the dial was last set for
+  runId: null,
+  temp: null,
+  tempLane: null,
   // which stage the reaction cartoon is playing; null follows the last stage
   playStage: null,
   // the enzyme list filters itself against the lane unless this is on
