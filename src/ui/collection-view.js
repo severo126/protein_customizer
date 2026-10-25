@@ -29,9 +29,12 @@ import { runStage } from '../model/pipeline.js';
 import { openReaction } from './reaction.js';
 import { showSources } from './sources.js';
 
-// Half a revolution. Long enough to read as a mechanism turning rather than a
-// cut, short enough to press repeatedly without waiting.
-const TURN_MS = 620;
+// Half a revolution, paced for a projector at the back of a room rather than
+// for a laptop a foot away. At 620ms the turn was over before anyone watching
+// a demo had followed where the card went; at this speed the mechanism is
+// legible — you can see the card leave, see the next one come up, and read
+// that they are two halves of one wheel.
+const TURN_MS = 1100;
 
 // The running order of the deck and the filter drawer's state both live here
 // rather than in app state: they are this screen's business, and turning the

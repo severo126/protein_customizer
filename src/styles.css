@@ -821,7 +821,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   position: relative;
   height: var(--wheel-h, 560px);
   overflow: hidden;
-  transition: height 240ms ease;
+  transition: height 360ms ease;
 }
 .card-wheel {
   position: absolute;
