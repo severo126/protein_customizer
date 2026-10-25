@@ -1,7 +1,7 @@
 // App shell: load the fixed catalogue, route between the screens, and
 // keep the "what this can't tell you" panel reachable from all of them.
 
-import { renderCatalogue } from './catalogue-view.js';
+import { renderCollection } from './collection-view.js';
 import { renderBench } from './bench-view.js';
 import { renderSplice } from './splice-view.js';
 import { renderWorkstation } from './workstation-view.js';
@@ -28,8 +28,13 @@ export const state = {
   playStage: null,
   // the enzyme list filters itself against the lane unless this is on
   showAllEnzymes: false,
-  // the catalogue screen can borrow the same filter
-  catalogueFilter: false,
+  // collection: which card is face up, and the drawer's filters. Every filter
+  // here reads a committed catalogue field; see collection-view.js.
+  cardIndex: 0,
+  cardDrawer: false,
+  cardQuery: '',
+  cardWants: [],
+  cardArchetype: null,
   // splice
   spliceA: null,
   spliceB: null,
@@ -54,7 +59,7 @@ export function render() {
   }
   if (state.screen !== 'home') unmountHome();
   if (state.screen === 'home') renderHome(screenEl);
-  else if (state.screen === 'catalogue') renderCatalogue(screenEl);
+  else if (state.screen === 'collection') renderCollection(screenEl);
   else if (state.screen === 'workstation') renderWorkstation(screenEl);
   else if (state.screen === 'bench') renderBench(screenEl);
   else renderSplice(screenEl);
