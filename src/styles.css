@@ -498,9 +498,9 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 
 .home { position: relative; }
 .home-stage {
-  position: sticky;
-  top: var(--topbar-h, 64px);
-  height: calc(100vh - var(--topbar-h, 64px));
+  position: relative;
+  height: calc(100vh - var(--topbar-h, 64px) - 132px);
+  min-height: 420px;
   overflow: hidden;
   background:
     radial-gradient(1200px 700px at 62% 50%, #0d1220 0%, #05070c 55%, #010103 100%);
@@ -513,7 +513,7 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
     radial-gradient(ellipse at 62% 50%, transparent 45%, rgba(0, 0, 0, 0.72) 100%),
     linear-gradient(180deg, rgba(160, 180, 220, 0.05), transparent 18%, transparent 82%, rgba(160, 180, 220, 0.05));
 }
-.home-fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px 24px 24px 40%; }
+.home-fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px 24px 24px 42%; }
 .home-fallback[hidden] { display: none; }
 .home-leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .home-leaders line { stroke: rgba(210, 225, 255, 0.55); stroke-width: 1; }
@@ -531,65 +531,86 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 }
 .home-label.shown { opacity: 1; }
 .home-label.hot { border-color: rgba(255, 198, 92, 0.6); }
-.home-label strong { display: block; color: var(--ink); font-size: 12px; margin-bottom: 2px; }
+.home-label strong { display: block; color: var(--ink); font-size: 11.5px; margin-bottom: 2px; }
+.home-label span { display: block; line-height: 1.35; }
 .home-scene-note {
-  position: absolute; right: 16px; bottom: 12px; max-width: 520px; text-align: right;
+  position: absolute; left: clamp(12px, 3vw, 40px); bottom: 14px; width: min(400px, 40vw);
   font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.02em;
   text-transform: uppercase; line-height: 1.5;
 }
-.home-rail {
-  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 14px; z-index: 3;
-}
-.home-rail button {
-  width: 12px; height: 12px; border-radius: 50%; padding: 0; cursor: pointer;
-  border: 1px solid rgba(200, 215, 240, 0.5); background: transparent; position: relative;
-}
-.home-rail button[aria-current] { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent); }
-.home-rail button span {
-  position: absolute; right: 22px; top: 50%; transform: translateY(-50%); white-space: nowrap;
-  font-size: 11px; color: var(--ink-faint); opacity: 0; transition: opacity 0.2s;
-}
-.home-rail button:hover span, .home-rail button:focus-visible span { opacity: 1; }
-.home-scrollhint {
-  position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%);
-  font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint);
-  transition: opacity 0.4s;
-}
-.home-scrollhint::after { content: ''; display: block; width: 1px; height: 28px; margin: 8px auto 0; background: linear-gradient(var(--ink-faint), transparent); }
-.home-scrollhint.gone { opacity: 0; }
-
-.home-track { position: relative; margin-top: calc(-100vh + var(--topbar-h, 64px)); pointer-events: none; z-index: 2; }
-.home-beat { min-height: 75vh; display: flex; align-items: center; padding: 0 0 0 clamp(16px, 5vw, 72px); }
-.home-chapter .home-beat:first-child { min-height: 100vh; }
+.home-caption { position: absolute; left: clamp(12px, 3vw, 40px); top: 0; bottom: 56px; width: min(400px, 40vw);
+  display: flex; flex-direction: column; justify-content: center; gap: 10px; pointer-events: none; }
 .home-card {
-  pointer-events: auto; max-width: 400px; padding: 20px 22px; border-radius: 14px;
-  background: linear-gradient(155deg, rgba(40, 46, 62, 0.72), rgba(10, 12, 18, 0.82));
+  pointer-events: auto; padding: 18px 20px; border-radius: 14px;
+  background: linear-gradient(155deg, rgba(40, 46, 62, 0.74), rgba(10, 12, 18, 0.84));
   border: 1px solid rgba(200, 212, 240, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 30px 60px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(10px);
 }
-.home-card h2 { margin: 4px 0 8px; font-size: 22px; letter-spacing: -0.01em; }
-.home-card p { margin: 0 0 8px; color: var(--ink-dim); font-size: 14px; line-height: 1.55; }
-.home-card .caveat { font-size: 11.5px; color: var(--ink-faint); margin-top: 12px; }
+.home-card.ruled-out { border-color: #5c2222; }
+.home-card h2 { margin: 4px 0 8px; font-size: 21px; letter-spacing: -0.01em; }
+.home-card p { margin: 0 0 8px; color: var(--ink-dim); font-size: 13.5px; line-height: 1.55; }
+.home-card p:last-child { margin-bottom: 0; }
+.home-card .caveat, .home-card .tally { font-size: 11.5px; color: var(--ink-faint); }
+.home-card .regions { line-height: 1.45; }
+.home-card .refused { color: var(--red); }
 .beat-step { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-2); }
 .hero-kicker { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-faint); }
 .hero-title {
-  margin: 6px 0 10px; font-size: clamp(40px, 6vw, 68px); line-height: 1; letter-spacing: -0.03em;
+  margin: 6px 0 10px; font-size: clamp(34px, 4.6vw, 56px); line-height: 1; letter-spacing: -0.03em;
   background: linear-gradient(180deg, #ffffff 0%, #c9d3e6 38%, #6d7891 52%, #e6ecf7 70%, #8f9ab2 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.6));
 }
-.hero-sub { font-size: 15px !important; color: var(--ink) !important; margin-bottom: 18px !important; }
-.home-cta { margin-left: 4px; }
+.hero-sub { font-size: 14.5px !important; color: var(--ink) !important; }
 
-@media (max-width: 720px) {
+.home-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.07); }
+.home-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); box-shadow: 0 0 12px var(--accent); }
+
+.home-controls {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px clamp(12px, 3vw, 24px);
+  background: linear-gradient(var(--panel), var(--bg-2));
+  border-top: 2px solid var(--edge);
+}
+.home-play { font-size: 15px; padding: 10px 18px; }
+.home-starter { display: flex; align-items: center; gap: 7px; font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--ink-faint); }
+.home-starter select {
+  background: #141825; color: var(--ink); border: 2px solid var(--edge); border-radius: 10px;
+  padding: 6px 8px; font: inherit; font-size: 13px; text-transform: none; letter-spacing: 0;
+}
+.home-lane { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.home-chip {
+  padding: 5px 10px; border-radius: 999px; border: 2px solid var(--edge); background: var(--panel-2);
+  font-size: 12px; color: var(--ink-dim);
+}
+.home-chip.ran { border-color: #1f4d3a; color: var(--ink); }
+.home-chip.mismatch { border-color: #5c2222; color: var(--red); }
+.home-chip.unreached { opacity: 0.5; }
+.home-chip.empty { border-style: dashed; }
+.home-chip-arrow { color: var(--ink-faint); font-size: 11px; }
+.home-control-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+@media (max-width: 900px) {
   .tabs { max-width: 100%; overflow-x: auto; margin-left: 0; }
   .tab { flex: none; }
-  .home-scene-note { font-size: 9px; left: 16px; }
-  .home-beat { padding: 0 16px; align-items: flex-end; padding-bottom: 10vh; }
-  .home-card { max-width: none; }
+  /* On a phone the story card becomes a sheet over the bottom of the stage,
+     with the standing note under it so it stays on screen. */
+  .home-stage { height: 64vh; min-height: 360px; }
+  .home-caption {
+    position: absolute; left: 8px; right: 8px; bottom: 44px; top: auto; width: auto;
+    max-height: 52%; overflow: auto; justify-content: flex-end;
+  }
+  .home-card { padding: 12px 14px; }
+  .home-card h2 { font-size: 17px; }
+  .home-card p { font-size: 12.5px; }
+  .home-card .regions { display: none; }
+  .hero-title { font-size: 34px; }
+  .home-scene-note { left: 10px; right: 10px; bottom: 6px; width: auto; font-size: 9px; }
   .home-label span { display: none; }
-  .home-label { width: auto; max-width: 160px; }
-  .home-fallback { padding: 16px; }
+  .home-label { width: auto; max-width: 150px; }
+  .home-fallback { padding: 12px; }
+  .home-control-actions { margin-left: 0; }
+  .home-controls { gap: 8px; }
 }

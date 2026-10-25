@@ -1,44 +1,34 @@
-// The home screen: a dark vacuum the reader scrolls through.
+// The home screen: the bench, played inside the vacuum.
 //
-// Each chapter is one stage of a short lane, run by the same runStage the bench
-// uses, so the picture can only show what the rules did. Scrolling drives the
-// camera and the choreography; dragging looks around. Leader lines point at the
-// parts doing the work: the lobes, the ribbons from the entry's own region
-// labels, the active site, and the group that is going on or coming off.
+// It shows the lane the bench holds — the same `state.lane` and starter — and
+// one press of Play runs the whole thing: the first enzyme acts on the
+// molecule, the product it leaves is carried to the next enzyme, and so on
+// down the chain. A stage with no rule for what it was handed refuses in the
+// middle of the run and the run stops there, which is the moment this screen
+// exists to show.
 //
-// When WebGL is missing the same chapters play as the flat SVG cartoon instead.
+// Nothing here decides anything. The stages come from runPipeline, the same
+// call the bench renders from, so the animation can only play what the rules
+// did. Molecules are drawn as ball-and-stick from structure.js; enzymes stay
+// cartoons. When WebGL is missing, the same chain plays as the flat cartoon.
 
-import { runStage } from '../model/pipeline.js';
+import { runPipeline } from '../model/pipeline.js';
 import { starter, groupMeta, prettyCore, describe } from '../model/molecules.js';
+import { buildStructure, formulaTally } from '../model/structure.js';
 import { CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { reactionScene, REACTION_NOTE } from './reaction.js';
 import { escapeText } from './cartoon.js';
-import { state, setState } from './app.js';
+import { state, setState, laneEntries } from './app.js';
 
-// A lane that puts groups on and takes one off again, then a refusal, so every
-// kind of ending is on the page.
-const LANE = [
-  { starter: 'glucose', enzyme: 'hexokinase' },
-  { enzyme: 'gpat' },
-  { enzyme: 'lipase' },
-  { starter: 'glycerol', enzyme: 'glucose-isomerase' },
-];
+// How long one stage takes to play, in seconds.
+const STAGE_SECONDS = 5.5;
 
-let mounted = null; // { root, scene, chapters, cleanup }
+// Where the timeline rests before Play: just past the enzyme's entrance, so
+// the piece is already on stage rather than the vacuum looking empty.
+const IDLE_AT = 0.2;
 
-function buildChapters() {
-  const out = [];
-  let mol = null;
-  for (const step of LANE) {
-    const entry = state.byId.get(step.enzyme);
-    if (!entry) continue;
-    const molIn = step.starter ? starter(step.starter) : mol;
-    const result = runStage(molIn, entry);
-    out.push({ entry, molIn, result });
-    mol = result.ok ? result.product : molIn;
-  }
-  return out;
-}
+let mounted = null;
+let mountedTimer = null;
 
 function verb(entry) {
   const a = entry.action;
@@ -46,94 +36,143 @@ function verb(entry) {
   if (a.op === 'add') return `puts a ${g} on`;
   if (a.op === 'remove') return `takes a ${g} off`;
   if (a.op === 'join') return `joins groups into a ${g}`;
-  return `rearranges the skeleton`;
+  return 'rearranges the skeleton';
 }
 
-function beats(ch, i) {
-  const { entry, molIn, result } = ch;
-  const a = entry.action;
-  const g = groupMeta(a.group).label;
+// The stages this screen will play: the ones the rules actually reached.
+function playable(run) {
+  return run.stages
+    .filter((s) => s.state !== 'unreached')
+    .map((s, i, all) => ({
+      index: s.index,
+      entry: s.enzyme,
+      molIn: s.input,
+      result: s.state === 'ran' ? { ok: true, product: s.product, what: s.what } : { ok: false, stallReason: s.stallReason },
+      last: i === all.length - 1,
+    }));
+}
+
+// The ribbon colours on the piece, from the entry's own region labels.
+function regionLine(entry) {
   const sites = entry.domain?.sites ?? [];
-  const regionLine = sites.map((s) => `${escapeText(s.label)} (${s.region})`).join(', ');
-  const cof = entry.cofactor && entry.cofactor !== 'none' ? ` It leans on ${escapeText(entry.cofactor)} as a helper.` : '';
-  const first =
-    i === 0
-      ? `<div class="hero-kicker">A classroom cartoon, in 3D</div>
-         <h1 class="hero-title">Nano Foundry</h1>
-         <p class="hero-sub">Scroll through the vacuum and watch cartoon enzymes put groups on a molecule and take them off again. Drag to look around.</p>`
-      : '';
-  const out = [
-    `${first}<div class="beat-step">Stage ${i + 1} · ${escapeText(entry.name)}</div>
-     <h2>${escapeText(entry.name)} ${escapeText(verb(entry))}</h2>
-     <p>${escapeText(entry.blurb)}</p>`,
-    `<div class="beat-step">The parts</div>
-     <h2>Two lobes and a cleft</h2>
-     <p>The body is two metal lobes with a cleft between them. The coloured ribbons are this entry's own regions: ${regionLine}. Helices are red coils, sheets amber arrows, loops green threads.</p>`,
-  ];
-  if (result.ok) {
-    out.push(
-      `<div class="beat-step">The hand-off</div>
-       <h2>${escapeText(prettyCore(molIn.core))} seats and the jaw shuts</h2>
-       <p>${
-         a.op === 'add'
-           ? `Watch the glowing ${escapeText(g)} fly in from the side and lock on at the active site ring.${cof}`
-           : a.op === 'remove'
-             ? `Watch the ${escapeText(g)} break away from the molecule at the active site ring and drift off into the dark.${cof}`
-             : `The active site ring flares while the groups are rearranged.${cof}`
-       }</p>`,
-      `<div class="beat-step">Released</div>
-       <h2>Out comes ${escapeText(describe(result.product))}</h2>
-       <p>The jaw opens and the product drifts out${i < LANE.length - 1 ? ', on its way to the next stage' : ''}.</p>`,
-    );
-  } else {
-    out.push(
-      `<div class="beat-step">Refused</div>
-       <h2>The cleft will not take it</h2>
-       <p>${escapeText(result.stallReason)} Nothing docks, and the toy says so rather than passing it along.</p>`,
-      `<div class="beat-step">That is the whole run</div>
-       <h2>Build your own lane</h2>
-       <p>Every stage here came from the same rules as the bench. <button class="btn primary home-cta" data-go="bench">Open the bench</button></p>
-       <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p>`,
-    );
-  }
-  return out;
+  if (!sites.length) return '';
+  return `<p class="tally regions">Ribbons on the body: ${sites
+    .map((x) => `${escapeText(x.label)} (${x.region})`)
+    .join(', ')} — helices red, sheets amber, loops green.</p>`;
 }
 
-function labelSet(ch, t, sub) {
-  // Which labels show depends on where in the chapter the reader is: anatomy
-  // first, then the chemistry, then the product.
-  const anchors = mounted.scene.labelAnchors();
-  const a = ch.entry.action;
+function caption(stage, run) {
+  const { entry, molIn, result } = stage;
+  const cof = entry.cofactor && entry.cofactor !== 'none' ? ` Helper: ${escapeText(entry.cofactor)}.` : '';
+  const head = `<div class="beat-step">Stage ${stage.index + 1} of ${run.stages.length} · ${escapeText(entry.name)}</div>
+    <h2>${escapeText(entry.name)} ${escapeText(verb(entry))}</h2>`;
+  if (!result.ok) {
+    return `${head}
+      ${regionLine(entry)}
+      <p class="refused">${escapeText(result.stallReason)}</p>
+      <p>Nothing docks. The jaw never shuts, and the run stops here rather than passing the molecule along.</p>`;
+  }
+  const tally = formulaTally(buildStructure(result.product));
+  return `${head}
+    ${regionLine(entry)}
+    <p>In: ${escapeText(describe(molIn))}. Out: ${escapeText(describe(result.product))}.${cof}</p>
+    <p class="tally">Drawn as ${escapeText(tally)}.</p>`;
+}
+
+function controls(run, entries) {
+  const chips = run.stages
+    .map(
+      (s) => `<span class="home-chip ${s.state}">${escapeText(s.enzyme.name)}</span>`,
+    )
+    .join('<span class="home-chip-arrow" aria-hidden="true">➜</span>');
+  return `<div class="home-controls">
+    <button class="btn primary home-play" data-play>▶ Play the run</button>
+    <label class="home-starter">Starting molecule
+      <select data-starter>
+        ${STARTER_OPTIONS()
+          .map((o) => `<option value="${o.id}" ${o.id === state.starterId ? 'selected' : ''}>${escapeText(o.label)}</option>`)
+          .join('')}
+      </select>
+    </label>
+    <div class="home-lane" aria-label="The lane">${entries.length ? chips : '<span class="home-chip empty">The lane is empty</span>'}</div>
+    <div class="home-control-actions">
+      ${(state.demo?.routes ?? [])
+        .map((r) => `<button class="btn small ghost" data-demo="${r.id}">${escapeText(r.title)}</button>`)
+        .join('')}
+      <button class="btn small" data-go="bench">Edit this lane on the bench</button>
+    </div>
+  </div>`;
+}
+
+function STARTER_OPTIONS() {
+  // molecules.js owns the list; this only needs id and label.
+  return STARTERS_CACHE;
+}
+let STARTERS_CACHE = [];
+
+export function unmountHome() {
+  if (!mounted) return;
+  mounted.cleanup();
+  mounted = null;
+  document.body.classList.remove('home-mode');
+}
+
+/* ---------- labels, drawn over the canvas with leader lines ---------- */
+
+function labelSet(stage, t, sub, scene) {
+  const anchors = scene.labelAnchors();
+  const a = stage.entry.action;
   const g = groupMeta(a.group).label;
   const out = [];
+  // Only a few at a time: the anatomy while the piece is arriving, then the
+  // chemistry. Everything else is in the card on the left.
+  let ribbons = 0;
   for (const an of anchors) {
     if (an.id === 'site') {
-      an.text = a.op === 'add' ? `Active site · puts the ${g} on here` : a.op === 'remove' ? `Active site · takes the ${g} off here` : `Active site`;
+      an.text =
+        a.op === 'add' ? `Active site · puts the ${g} on here` : a.op === 'remove' ? `Active site · takes the ${g} off here` : 'Active site';
+      an.detail = 'Where this toy draws the chemistry as happening.';
     }
-    const anatomy = an.id === 'upper' || an.id === 'lower' || an.id.startsWith('ribbon');
-    if (t < 0.36 && anatomy) out.push(an);
-    if (t >= 0.14 && t < 0.36 && an.id === 'cleft') out.push(an);
-    if (t >= 0.36 && t < 0.86 && an.id === 'site') out.push(an);
+    if (an.id.startsWith('ribbon')) {
+      if (t > 0.18 && t < 0.44 && ribbons < 2) {
+        ribbons += 1;
+        out.push(an);
+      }
+      continue;
+    }
+    if ((an.id === 'upper' || an.id === 'cleft') && t > 0.2 && t < 0.5) out.push(an);
+    if (an.id === 'site' && t >= 0.44 && t < 0.86) out.push(an);
   }
-  if (sub.flyer?.visible && t > 0.5 && t < 0.86) {
+  if (sub.flyer?.visible) {
     out.push({
       id: 'flyer',
       text: a.op === 'add' ? `${g} going on` : `${g} coming off`,
-      detail: a.op === 'add' ? 'Handed over from a donor and fixed to the molecule.' : 'Cut free and released into the vacuum.',
+      detail: a.op === 'add' ? 'Handed over and fixed to the molecule.' : 'Cut free and released into the vacuum.',
       object: sub.flyer,
       hot: true,
     });
   }
-  if (t >= 0.82 && ch.result.ok && sub.product?.visible) {
-    out.push({ id: 'product', text: `Product · ${prettyCore(ch.result.product.core)}`, detail: describe(ch.result.product), object: sub.product });
+  if (stage.result.ok && sub.product?.visible) {
+    out.push({
+      id: 'product',
+      text: `Product · ${prettyCore(stage.result.product.core)}`,
+      detail: stage.last ? describe(stage.result.product) : 'On its way to the next enzyme.',
+      object: sub.product,
+    });
   }
-  if (!ch.result.ok && t > 0.45) {
-    out.push({ id: 'molecule', text: `${prettyCore(ch.molIn.core)} · refused`, detail: 'It never seats in the cleft.', object: sub.molecule, hot: true });
+  if (!stage.result.ok && t > 0.4) {
+    out.push({
+      id: 'refused',
+      text: `${prettyCore(stage.molIn.core)} · refused`,
+      detail: 'It never seats in the cleft.',
+      object: sub.molecule,
+      hot: true,
+    });
   }
   return out;
 }
 
-function drawLabels(ch, t) {
+function drawLabels(stage, t) {
   const { scene, root } = mounted;
   const sub = scene.subject;
   const layer = root.querySelector('.home-labels');
@@ -141,14 +180,13 @@ function drawLabels(ch, t) {
   if (!sub || !layer) return;
   const w = layer.clientWidth;
   const h = layer.clientHeight;
-  const cx = w > 900 ? w * 0.63 : w * 0.5;
+  const cx = w > 900 ? w * 0.6 : w * 0.5;
   const cy = h * 0.5;
-  const list = labelSet(ch, t, sub);
   const seen = new Set();
   const placed = [];
-  // Keep labels off the story cards on the left of a wide screen.
-  const minX = w > 900 ? Math.min(500, w * 0.36) : 12;
-  for (const an of list) {
+  const minX = w > 900 ? Math.min(470, w * 0.33) : 8;
+
+  for (const an of labelSet(stage, t, sub, scene)) {
     const p = scene.project(an.object);
     if (!p.visible) continue;
     seen.add(an.id);
@@ -166,7 +204,6 @@ function drawLabels(ch, t) {
       el._html = html;
       el._h = el.offsetHeight;
     }
-    // Push the label outward from the middle of the subject so the lines fan.
     let dx = p.x - cx;
     let dy = p.y - cy;
     const len = Math.hypot(dx, dy) || 1;
@@ -181,12 +218,12 @@ function drawLabels(ch, t) {
     lx = Math.min(w - 250, lx);
     placed.push({ el, p, lx, ly: p.y + dy * 80 - 18, hgt: el._h || 70, left });
   }
-  // Settle overlaps: walk top to bottom and push a label down past any
-  // earlier one it would sit on.
+
+  // Settle overlaps top to bottom.
   placed.sort((m, n) => m.ly - n.ly);
   for (let i = 0; i < placed.length; i++) {
     const m = placed[i];
-    m.ly = Math.max(20, m.ly);
+    m.ly = Math.max(16, m.ly);
     for (let j = 0; j < i; j++) {
       const n = placed[j];
       if (Math.abs(n.lx - m.lx) < 205 && m.ly < n.ly + n.hgt + 8) m.ly = n.ly + n.hgt + 8;
@@ -194,7 +231,7 @@ function drawLabels(ch, t) {
   }
   let lines = '';
   for (const m of placed) {
-    const ly = Math.min(h - m.hgt - 16, m.ly);
+    const ly = Math.min(h - m.hgt - 12, m.ly);
     m.el.style.transform = `translate(${m.lx}px, ${ly}px)`;
     const ex = m.left ? m.lx + 200 : m.lx;
     lines += `<line x1="${m.p.x.toFixed(1)}" y1="${m.p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${(ly + 16).toFixed(1)}"/>
@@ -207,50 +244,50 @@ function drawLabels(ch, t) {
   }
 }
 
-export function unmountHome() {
-  if (!mounted) return;
-  mounted.cleanup();
-  mounted = null;
-  document.body.classList.remove('home-mode');
-}
+/* ---------- the screen ---------- */
 
 export async function renderHome(root) {
-  if (mounted && mounted.root.isConnected && root.contains(mounted.root)) return;
+  const entries = laneEntries();
+  const signature = `${state.starterId}|${state.lane.join(',')}`;
+  if (mounted && mounted.signature === signature && root.contains(mounted.root)) return;
+  const wasPlaying = mounted?.playing;
   unmountHome();
   document.body.classList.add('home-mode');
 
-  const chapters = buildChapters();
-  const beatHtml = chapters
-    .map(
-      (ch, i) => `<section class="home-chapter" data-chapter="${i}">
-        ${beats(ch, i).map((b) => `<div class="home-beat"><div class="home-card">${b}</div></div>`).join('')}
-      </section>`,
-    )
-    .join('');
+  const { STARTERS } = await import('../model/molecules.js');
+  STARTERS_CACHE = STARTERS.map((s) => ({ id: s.id, label: s.label }));
+
+  const run = runPipeline(starter(state.starterId), entries);
+  const stages = playable(run);
 
   root.innerHTML = `<div class="home">
     <div class="home-stage">
-      <canvas class="home-canvas" aria-label="3D cartoon of the current enzyme and molecule"></canvas>
+      <canvas class="home-canvas" aria-label="3D cartoon of the lane running"></canvas>
       <div class="home-fallback" hidden></div>
       <svg class="home-leaders" aria-hidden="true"></svg>
       <div class="home-labels"></div>
       <div class="home-vignette" aria-hidden="true"></div>
+      <div class="home-caption"></div>
+      <div class="home-progress"><div class="home-progress-bar"></div></div>
       <div class="home-scene-note" role="note"></div>
-      <nav class="home-rail" aria-label="Chapters">
-        ${chapters.map((ch, i) => `<button data-jump="${i}" title="${escapeText(ch.entry.name)}"><span>${escapeText(ch.entry.name)}</span></button>`).join('')}
-      </nav>
-      <div class="home-scrollhint">Scroll</div>
     </div>
-    <div class="home-track">${beatHtml}</div>
+    ${controls(run, entries)}
   </div>`;
 
   const homeEl = root.querySelector('.home');
   const canvas = homeEl.querySelector('.home-canvas');
   const note = homeEl.querySelector('.home-scene-note');
-  const track = homeEl.querySelector('.home-track');
-  const rail = [...homeEl.querySelectorAll('.home-rail button')];
+  const captionEl = homeEl.querySelector('.home-caption');
+  const bar = homeEl.querySelector('.home-progress-bar');
+  const playBtn = homeEl.querySelector('[data-play]');
+  const fallback = homeEl.querySelector('.home-fallback');
   const topbar = document.querySelector('.topbar');
-  const setTop = () => document.documentElement.style.setProperty('--topbar-h', `${topbar?.offsetHeight ?? 0}px`);
+  const standing = document.querySelector('.standing-note');
+  const setTop = () =>
+    document.documentElement.style.setProperty(
+      '--topbar-h',
+      `${(topbar?.offsetHeight ?? 0) + (standing?.offsetHeight ?? 0)}px`,
+    );
   setTop();
 
   let scene = null;
@@ -259,7 +296,8 @@ export async function renderHome(root) {
     const made = mod.createFoundryScene(canvas);
     if (made.ok) {
       scene = made;
-      note.textContent = `${mod.SCENE_NOTE} ${REACTION_NOTE}`;
+      note.textContent = mod.SCENE_NOTE;
+      note.title = `${mod.SCENE_NOTE_LONG} ${REACTION_NOTE}`;
     }
   } catch (err) {
     console.warn('3D scene unavailable, falling back to the flat cartoon', err);
@@ -268,48 +306,127 @@ export async function renderHome(root) {
     scene?.dispose();
     return;
   }
-
-  let chapter = -1;
-  let target = 0;
-  let shown = 0;
-  const fallback = homeEl.querySelector('.home-fallback');
-
   if (!scene) {
     canvas.hidden = true;
     fallback.hidden = false;
-    note.textContent = `This browser has no WebGL, so the flat cartoon plays instead. ${REACTION_NOTE}`;
+    note.textContent = 'This browser has no WebGL, so the flat cartoon plays instead.';
+    note.title = REACTION_NOTE;
   }
 
-  function readScroll() {
-    const rect = track.getBoundingClientRect();
-    const total = track.offsetHeight - window.innerHeight;
-    const p = Math.min(0.99999, Math.max(0, -rect.top / Math.max(1, total)));
-    const f = p * chapters.length;
-    const idx = Math.floor(f);
-    target = f - idx;
-    if (idx !== chapter) {
-      chapter = idx;
-      const ch = chapters[idx];
-      rail.forEach((b, i) => b.toggleAttribute('aria-current', i === idx));
-      if (scene) {
-        scene.setSubject(ch.entry, ch.molIn, ch.result);
-        homeEl.querySelector('.home-labels').innerHTML = '';
-        shown = target;
-      } else {
-        fallback.innerHTML = reactionScene(ch.entry, ch.molIn);
-      }
+  /* --- the run: one clock across every stage --- */
+
+  let at = 0; // 0 .. stages.length, the position along the whole chain
+  let playing = false;
+  let current = -1;
+
+  const empty = () => {
+    captionEl.innerHTML = `<div class="home-card">
+      <div class="hero-kicker">A classroom cartoon, in 3D</div>
+      <h1 class="hero-title">Nano Foundry</h1>
+      <p class="hero-sub">Put enzymes in a lane and press Play once: the molecule goes down the chain,
+      each enzyme acting on what the one before it left.</p>
+      <p>The lane is empty. Load one of the seeded routes below, or build your own on the bench.</p>
+      <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p>
+    </div>`;
+  };
+
+  function showStage(i) {
+    const stage = stages[i];
+    if (!stage) return;
+    current = i;
+    captionEl.innerHTML = `<div class="home-card">${caption(stage, run)}</div>`;
+    if (scene) {
+      const prev = stages[i - 1];
+      scene.setSubject(stage.entry, stage.molIn, stage.result, {
+        carry: !!prev?.result.ok,
+        last: stage.last,
+        slide: i > 0,
+      });
+      homeEl.querySelector('.home-labels').innerHTML = '';
+      homeEl.querySelector('.home-leaders').innerHTML = '';
+    } else {
+      fallback.innerHTML = reactionScene(stage.entry, stage.molIn);
     }
-    homeEl.querySelector('.home-scrollhint').classList.toggle('gone', p > 0.01);
   }
 
+  function finished() {
+    const lastStage = stages.at(-1);
+    playBtn.textContent = '▶ Play again';
+    playBtn.disabled = false;
+    if (lastStage && !lastStage.result.ok) {
+      captionEl.insertAdjacentHTML(
+        'beforeend',
+        `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div>
+          <p>Stages after this one never got the molecule. ${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
+      );
+    } else if (lastStage) {
+      captionEl.insertAdjacentHTML(
+        'beforeend',
+        `<div class="home-card"><div class="beat-step">End of the run</div>
+          <h2>Out comes ${escapeText(describe(run.product ?? lastStage.result.product))}</h2>
+          <p class="caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p></div>`,
+      );
+    }
+  }
+
+  function play() {
+    if (!stages.length) return;
+    at = 0;
+    current = -1;
+    if (scene) scene.setProgress(0);
+    current = -1;
+    playing = true;
+    playBtn.textContent = '■ Stop';
+    showStage(0);
+  }
+
+  function stop() {
+    playing = false;
+    playBtn.textContent = stages.length ? '▶ Play the run' : '▶ Play the run';
+  }
+
+  function tick(dt) {
+    if (!playing) return;
+    at = Math.min(stages.length, at + dt / STAGE_SECONDS);
+    const i = Math.min(stages.length - 1, Math.floor(at));
+    if (i !== current) showStage(i);
+    const t = Math.min(1, at - i);
+    bar.style.width = `${((at / stages.length) * 100).toFixed(2)}%`;
+    if (scene) scene.setProgress(t);
+    if (at >= stages.length) {
+      playing = false;
+      finished();
+    }
+    return t;
+  }
+
+  if (!stages.length) {
+    empty();
+    playBtn.disabled = true;
+  } else {
+    showStage(0);
+    at = IDLE_AT;
+    if (scene) scene.setProgress(IDLE_AT);
+  }
+
+  let lastNow = performance.now();
   if (scene) {
     scene.resize();
     scene.onFrame(() => {
-      shown += (target - shown) * 0.12;
-      scene.setProgress(shown);
-      if (chapter >= 0) drawLabels(chapters[chapter], shown);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastNow) / 1000);
+      lastNow = now;
+      tick(dt);
+      const i = Math.min(stages.length - 1, Math.floor(at));
+      if (stages[i]) drawLabels(stages[i], Math.min(1, at - i));
     });
+  } else {
+    // No WebGL: step the flat cartoon through the same chain on a timer.
+    const id = setInterval(() => tick(0.25), 250);
+    mountedTimer = id;
   }
+
+  /* --- input --- */
 
   let drag = null;
   const down = (e) => {
@@ -330,35 +447,48 @@ export async function renderHome(root) {
   const onResize = () => {
     setTop();
     scene?.resize();
-    readScroll();
   };
-  window.addEventListener('scroll', readScroll, { passive: true });
   window.addEventListener('resize', onResize);
 
   homeEl.addEventListener('click', (e) => {
-    const jump = e.target.closest('[data-jump]');
-    if (jump) {
-      const sec = track.querySelector(`[data-chapter="${jump.dataset.jump}"]`);
-      window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY + 2, behavior: 'smooth' });
+    if (e.target.closest('[data-play]')) {
+      if (playing) stop();
+      else play();
+      return;
     }
     const go = e.target.closest('[data-go]');
     if (go) {
-      window.scrollTo(0, 0);
       setState({ screen: go.dataset.go });
+      return;
     }
+    const demo = e.target.closest('[data-demo]');
+    if (demo) {
+      const route = (state.demo?.routes ?? []).find((r) => r.id === demo.dataset.demo);
+      if (route) setState({ starterId: route.starter, lane: [...route.lane], playStage: null });
+    }
+  });
+
+  homeEl.addEventListener('change', (e) => {
+    const sel = e.target.closest('[data-starter]');
+    if (sel) setState({ starterId: sel.value });
   });
 
   mounted = {
     root: homeEl,
     scene,
-    chapters,
+    stages,
+    signature,
+    get playing() {
+      return playing;
+    },
     cleanup() {
-      window.removeEventListener('scroll', readScroll);
       window.removeEventListener('resize', onResize);
+      if (mountedTimer) clearInterval(mountedTimer);
+      mountedTimer = null;
       scene?.dispose();
     },
   };
-  // Exposed for screenshots and for poking at in the console.
-  window.__foundryHome = { scene, chapters, readScroll };
-  readScroll();
+  window.__foundryHome = { scene, stages, play, tick };
+  if (wasPlaying || state.autoPlayHome) play();
 }
+
