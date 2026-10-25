@@ -75,6 +75,9 @@ runcmd:
     else
       sudo -u postgres psql -d foundry -f /opt/nano-foundry/tools/api/schema.sql || true
     fi
+  # Vultr's Ubuntu images ship with ufw on and only SSH allowed.
+  - ufw allow 80/tcp || true
+  - ufw allow 443/tcp || true
   - ln -sf /etc/nginx/sites-available/nano-foundry /etc/nginx/sites-enabled/default
   - systemctl restart nginx
   - systemctl enable --now nano-foundry-api nano-foundry-filters
