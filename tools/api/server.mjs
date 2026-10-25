@@ -13,6 +13,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { extname, join, normalize } from 'node:path';
 import { screenReferences } from './sourceFilter.mjs';
+import { searchQueries, searchWithFallback } from './sourceQuery.mjs';
 
 const root = process.cwd();
 const port = Number(process.env.PORT ?? 5173);
@@ -234,15 +235,15 @@ createServer(async (req, res) => {
     const topic = url.searchParams.get('topic') === 'failure-mode' ? 'failure-mode' : 'enzyme';
     if (!q) return json(res, 400, { error: 'q is required' });
 
-    // A catalogue card is one enzyme, so the name alone is ambiguous and gets a
-    // nudge. A failure-mode query is already a full phrase; appending to it only
-    // narrows it to nothing.
-    const query = topic === 'failure-mode' ? q : `${q} enzyme`;
+    // Usually one query, but a decorated enzyme name falls back to the bare one
+    // when it finds nothing — see sourceQuery.mjs for why that happens.
+    const attempts = searchQueries(q, topic);
+    const search = process.env.SERPAPI_KEY ? viaSerpApi : viaCrossref;
 
     try {
-      const { provider, results } = process.env.SERPAPI_KEY ? await viaSerpApi(query) : await viaCrossref(query);
+      const { provider, results, asked } = await searchWithFallback(attempts, search);
       const { kept, dropped } = screenReferences(results);
-      return json(res, 200, { configured: true, provider, topic, query: q, results: kept, screened_out: dropped });
+      return json(res, 200, { configured: true, provider, topic, query: q, asked, results: kept, screened_out: dropped });
     } catch (err) {
       // Nothing answered, so hand over somewhere to look rather than pretending
       // to have found sources.
