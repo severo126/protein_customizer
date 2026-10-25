@@ -14,9 +14,13 @@
 
 import * as THREE from 'three';
 import { groupMeta } from '../model/molecules.js';
+import { buildStructure, buildGroupFragment, elementMeta, STRUCTURE_NOTE } from '../model/structure.js';
 
 export const SCENE_NOTE =
-  'Invented geometry: noise-displaced blobs, a carved cleft and ribbons laid on by hand. Not a coordinate set, not a structure, not a trajectory.';
+  'Enzyme bodies are invented geometry — not a structure, not a coordinate set. Molecules are a ball-and-stick cartoon: real atoms and bonds, drawn positions.';
+
+export const SCENE_NOTE_LONG =
+  `The enzyme is a noise-displaced blob with a carved cleft and ribbons laid on by hand: not a coordinate set, not a structure, not a trajectory. ${STRUCTURE_NOTE}`;
 
 const REGION_COLOUR = { loop: 0x4ddba0, helix: 0xff6b6b, sheet: 0xffb648 };
 
@@ -355,53 +359,102 @@ function buildEnzyme(entry, env) {
   return group;
 }
 
-/* ---------- the molecule ---------- */
+/* ---------- the molecule, as ball-and-stick ---------- */
 
-function buildMolecule(mol, env, { scale = 1 } = {}) {
+// One bond: a cylinder from a to b, doubled side by side for a double bond.
+function bondMeshes(from, to, order, material, thickness) {
+  const out = [];
+  const dir = to.clone().sub(from);
+  const len = dir.length();
+  if (len < 1e-4) return out;
+  const mid = from.clone().lerp(to, 0.5);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  const side = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
+  if (!Number.isFinite(side.x) || side.lengthSq() < 0.1) side.set(1, 0, 0);
+  const offsets = order >= 2 ? [-thickness * 1.5, thickness * 1.5] : [0];
+  for (const off of offsets) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(thickness, thickness, len, 10), material);
+    m.position.copy(mid).addScaledVector(side, off);
+    m.quaternion.copy(q);
+    out.push(m);
+  }
+  return out;
+}
+
+// Draw a laid-out structure: a sphere per atom in its element's colour, a
+// stick per bond. The layout comes from structure.js, which says in its own
+// header that the positions are drawing rather than measurement.
+function ballAndStick(structure, env, { scale = 1, emissive = 0 } = {}) {
   const group = new THREE.Group();
-  const core = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.34 * scale, 2),
-    new THREE.MeshStandardMaterial({ color: 0x8e9ac4, metalness: 0.8, roughness: 0.3, envMap: env, envMapIntensity: 1.1 }),
-  );
-  group.add(core);
-  group.userData.core = core;
-  group.userData.groupNodes = [];
+  const stick = new THREE.MeshStandardMaterial({ color: 0xa8b2c8, metalness: 0.85, roughness: 0.3, envMap: env });
+  const byElement = new Map();
+  const atomMeshes = [];
 
-  const n = Math.max(mol.groups.length, 1);
-  mol.groups.forEach((name, i) => {
-    const meta = groupMeta(name);
-    const colour = new THREE.Color().setHSL(meta.hue / 360, 0.72, 0.56);
-    const angle = (i / n) * Math.PI * 2;
-    const tilt = (i % 3) - 1;
-    const dir = new THREE.Vector3(Math.cos(angle), tilt * 0.42, Math.sin(angle)).normalize();
-    const at = dir.clone().multiplyScalar(0.62 * scale);
-
-    const node = new THREE.Group();
-    const ball = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.2 * scale, 3),
-      new THREE.MeshStandardMaterial({
+  for (const atom of structure.atoms) {
+    const meta = elementMeta(atom.element);
+    let material = byElement.get(atom.element);
+    if (!material) {
+      const colour = new THREE.Color(meta.colour);
+      material = new THREE.MeshStandardMaterial({
         color: colour,
-        metalness: 0.55,
+        metalness: 0.45,
         roughness: 0.22,
         envMap: env,
-        emissive: colour.clone().multiplyScalar(0.12),
-      }),
-    );
-    node.add(ball);
-    const stick = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.045 * scale, 0.045 * scale, at.length(), 8),
-      new THREE.MeshStandardMaterial({ color: 0x9aa4c4, metalness: 0.9, roughness: 0.35, envMap: env }),
-    );
-    stick.position.copy(at.clone().multiplyScalar(0.5));
-    stick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-    node.position.copy(at);
-    stick.position.sub(at);
-    node.add(stick);
-    node.userData.group = name;
+        envMapIntensity: 1.2,
+        emissive: colour.clone().multiplyScalar(emissive),
+      });
+      byElement.set(atom.element, material);
+    }
+    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(meta.radius * scale, 3), material);
+    mesh.position.set(atom.pos[0] * scale, atom.pos[1] * scale, atom.pos[2] * scale);
+    mesh.userData.element = atom.element;
+    group.add(mesh);
+    atomMeshes.push(mesh);
+  }
+
+  for (const bond of structure.bonds) {
+    const a = atomMeshes[bond.a];
+    const b = atomMeshes[bond.b];
+    if (!a || !b) continue;
+    for (const m of bondMeshes(a.position, b.position, bond.order, stick, 0.075 * scale)) group.add(m);
+  }
+
+  group.userData.atomMeshes = atomMeshes;
+  group.userData.structure = structure;
+  return group;
+}
+
+function buildMolecule(mol, env, { scale = 1 } = {}) {
+  const structure = buildStructure(mol);
+  // The layout is in its own units, and a starch fragment is far larger than
+  // hydrogen peroxide. Fit each one to about the same size on screen, with a
+  // little room so a bigger molecule still reads as bigger.
+  const extent = Math.max(
+    0.8,
+    ...structure.atoms.map((a) => Math.hypot(a.pos[0], a.pos[1], a.pos[2])),
+  );
+  const fitted = (scale * 1.9) / Math.pow(extent, 0.82);
+  const group = ballAndStick(structure, env, { scale: fitted, emissive: 0.08 });
+  group.userData.molecule = mol;
+
+  // A handle on each named group, so a label can point at the one changing.
+  group.userData.groupNodes = structure.groups.map((g) => {
+    const node = new THREE.Object3D();
+    const pick = g.atoms.length ? g.atoms : [g.anchor ?? g.highlight ?? 0];
+    const mid = new THREE.Vector3();
+    for (const i of pick) {
+      const m = group.userData.atomMeshes[i];
+      if (m) mid.add(m.position);
+    }
+    node.position.copy(mid.divideScalar(Math.max(1, pick.length)));
+    node.userData.group = g.group;
     group.add(node);
-    group.userData.groupNodes.push(node);
+    return node;
   });
 
+  // Centre of the whole thing, which is what the camera and the jaw aim at.
+  const box = new THREE.Box3().setFromObject(group);
+  group.userData.span = box.getSize(new THREE.Vector3()).length();
   return group;
 }
 
@@ -487,43 +540,61 @@ export function createFoundryScene(canvas) {
     }
   }
 
+  // Where a product is handed to the next stage, and where the next stage's
+  // enzyme comes in from. Keeping these fixed is what makes the run read as
+  // one chain rather than a series of separate scenes.
+  const HANDOFF = new THREE.Vector3(4.6, -0.2, 1.4);
+  const OFFSTAGE_IN = new THREE.Vector3(13, -0.6, -2);
+  const OFFSTAGE_OUT = new THREE.Vector3(-14, 0.8, -3);
+
+  function disposeTree(root) {
+    root.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) m.dispose();
+      }
+    });
+    root.parent?.remove(root);
+  }
+
   // `result` is the bench's own runStage output, handed in rather than
-  // recomputed, so the scene can only show what the rules did.
-  function setSubject(entry, molIn, result) {
-    clearStage();
+  // recomputed, so the scene can only show what the rules did. `carry` means
+  // this stage is picking up the molecule the previous stage let go of, and
+  // `slide` means the enzyme before it is still on screen and should leave.
+  function setSubject(entry, molIn, result, { carry = false, last = true, slide = false } = {}) {
+    const leaving = slide && subject ? subject.enzyme : null;
+    if (subject?.outgoing) disposeTree(subject.outgoing);
+    for (const obj of [subject?.molecule, subject?.product, subject?.flyer]) {
+      if (obj) disposeTree(obj);
+    }
+    if (!leaving && subject?.enzyme) disposeTree(subject.enzyme);
+
     const enzyme = buildEnzyme(entry, env);
+    enzyme.position.copy(OFFSTAGE_IN);
     stage.add(enzyme);
 
-    const molecule = buildMolecule(molIn, env, { scale: 1.3 });
+    const molecule = buildMolecule(molIn, env, { scale: 1 });
     stage.add(molecule);
 
     let product = null;
     if (result?.ok) {
-      product = buildMolecule(result.product, env, { scale: 1.3 });
+      product = buildMolecule(result.product, env, { scale: 1 });
       product.visible = false;
       stage.add(product);
     }
 
-    // The group that changes hands, if one does.
+    // The group that changes hands, drawn with its own atoms.
     let flyer = null;
     const op = entry.action.op;
     if (result?.ok && (op === 'add' || op === 'remove')) {
       const meta = groupMeta(entry.action.group);
       const colour = new THREE.Color().setHSL(meta.hue / 360, 0.85, 0.6);
-      flyer = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.24, 3),
-        new THREE.MeshStandardMaterial({
-          color: colour,
-          emissive: colour.clone().multiplyScalar(0.35),
-          metalness: 0.5,
-          roughness: 0.2,
-          envMap: env,
-        }),
-      );
+      flyer = ballAndStick(buildGroupFragment(entry.action.group), env, { scale: 0.6, emissive: 0.5 });
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({ map: glowTexture(), color: colour, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
       );
-      halo.scale.setScalar(1.3);
+      halo.scale.setScalar(1.5);
       flyer.add(halo);
       flyer.visible = false;
       stage.add(flyer);
@@ -534,10 +605,13 @@ export function createFoundryScene(canvas) {
       molIn,
       result,
       enzyme,
+      outgoing: leaving,
       molecule,
       product,
       flyer,
       op,
+      carry,
+      last,
       radius: enzyme.userData.radius,
     };
     handle.subject = subject;
@@ -552,8 +626,8 @@ export function createFoundryScene(canvas) {
   const SHOTS = [
     { at: 0.0, pos: [0.6, 1.8, 10.5], look: [0, 0, 0], fov: 42 },
     { at: 0.2, pos: [-3.6, 1.6, 7.6], look: [0, 0.1, 0], fov: 40 },
-    { at: 0.42, pos: [3.2, 1.2, 7.4], look: [0.6, 0, 0], fov: 38 },
-    { at: 0.62, pos: [5.0, 0.6, 5.0], look: [1.2, -0.2, 0], fov: 36 },
+    { at: 0.42, pos: [3.6, 1.1, 7.6], look: [0.8, 0, 0.2], fov: 39 },
+    { at: 0.62, pos: [5.4, 0.7, 5.6], look: [1.3, -0.1, 0.3], fov: 38 },
     { at: 0.82, pos: [5.4, 1.4, 7.2], look: [1.4, -0.3, 0.6], fov: 40 },
     { at: 1.0, pos: [0.4, 1.6, 10.2], look: [0, 0, 0], fov: 42 },
   ];
@@ -598,21 +672,29 @@ export function createFoundryScene(canvas) {
   // Where the molecule is along its run, for a given t.
   function placeSubject(t, clock) {
     if (!subject) return;
-    const { enzyme, molecule, product, flyer, radius, result, op } = subject;
+    const { enzyme, outgoing, molecule, product, flyer, radius, result, op, carry, last } = subject;
     const parts = enzyme.userData.parts;
 
-    enzyme.rotation.y = -0.35 + Math.sin(clock * 0.12) * 0.06 + t * 0.5;
-    enzyme.position.y = Math.sin(clock * 0.5) * 0.04;
+    // The swap: this stage's enzyme comes in while the last one leaves.
+    const arrive = span(t, 0, 0.17);
+    enzyme.position.copy(OFFSTAGE_IN).lerp(new THREE.Vector3(0, 0, 0), arrive);
+    enzyme.position.y += Math.sin(clock * 0.5) * 0.04;
+    enzyme.rotation.y = -0.35 + Math.sin(clock * 0.12) * 0.06 + t * 0.4;
+    if (outgoing) {
+      outgoing.position.lerpVectors(new THREE.Vector3(0, 0, 0), OFFSTAGE_OUT, arrive);
+      outgoing.visible = arrive < 0.999;
+    }
 
-    const dockAt = new THREE.Vector3(radius * 0.52, 0, 0);
-    const start = new THREE.Vector3(radius * 0.74 + 7, 0.3, 1.4);
-    const exit = new THREE.Vector3(radius * 0.74 + 6, -1.1, 2.6);
+    const dockAt = new THREE.Vector3(radius * 0.95, -0.05, 0.35);
+    // A molecule the previous stage handed over starts where it was let go.
+    const start = carry ? HANDOFF.clone() : new THREE.Vector3(radius + 9, 0.6, 2.2);
+    const exit = last ? new THREE.Vector3(-radius - 9, -1.4, 3.4) : HANDOFF.clone();
 
-    const approach = span(t, 0.34, 0.56);
-    const close = span(t, 0.56, 0.64);
-    const hand = span(t, 0.62, 0.72);
-    const open = span(t, 0.74, 0.8);
-    const leave = span(t, 0.78, 0.94);
+    const approach = span(t, 0.18, 0.46);
+    const close = span(t, 0.46, 0.56);
+    const hand = span(t, 0.54, 0.7);
+    const open = span(t, 0.72, 0.8);
+    const leave = span(t, 0.8, 1);
 
     // The jaw shuts over whatever is in the cleft, then opens again.
     const shut = close * (1 - open);
@@ -623,10 +705,12 @@ export function createFoundryScene(canvas) {
     parts.siteHalo.scale.setScalar(radius * (2.0 + hand * (1 - leave) * 1.6));
 
     const docked = molecule.position.copy(start).lerp(dockAt, approach);
-    molecule.rotation.y = clock * 0.6;
-    molecule.rotation.x = Math.sin(clock * 0.4) * 0.2;
+    molecule.rotation.y = clock * 0.5;
+    molecule.rotation.x = Math.sin(clock * 0.35) * 0.18;
 
     if (result?.ok) {
+      // The product replaces the input at the moment the group changes hands,
+      // and then drifts to the hand-off point for the next stage.
       const swapped = hand > 0.5;
       molecule.visible = !swapped;
       if (product) {
@@ -635,26 +719,31 @@ export function createFoundryScene(canvas) {
         product.rotation.copy(molecule.rotation);
       }
       if (flyer) {
-        const donor = new THREE.Vector3(radius * 2.3, -0.5, 2.4);
-        const away = new THREE.Vector3(radius * 2.5, -0.7, 2.6);
+        const donor = new THREE.Vector3(radius * 1.2, -radius * 2.2, 2.6);
+        const away = new THREE.Vector3(radius * 1.1, -radius * 2.4, 3.0);
         if (op === 'add') {
-          flyer.visible = t > 0.5 && hand < 0.98;
+          flyer.visible = t > 0.3 && hand < 0.98;
           flyer.position.copy(donor).lerp(dockAt, hand);
-          flyer.scale.setScalar(1 - hand * 0.7);
+          flyer.scale.setScalar(1 - hand * 0.45);
         } else {
-          flyer.visible = hand > 0.02;
+          flyer.visible = hand > 0.02 && leave < 0.9;
           flyer.position.copy(dockAt).lerp(away, Math.max(0, (hand - 0.3) / 0.7));
           flyer.scale.setScalar(Math.min(1, hand * 2));
         }
+        flyer.rotation.y = clock * 1.1;
+        flyer.rotation.z = clock * 0.7;
       }
     } else {
-      // A refusal: it comes in, does not seat, and drifts back out.
-      const bounce = span(t, 0.6, 0.86);
-      molecule.position.copy(start).lerp(dockAt.clone().add(new THREE.Vector3(1.5, 0, 0)), approach);
-      molecule.position.lerp(start.clone().add(new THREE.Vector3(1.4, -0.8, 1.2)), bounce);
+      // A refusal, shown mid-run: it comes in, will not seat, and backs out.
+      // The jaw never shuts, which is the whole point of the moment.
+      const bounce = span(t, 0.55, 0.85);
+      const nudge = dockAt.clone().add(new THREE.Vector3(radius * 0.9, 0, 0.3));
+      molecule.position.copy(start).lerp(nudge, approach);
+      molecule.position.lerp(start.clone().add(new THREE.Vector3(radius * 0.6, -1.2, 1.6)), bounce);
       molecule.visible = true;
       parts.jawTop.rotation.z = 0;
       parts.jawBottom.rotation.z = 0;
+      parts.siteRing.material.emissiveIntensity = 0.5;
     }
   }
 
