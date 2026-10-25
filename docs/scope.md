@@ -41,10 +41,12 @@ walks every exported object recursively so a new field cannot quietly reintroduc
 * A plausibility result that clears every filter is reported as
   **"Nothing here ruled this out"** — never as stable, viable, correct, validated, approved,
   or designed.
-* Beside that verdict the app lists, as a standing list and not a footnote, what was never
-  checked: folding kinetics, real side-chain packing, expression, solubility, aggregation,
-  activity retention, allostery, any cellular context, and anything to do with actual
-  safety.
+* Beside that verdict the app lists what was never checked: folding kinetics, real
+  side-chain packing, expression, solubility, aggregation, activity retention, allostery,
+  any cellular context, and anything to do with actual safety. It sits next to the verdict
+  itself, one click away in its own disclosure, never in a page footer and never on a
+  separate screen. (It was a printed panel until severo asked for the interface to stop
+  explaining itself; the list stayed and the prose around it went.)
 * There is no "validated" or "approved" state anywhere in the UI, and no code path that
   can produce one.
 * A pass is the absence of a red flag from a cartoon. The UI says so in those words.
