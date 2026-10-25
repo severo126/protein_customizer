@@ -221,7 +221,12 @@ async function viaGemini({ agent, prompt }) {
     }),
     signal: AbortSignal.timeout(spec.limits?.timeout_ms ?? 20000),
   });
-  if (!out.ok) throw new Error(`Gemini HTTP ${out.status}`);
+  if (!out.ok) {
+    // Google's reason (wrong model, no free tier, quota) is what anyone
+    // debugging this needs, and the key is never part of it.
+    const reason = await out.json().then((d) => d?.error?.message).catch(() => '');
+    throw new Error(`Gemini HTTP ${out.status}${reason ? `: ${reason.slice(0, 300)}` : ''}`);
+  }
   const data = await out.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';
   if (!text) throw new Error('empty reply');
