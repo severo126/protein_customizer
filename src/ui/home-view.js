@@ -237,7 +237,11 @@ function drawLabels(stage, t) {
   }
   let lines = '';
   for (const m of placed) {
-    const ly = Math.min(h - m.hgt - 12, m.ly);
+    // Measure rather than trust the cached height, and keep the whole card
+    // inside the stage: it has overflow:hidden, so a card hanging past the
+    // bottom edge is cut in half against the controls below it.
+    const hgt = m.el.offsetHeight || m.hgt;
+    const ly = Math.min(Math.max(8, m.ly), Math.max(8, h - hgt - 12));
     m.el.style.transform = `translate(${m.lx}px, ${ly}px)`;
     const ex = m.left ? m.lx + 200 : m.lx;
     lines += `<line x1="${m.p.x.toFixed(1)}" y1="${m.p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${(ly + 16).toFixed(1)}"/>
