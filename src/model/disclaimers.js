@@ -10,7 +10,8 @@ export const PASS_EXPLANATION =
 export const CARTOON_PHYSICS_NOTE =
   'Classroom cartoon with order-of-magnitude-wrong physics. Passing means only that this toy did not rule it out. Nothing here says a construct would fold, function, or be safe.';
 
-// Shown beside every verdict, as a standing list — never a footnote.
+// Shown beside every verdict, in its own disclosure — never a footnote, never a
+// separate screen. See docs/scope.md §3.
 export const NOT_CHECKED = [
   'Folding kinetics — whether this could ever reach a folded state, and how fast',
   'Real side-chain packing — every atom-level contact at the join',

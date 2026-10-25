@@ -29,8 +29,8 @@ the pot does not**: both stages run and there *is* a product, and the pH light i
 naming invertase and the glucuronosyltransferase. That contrast is the point of the whole screen.
 
 **1:20 — the splice table, the money shot.** Lipase and alpha-amylase, 6-unit linker: six hard
-filters, all green, and the verdict is **"Nothing here ruled this out"** — read it aloud, then read
-the standing list of what was never checked beside it. Drag the linker to 2: the blobs clash. Drag
+filters, all green, and the verdict is **"Nothing here ruled this out"** — read it aloud, then open
+"Not checked by any of this" beside it and read the list. Drag the linker to 2: the blobs clash. Drag
 to 20: the compactness band rejects the dumbbell. Then point at the funnel: 36 candidate splice
 points in, which filter killed how many, and how few come out.
 
