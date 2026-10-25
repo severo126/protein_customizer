@@ -206,9 +206,8 @@ export function routeMapSvg(map, entriesById) {
 export function routeMapPanel(map, entriesById) {
   const cut =
     map.deeper > 0
-      ? `<p class="rm-cut">${map.deeper} more molecule${map.deeper === 1 ? '' : 's'} on this skeleton
-         ${map.deeper === 1 ? 'is' : 'are'} reachable further out than the map draws. The search still
-         finds ${map.deeper === 1 ? 'it' : 'them'} when you ask for ${map.deeper === 1 ? 'it' : 'one'}.</p>`
+      ? `<p class="rm-cut">${map.deeper} more reachable further out than this draws. The search still
+         finds ${map.deeper === 1 ? 'it' : 'them'}.</p>`
       : '';
 
   // The dead end gets said twice on purpose: once in the headline above the
@@ -216,9 +215,8 @@ export function routeMapPanel(map, entriesById) {
   // reader looking at a graph trusts the graph.
   const deadEnd =
     !map.reachable && map.core
-      ? `<p class="rm-deadend">Nothing on the map arrives at what you have asked for, and the
-         dashed node on the right is why it is drawn anyway. That is the answer rather than a gap in
-         the picture: ${
+      ? `<p class="rm-deadend">Nothing arrives at the dashed node, which is the answer rather than
+         a gap in the picture: ${
            map.exhausted
              ? `no chain of up to ${map.searchDepth} catalogue stages gets there`
              : 'though the walk did not finish inside its budget, so this says nothing either way'
