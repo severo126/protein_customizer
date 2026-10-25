@@ -615,6 +615,18 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 .home-hint svg { display: block; width: 72px; height: 54px; margin: 0 0 -4px 8px; overflow: visible; transform: scale(-1, -1); }
 .home-hint path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 900px) { .home-hint { display: none; } }
+/* A short stage (a 720p or 768p projector, or a laptop with the flow bar
+   under the scene) has less room than the caption wants. Smaller type and no
+   region line keep the kicker and the last sentence inside the stage instead
+   of under the top edge and over the geometry label. */
+@media (max-height: 820px) {
+  .home-caption { gap: 6px; bottom: 44px; }
+  .home-card h2 { font-size: clamp(22px, 2.4vw, 30px); margin: 4px 0 8px; }
+  .home-card p { font-size: 13px; line-height: 1.45; margin-bottom: 5px; }
+  .home-card .regions { display: none; }
+  .home-card .tally { display: none; }
+  .home-change, .home-handoff, .home-thermal-line { font-size: 12px; line-height: 1.4; }
+}
 .home-progress-bar { height: 100%; width: 0; background: var(--accent); }
 
 .home-controls {
