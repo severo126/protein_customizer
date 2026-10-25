@@ -1,12 +1,19 @@
 // The vacuum: a 3D stage for one enzyme and one molecule.
 //
-// Everything in here is invented geometry. The blobs are noise-displaced
-// spheres, the cleft is a dish carved out of two of them, and the ribbons are
-// tubes and arrows laid on the surface along paths this file makes up. The
-// only thing that comes from data is which of the three region labels each
-// ribbon gets, and what the molecule is carrying — both read straight out of
-// the fixed catalogue. There is no coordinate set anywhere near this file, and
-// the screen that uses it says so on top of the canvas.
+// Everything in here is invented geometry. The body is a clump of rounded
+// lobes: two big ones with a cleft dished between them for the jaw, and one
+// smaller lobe per site sat on the skin where this file decides to put it. The
+// only thing that comes from data is how many site lobes there are and which
+// of the three region labels each one carries, plus what the molecule is
+// carrying — all read straight out of the fixed catalogue. There is no
+// coordinate set anywhere near this file, and the screen that uses it says so
+// on top of the canvas.
+//
+// The look is a flat cartoon, after the research notes in docs/ and the
+// Kurzgesagt frames they describe: banded toon shading under one warm light,
+// a lighter rim where a body turns away instead of a dark outline, saturated
+// flat colour on the few things that matter, and depth from soft out-of-focus
+// shapes in front and behind rather than from reflections. Nothing is metal.
 //
 // Nothing here decides anything either: the scene is handed the result the
 // bench already computed, so the picture cannot show a reaction the rules did
@@ -19,7 +26,7 @@ import { buildStructure, buildGroupFragment, elementMeta, STRUCTURE_NOTE } from 
 export const SCENE_NOTE = 'Invented geometry — not a structure.';
 
 export const SCENE_NOTE_LONG =
-  `The enzyme is a noise-displaced blob with a carved cleft and ribbons laid on by hand: not a coordinate set, not a structure, not a trajectory. ${STRUCTURE_NOTE}`;
+  `The enzyme is a clump of noise-displaced lobes with a carved cleft, one small lobe per catalogue site placed by hand: not a coordinate set, not a structure, not a trajectory. ${STRUCTURE_NOTE}`;
 
 const REGION_COLOUR = { loop: 0x4ddba0, helix: 0xff6b6b, sheet: 0xffb648 };
 
@@ -74,47 +81,6 @@ function fbm(x, y, z, seed) {
 
 /* ---------- the studio the metal reflects ---------- */
 
-// A procedural environment, painted into a canvas and run through PMREM. No
-// image file to ship, and it is what makes the bodies read as metal rather
-// than as flat plastic.
-function studioEnvironment(renderer) {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 256;
-  const g = c.getContext('2d');
-
-  const sky = g.createLinearGradient(0, 0, 0, 256);
-  sky.addColorStop(0, '#2b3350');
-  sky.addColorStop(0.45, '#10131c');
-  sky.addColorStop(1, '#05070b');
-  g.fillStyle = sky;
-  g.fillRect(0, 0, 512, 256);
-
-  // Soft light panels: the bright streaks that slide across a metal surface.
-  const panel = (x, y, w, h, colour, blur) => {
-    g.save();
-    g.filter = `blur(${blur}px)`;
-    g.fillStyle = colour;
-    g.fillRect(x, y, w, h);
-    g.restore();
-  };
-  panel(40, 18, 150, 54, 'rgba(226,238,255,0.95)', 16);
-  panel(300, 10, 110, 40, 'rgba(150,200,255,0.75)', 20);
-  panel(210, 96, 230, 20, 'rgba(255,198,92,0.55)', 26);
-  panel(0, 186, 512, 30, 'rgba(92,208,255,0.22)', 34);
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.mapping = THREE.EquirectangularReflectionMapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  pmrem.compileEquirectangularShader();
-  const env = pmrem.fromEquirectangular(tex).texture;
-  pmrem.dispose();
-  tex.dispose();
-  return env;
-}
-
 // A soft round sprite, used for the dust and for the glow around hot points.
 function glowTexture() {
   const c = document.createElement('canvas');
@@ -130,6 +96,52 @@ function glowTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
+/* ---------- the cartoon look ---------- */
+
+// Three flat bands of light instead of a smooth falloff, so a body reads as a
+// shape with a lit side and a shadow side, the way a flat illustration does.
+let toonRamp = null;
+function toonGradient() {
+  if (toonRamp) return toonRamp;
+  const data = new Uint8Array([70, 70, 70, 255, 90, 90, 90, 255, 225, 225, 225, 255, 255, 255, 255, 255]);
+  toonRamp = new THREE.DataTexture(data, 4, 1, THREE.RGBAFormat);
+  toonRamp.minFilter = THREE.LinearFilter;
+  toonRamp.magFilter = THREE.LinearFilter;
+  toonRamp.generateMipmaps = false;
+  toonRamp.needsUpdate = true;
+  return toonRamp;
+}
+
+// Toon bands plus a light rim on the edges facing away from the camera. The
+// rim is what separates a body from the ground without an outline; it is the
+// body's own hue lifted, never white, because a white rim reads as frost.
+function cartoonMaterial(colour, { rim = null, rimStrength = 0.55, emissive = 0x000000 } = {}) {
+  const base = colour instanceof THREE.Color ? colour : new THREE.Color(colour);
+  const mat = new THREE.MeshToonMaterial({ color: base, gradientMap: toonGradient(), emissive });
+  // Tone mapping greys saturated colour out; a flat look wants it as picked.
+  mat.toneMapped = false;
+  const hsl = {};
+  base.getHSL(hsl);
+  const rimColour = rim ? new THREE.Color(rim) : new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s + 0.1), 0.85);
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.rimColour = { value: rimColour };
+    shader.uniforms.rimStrength = { value: rimStrength };
+    shader.fragmentShader = shader.fragmentShader
+      .replace('void main() {', 'uniform vec3 rimColour;\nuniform float rimStrength;\nvoid main() {')
+      .replace(
+        '#include <opaque_fragment>',
+        `float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
+        float rimBand = smoothstep(0.72, 0.78, 1.0 - facing);
+        outgoingLight = mix(outgoingLight, rimColour, rimBand * rimStrength);
+        #include <opaque_fragment>`,
+      );
+  };
+  return mat;
+}
+
+// Colours are picked in sRGB so they land on screen as saturated as chosen.
+const flat = (h, s, l) => new THREE.Color().setHSL(h, s, l, THREE.SRGBColorSpace);
 
 /* ---------- the enzyme body ---------- */
 
@@ -190,103 +202,49 @@ function lobeShape(seed, { radius, squash, dishAt, dishDepth }) {
   return { geo, surface };
 }
 
-// A ribbon laid over a lobe's outer face: a coil for a helix, a run of flat
-// arrows for a sheet, a thin meander for a loop. Which one comes from the
-// entry's own region label; the path itself is invented.
-function ribbonMesh(region, seed, radius, lane, shape, outward) {
+// One small lobe per site, sat on the big lobe's skin: a clump of rounded
+// shapes in flat colour is how the reference frames draw a protein, and it is
+// also the honest choice, because a bump says "this has a part here" and
+// nothing more. Which of the three region colours it gets comes from the
+// entry's own region label; its size and shape are a hint at that label (a
+// helix is taller, a sheet is flatter, a loop is a small round bump), and
+// where it sits is invented.
+function siteLobe(region, seed, radius, lane, shape, outward) {
   const colour = REGION_COLOUR[region] ?? 0x8c95ad;
-  const material = new THREE.MeshStandardMaterial({
-    color: colour,
-    metalness: 0.3,
-    roughness: 0.35,
-    emissive: new THREE.Color(colour).multiplyScalar(0.28),
-  });
+  const material = cartoonMaterial(colour, { rimStrength: 0.5 });
 
-  // Walk across the front of the lobe at a given height, away from the cleft.
-  const steps = 90;
-  const base = [];
-  const lat = lane * outward; // positive = towards the outer pole of this lobe
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const lon = -1.35 + t * 1.7 + seed * 0.3; // around the lobe, front side
-    const wob = region === 'loop' ? Math.sin(t * Math.PI * 3 + seed * 5) * 0.12 : 0;
-    const y = lat + wob;
-    const c = Math.sqrt(Math.max(0.05, 1 - y * y));
-    base.push(new THREE.Vector3(Math.sin(lon) * c, y, Math.cos(lon) * c).normalize());
-  }
+  // A direction on the front of the lobe, away from the cleft, at the lane's
+  // height — the same walk the earlier ribbons took, stopped at one point.
+  const lat = lane * outward;
+  const lon = -0.5 + ((seed * 7.3) % 1) * 1.1;
+  const c = Math.sqrt(Math.max(0.05, 1 - lat * lat));
+  const n = new THREE.Vector3(Math.sin(lon) * c, lat, Math.cos(lon) * c).normalize();
 
-  if (region === 'helix') {
-    // A coil: the path winds round the walk, lifted off the surface.
-    const pts = [];
-    const turns = 7;
-    for (let i = 0; i < base.length; i++) {
-      const t = i / (base.length - 1);
-      const n = base[i];
-      const next = base[Math.min(i + 1, base.length - 1)];
-      const tangent = next.clone().sub(base[Math.max(i - 1, 0)]).normalize();
-      const side = new THREE.Vector3().crossVectors(n, tangent).normalize();
-      const ang = t * turns * Math.PI * 2;
-      const p = shape.surface(n, radius * (0.07 + 0.05 * Math.cos(ang)));
-      p.addScaledVector(side, Math.sin(ang) * radius * 0.07);
-      pts.push(p);
-    }
-    const curve = new THREE.CatmullRomCurve3(pts);
-    const coil = new THREE.Mesh(new THREE.TubeGeometry(curve, 360, radius * 0.032, 8, false), material);
-    coil.userData.mid = curve.getPointAt(0.55);
-    return coil;
-  }
-
-  const pts = base.map((n) => shape.surface(n, radius * 0.035));
-  const curve = new THREE.CatmullRomCurve3(pts);
-
-  if (region === 'sheet') {
-    const group = new THREE.Group();
-    const strands = 3;
-    for (let k = 0; k < strands; k++) {
-      const t0 = 0.12 + (k / strands) * 0.78;
-      const t1 = t0 + 0.2;
-      const a = curve.getPointAt(t0);
-      const b = curve.getPointAt(t1);
-      const len = a.distanceTo(b);
-      const normal = a.clone().normalize();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.2, radius * 0.035, len * 0.74), material);
-      const mid = a.clone().lerp(b, 0.37);
-      body.position.copy(mid);
-      body.up.copy(normal);
-      body.lookAt(b);
-      group.add(body);
-      const tip = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.17, len * 0.3, 3), material);
-      tip.position.copy(a.clone().lerp(b, 0.86));
-      tip.up.copy(normal);
-      tip.lookAt(b);
-      tip.rotateX(Math.PI / 2);
-      tip.scale.set(1, 1, 0.25);
-      group.add(tip);
-    }
-    group.userData.mid = curve.getPointAt(0.5);
-    return group;
-  }
-
-  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 160, radius * 0.038, 8, false), material);
-  tube.userData.mid = curve.getPointAt(0.45);
-  return tube;
+  const size = { helix: 0.36, sheet: 0.34, loop: 0.27 }[region] ?? 0.3;
+  const geo = welded(new THREE.IcosahedronGeometry(radius * size, 4));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, material);
+  // Sunk a little into the body so the join reads as one clump, not a stuck-on ball.
+  mesh.position.copy(shape.surface(n, -radius * 0.06));
+  mesh.lookAt(mesh.position.clone().multiplyScalar(2));
+  if (region === 'helix') mesh.scale.set(0.85, 1.35, 0.9);
+  else if (region === 'sheet') mesh.scale.set(1.35, 0.95, 0.6);
+  else mesh.scale.set(1, 1, 0.85);
+  mesh.userData.mid = mesh.position.clone();
+  return mesh;
 }
 
-// The whole piece: two lobes with a cleft between them, ribbons on the
-// surface, and a lit ring where the chemistry is drawn to happen.
-function buildEnzyme(entry, env) {
+// The whole piece: two lobes with a cleft between them, a small lobe per
+// site on the skin, and a lit ring where the chemistry is drawn to happen.
+function buildEnzyme(entry) {
   const seed = seedOf(entry.id);
   const hue = entry.cartoon.hue / 360;
-  const base = new THREE.Color().setHSL(hue, 0.42, 0.52);
   const radius = 1.15 + (entry.domain?.radius ?? 2) * 0.1;
 
-  const metal = new THREE.MeshStandardMaterial({
-    color: base,
-    metalness: 0.94,
-    roughness: 0.26,
-    envMap: env,
-    envMapIntensity: 1.25,
-  });
+  // Two neighbouring hues, the lower lobe a step darker, so the hinge reads
+  // as two shapes meeting rather than one shape with a crease.
+  const upperSkin = cartoonMaterial(flat(hue, 0.72, 0.56), { rimStrength: 0.6 });
+  const lowerSkin = cartoonMaterial(flat((hue + 0.045) % 1, 0.7, 0.47), { rimStrength: 0.6 });
 
   const group = new THREE.Group();
   group.userData.parts = {};
@@ -294,9 +252,9 @@ function buildEnzyme(entry, env) {
   const squash = new THREE.Vector3(1.18, 0.9, 1.0);
   const upperShape = lobeShape(seed, { radius, squash, dishAt: new THREE.Vector3(0.35, -1, 0).normalize(), dishDepth: 0.42 });
   const lowerShape = lobeShape(seed + 0.37, { radius: radius * 0.94, squash, dishAt: new THREE.Vector3(0.35, 1, 0).normalize(), dishDepth: 0.42 });
-  const upper = new THREE.Mesh(upperShape.geo, metal);
+  const upper = new THREE.Mesh(upperShape.geo, upperSkin);
   upper.position.y = radius * 0.46;
-  const lower = new THREE.Mesh(lowerShape.geo, metal);
+  const lower = new THREE.Mesh(lowerShape.geo, lowerSkin);
   lower.position.y = -radius * 0.46;
 
   const jawTop = new THREE.Group();
@@ -309,38 +267,33 @@ function buildEnzyme(entry, env) {
   group.userData.parts.upper = upper;
   group.userData.parts.lower = lower;
 
-  // Ribbons, one per site, from the entry's own loop / helix / sheet labels.
-  // They are laid on the lobe's own skin, so they ride the jaw as it shuts.
+  // One small lobe per site, from the entry's own loop / helix / sheet labels.
+  // They sit on the big lobe's own skin, so they ride the jaw as it shuts.
   const sites = entry.domain?.sites ?? [];
-  group.userData.parts.ribbons = [];
+  group.userData.parts.lobes = [];
   sites.forEach((site, i) => {
     const onLower = i % 2 === 1;
-    const lane = [0.28, 0.1, -0.12, 0.45][i % 4];
-    const mesh = ribbonMesh(site.region, seed + i * 0.61, radius, lane, onLower ? lowerShape : upperShape, onLower ? -1 : 1);
+    const lane = [0.32, 0.12, -0.1, 0.5][i % 4];
+    const mesh = siteLobe(site.region, seed + i * 0.61, radius, lane, onLower ? lowerShape : upperShape, onLower ? -1 : 1);
     mesh.userData.site = site;
-    // A point on the ribbon itself for the leader line, not the lobe centre.
+    // The leader line lands on the lobe's own surface, not its centre.
     const pin = new THREE.Object3D();
-    pin.position.copy(mesh.userData.mid ?? new THREE.Vector3());
+    pin.position.set(0, 0, radius * 0.3);
     mesh.add(pin);
     mesh.userData.pin = pin;
     (onLower ? lower : upper).add(mesh);
-    group.userData.parts.ribbons.push(mesh);
+    group.userData.parts.lobes.push(mesh);
   });
 
   // The active site: a ring at the mouth of the cleft, lit in the colour of
   // the group this enzyme moves.
   const gm = groupMeta(entry.group);
-  const siteColour = new THREE.Color().setHSL(gm.hue / 360, 0.8, 0.6);
+  const siteColour = flat(gm.hue / 360, 0.85, 0.62);
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius * 0.42, radius * 0.045, 12, 48),
-    new THREE.MeshStandardMaterial({
-      color: siteColour,
-      emissive: siteColour,
-      emissiveIntensity: 1.1,
-      metalness: 0.2,
-      roughness: 0.4,
-    }),
+    new THREE.TorusGeometry(radius * 0.42, radius * 0.05, 12, 48),
+    cartoonMaterial(siteColour, { emissive: siteColour, rimStrength: 0.3 }),
   );
+  ring.material.emissiveIntensity = 0.8;
   ring.position.set(radius * 0.72, 0, 0);
   ring.rotation.y = Math.PI / 2;
   group.add(ring);
@@ -383,9 +336,9 @@ function bondMeshes(from, to, order, material, thickness) {
 // Draw a laid-out structure: a sphere per atom in its element's colour, a
 // stick per bond. The layout comes from structure.js, which says in its own
 // header that the positions are drawing rather than measurement.
-function ballAndStick(structure, env, { scale = 1, emissive = 0 } = {}) {
+function ballAndStick(structure, { scale = 1, emissive = 0 } = {}) {
   const group = new THREE.Group();
-  const stick = new THREE.MeshStandardMaterial({ color: 0xa8b2c8, metalness: 0.85, roughness: 0.3, envMap: env });
+  const stick = cartoonMaterial(0xc9cff5, { rim: 0xffffff, rimStrength: 0.25 });
   const byElement = new Map();
   const atomMeshes = [];
 
@@ -394,14 +347,7 @@ function ballAndStick(structure, env, { scale = 1, emissive = 0 } = {}) {
     let material = byElement.get(atom.element);
     if (!material) {
       const colour = new THREE.Color(meta.colour);
-      material = new THREE.MeshStandardMaterial({
-        color: colour,
-        metalness: 0.45,
-        roughness: 0.22,
-        envMap: env,
-        envMapIntensity: 1.2,
-        emissive: colour.clone().multiplyScalar(emissive),
-      });
+      material = cartoonMaterial(colour, { emissive: colour.clone().multiplyScalar(emissive), rimStrength: 0.45 });
       byElement.set(atom.element, material);
     }
     const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(meta.radius * scale, 3), material);
@@ -423,7 +369,7 @@ function ballAndStick(structure, env, { scale = 1, emissive = 0 } = {}) {
   return group;
 }
 
-function buildMolecule(mol, env, { scale = 1 } = {}) {
+function buildMolecule(mol, { scale = 1 } = {}) {
   const structure = buildStructure(mol);
   // The layout is in its own units, and a starch fragment is far larger than
   // hydrogen peroxide. Fit each one to about the same size on screen, with a
@@ -433,7 +379,7 @@ function buildMolecule(mol, env, { scale = 1 } = {}) {
     ...structure.atoms.map((a) => Math.hypot(a.pos[0], a.pos[1], a.pos[2])),
   );
   const fitted = (scale * 1.9) / Math.pow(extent, 0.82);
-  const group = ballAndStick(structure, env, { scale: fitted, emissive: 0.08 });
+  const group = ballAndStick(structure, { scale: fitted, emissive: 0.08 });
   group.userData.molecule = mol;
 
   // A handle on each named group, so a label can point at the one changing.
@@ -468,14 +414,17 @@ export function createFoundryScene(canvas) {
   }
   if (!renderer.getContext()) return { ok: false, reason: 'no WebGL context' };
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  // Flat colour as picked: no filmic curve to grey the saturation out.
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+  // The ground is a deep indigo, never black, and the fog is the same colour,
+  // so far things fade into colour rather than into nothing. That fade is the
+  // whole of the atmospheric perspective here.
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x04060a);
-  scene.fog = new THREE.FogExp2(0x04060a, 0.045);
+  scene.background = new THREE.Color(0x12163a);
+  scene.fog = new THREE.FogExp2(0x12163a, 0.04);
 
   // How the vacuum is being run: warmth from -1 (held well under the stated
   // window) to +1 (well over it), and agitation, which is only ever non-zero
@@ -483,30 +432,27 @@ export function createFoundryScene(canvas) {
   // src/ui/climate.js, which reads the activity curve — the scene does not
   // decide anything about temperature, it only shows what that number says.
   const climate = { warmth: 0, agitation: 0 };
-  const VACUUM_BASE = new THREE.Color(0x04060a);
-  const VACUUM_HOT = new THREE.Color(0x200703);
-  const VACUUM_COLD = new THREE.Color(0x03101e);
-  const RIM_BASE = new THREE.Color(0xffc65c);
-  const RIM_HOT = new THREE.Color(0xff4a22);
+  const VACUUM_BASE = new THREE.Color(0x12163a);
+  const VACUUM_HOT = new THREE.Color(0x3b1434);
+  const VACUUM_COLD = new THREE.Color(0x0c1a4d);
   const tint = new THREE.Color();
-  const rimTint = new THREE.Color();
-
-  const env = studioEnvironment(renderer);
-  scene.environment = env;
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
   camera.position.set(0, 1.4, 9);
 
-  // The env map does most of the work; these three give it direction.
-  const key = new THREE.DirectionalLight(0xdce8ff, 2.4);
-  key.position.set(-4, 5, 6);
-  const rim = new THREE.DirectionalLight(0xffc65c, 3.4);
-  rim.position.set(5, -1.5, -5);
-  const fill = new THREE.DirectionalLight(0x5cd0ff, 0.8);
+  // One warm light from the upper left, and a sky-to-ground hemisphere that
+  // turns the shadow side purple-blue rather than grey. The heat light is off
+  // until the dial is run past a window; then it reddens the far edge.
+  const key = new THREE.DirectionalLight(0xfff1dc, 1.9);
+  key.position.set(-6, 6, 1.5);
+  const heat = new THREE.DirectionalLight(0xff6a3a, 0);
+  heat.position.set(5, -1.5, -5);
+  const fill = new THREE.DirectionalLight(0x86d4ff, 0.45);
   fill.position.set(3, 2, 4);
-  scene.add(key, rim, fill, new THREE.AmbientLight(0x3a4256, 0.25));
+  scene.add(key, heat, fill, new THREE.HemisphereLight(0x8fa6ff, 0x3a2470, 0.8));
 
-  /* dust, so the vacuum has depth rather than being a flat black */
+  /* dust: small, dim, and the only particles — nothing that happens at this
+     scale looks like god rays, caustics or bubbles */
   const dustCount = 900;
   const dustPos = new Float32Array(dustCount * 3);
   for (let i = 0; i < dustCount; i++) {
@@ -522,16 +468,41 @@ export function createFoundryScene(canvas) {
   const dust = new THREE.Points(
     dustGeo,
     new THREE.PointsMaterial({
-      size: 0.08,
+      size: 0.06,
       map: glowTexture(),
-      color: 0x8fb4d8,
+      color: 0xb4c0ff,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.3,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     }),
   );
   scene.add(dust);
+
+  /* depth by blur: soft out-of-focus clumps far behind the subject and a few
+     very close to the lens, the way the reference frames keep only the middle
+     sharp. They are flat discs of the glow texture tinted in muted versions
+     of the palette, inside the fog, at low contrast — nothing a reader tracks. */
+  const bokeh = new THREE.Group();
+  const bokehHues = [0.72, 0.58, 0.45, 0.62, 0.8];
+  const bokehRand = (i, k) => ((Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
+  for (let i = 0; i < 18; i++) {
+    const near = i >= 14;
+    const colour = flat(bokehHues[i % bokehHues.length], 0.5, near ? 0.42 : 0.5);
+    const disc = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: glowTexture(), color: colour, transparent: true, opacity: near ? 0.1 : 0.14, depthWrite: false }),
+    );
+    const spread = near ? 9 : 16;
+    disc.position.set(
+      (bokehRand(i, 1) - 0.5) * spread * 2,
+      (bokehRand(i, 2) - 0.5) * (near ? 7 : 9),
+      near ? 5.5 + bokehRand(i, 3) * 2 : -9 - bokehRand(i, 3) * 14,
+    );
+    disc.scale.setScalar(near ? 5 + bokehRand(i, 4) * 4 : 3 + bokehRand(i, 4) * 5);
+    disc.userData.seed = i;
+    bokeh.add(disc);
+  }
+  scene.add(bokeh);
 
   const stage = new THREE.Group();
   scene.add(stage);
@@ -583,16 +554,16 @@ export function createFoundryScene(canvas) {
     }
     if (!leaving && subject?.enzyme) disposeTree(subject.enzyme);
 
-    const enzyme = buildEnzyme(entry, env);
+    const enzyme = buildEnzyme(entry);
     enzyme.position.copy(OFFSTAGE_IN);
     stage.add(enzyme);
 
-    const molecule = buildMolecule(molIn, env, { scale: 1 });
+    const molecule = buildMolecule(molIn, { scale: 1 });
     stage.add(molecule);
 
     let product = null;
     if (result?.ok) {
-      product = buildMolecule(result.product, env, { scale: 1 });
+      product = buildMolecule(result.product, { scale: 1 });
       product.visible = false;
       stage.add(product);
     }
@@ -602,8 +573,8 @@ export function createFoundryScene(canvas) {
     const op = entry.action.op;
     if (result?.ok && (op === 'add' || op === 'remove')) {
       const meta = groupMeta(entry.action.group);
-      const colour = new THREE.Color().setHSL(meta.hue / 360, 0.85, 0.6);
-      flyer = ballAndStick(buildGroupFragment(entry.action.group), env, { scale: 0.6, emissive: 0.5 });
+      const colour = flat(meta.hue / 360, 0.85, 0.6);
+      flyer = ballAndStick(buildGroupFragment(entry.action.group), { scale: 0.6, emissive: 0.5 });
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({ map: glowTexture(), color: colour, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
       );
@@ -813,13 +784,13 @@ export function createFoundryScene(canvas) {
       { id: 'upper', text: 'Upper lobe', detail: 'One half of the jaw. It swings down over the cleft.', object: parts.upper },
       { id: 'lower', text: 'Lower lobe', detail: 'The other half, and the hinge between them.', object: parts.lower },
     ];
-    parts.ribbons.forEach((mesh, i) => {
+    parts.lobes.forEach((mesh, i) => {
       const site = sites[i];
       if (!site) return;
       out.push({
         id: `ribbon-${i}`,
         text: `${site.label} · ${site.region}`,
-        detail: `Drawn as a ${site.region} because the catalogue entry labels this region a ${site.region}.`,
+        detail: `Drawn as its own lobe, in the ${site.region} colour, because the catalogue entry labels this region a ${site.region}. Where it sits is invented.`,
         object: mesh.userData.pin ?? mesh,
       });
     });
@@ -872,20 +843,25 @@ export function createFoundryScene(canvas) {
     orbitTarget.el *= 1 - Math.min(1, dt * 0.35);
 
     dust.rotation.y += dt * 0.012;
+    // The far clumps drift slower than anything in front of them.
+    for (const disc of bokeh.children) {
+      const s = disc.userData.seed;
+      disc.position.x += Math.sin(clock * 0.07 + s) * dt * 0.08;
+      disc.position.y += Math.cos(clock * 0.05 + s * 1.7) * dt * 0.05;
+    }
 
-    // Warm or cool the whole picture. Hot reddens the vacuum and pushes the rim
-    // light towards an element glow; cold drains it towards blue and lifts the
-    // cool fill, so a run held under its window reads as slow rather than wrong.
+    // Warm or cool the whole picture. Hot shifts the ground towards magenta
+    // and switches a red light on at the far edge; cold drains it towards blue
+    // and lifts the cool fill, so a run held under its window reads as slow
+    // rather than wrong.
     const warm = climate.warmth;
     tint.copy(VACUUM_BASE).lerp(warm >= 0 ? VACUUM_HOT : VACUUM_COLD, Math.abs(warm));
     scene.background.copy(tint);
     scene.fog.color.copy(tint);
-    scene.fog.density = 0.045 + Math.max(0, warm) * 0.03;
-    rimTint.copy(RIM_BASE).lerp(RIM_HOT, Math.max(0, warm));
-    rim.color.copy(rimTint);
-    rim.intensity = 3.4 + Math.max(0, warm) * 2.2;
-    fill.intensity = 0.8 + Math.max(0, -warm) * 1.4;
-    key.intensity = 2.4 - Math.max(0, -warm) * 0.7;
+    scene.fog.density = 0.04 + Math.max(0, warm) * 0.03;
+    heat.intensity = Math.max(0, warm) * 2.6;
+    fill.intensity = 0.45 + Math.max(0, -warm) * 1.2;
+    key.intensity = 1.9 - Math.max(0, -warm) * 0.5;
 
     applyShot(progress);
     placeSubject(progress, clock);
@@ -900,7 +876,6 @@ export function createFoundryScene(canvas) {
     scene,
     camera,
     renderer,
-    env,
     stage,
     subject: null,
     setSubject,
@@ -935,7 +910,6 @@ export function createFoundryScene(canvas) {
     dispose() {
       running = false;
       clearStage();
-      env.dispose();
       renderer.dispose();
     },
   };
