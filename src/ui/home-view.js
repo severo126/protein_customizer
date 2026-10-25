@@ -187,7 +187,9 @@ function drawLabels(stage, t) {
 
   for (const an of labelSet(stage, t, sub, scene)) {
     const p = scene.project(an.object);
-    if (!p.visible) continue;
+    // Offstage anchors (a molecule parked outside the frame) would leave a
+    // label on the edge with its leader running off the canvas.
+    if (!p.visible || p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue;
     seen.add(an.id);
     let el = layer.querySelector(`[data-label="${an.id}"]`);
     if (!el) {
