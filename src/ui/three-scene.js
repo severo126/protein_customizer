@@ -477,6 +477,20 @@ export function createFoundryScene(canvas) {
   scene.background = new THREE.Color(0x04060a);
   scene.fog = new THREE.FogExp2(0x04060a, 0.045);
 
+  // How the vacuum is being run: warmth from -1 (held well under the stated
+  // window) to +1 (well over it), and agitation, which is only ever non-zero
+  // past the top of the entry's own stated window. Both are set from
+  // src/ui/climate.js, which reads the activity curve — the scene does not
+  // decide anything about temperature, it only shows what that number says.
+  const climate = { warmth: 0, agitation: 0 };
+  const VACUUM_BASE = new THREE.Color(0x04060a);
+  const VACUUM_HOT = new THREE.Color(0x200703);
+  const VACUUM_COLD = new THREE.Color(0x03101e);
+  const RIM_BASE = new THREE.Color(0xffc65c);
+  const RIM_HOT = new THREE.Color(0xff4a22);
+  const tint = new THREE.Color();
+  const rimTint = new THREE.Color();
+
   const env = studioEnvironment(renderer);
   scene.environment = env;
 
@@ -687,6 +701,16 @@ export function createFoundryScene(canvas) {
     enzyme.position.y += breathe(clock, 0.4, 0.5) * radius * 0.03;
     enzyme.position.x += breathe(clock, 3.1, 0.4) * radius * 0.02;
     enzyme.rotation.y = -0.35 + Math.sin(clock * 0.12) * 0.06 + t * 0.4;
+    // Past the top of its stated window the body is visibly shaken rather than
+    // broken: this toy has no model of denaturation and must not mime one.
+    const ag = climate.agitation;
+    if (ag > 0) {
+      enzyme.position.x += Math.sin(clock * 34.1) * radius * 0.013 * ag;
+      enzyme.position.y += Math.sin(clock * 41.7 + 1.3) * radius * 0.015 * ag;
+      enzyme.rotation.z = Math.sin(clock * 27.3) * 0.055 * ag;
+    } else {
+      enzyme.rotation.z = 0;
+    }
     if (outgoing) {
       outgoing.position.lerpVectors(new THREE.Vector3(0, 0, 0), OFFSTAGE_OUT, arrive);
       outgoing.visible = arrive < 0.999;
@@ -848,6 +872,21 @@ export function createFoundryScene(canvas) {
     orbitTarget.el *= 1 - Math.min(1, dt * 0.35);
 
     dust.rotation.y += dt * 0.012;
+
+    // Warm or cool the whole picture. Hot reddens the vacuum and pushes the rim
+    // light towards an element glow; cold drains it towards blue and lifts the
+    // cool fill, so a run held under its window reads as slow rather than wrong.
+    const warm = climate.warmth;
+    tint.copy(VACUUM_BASE).lerp(warm >= 0 ? VACUUM_HOT : VACUUM_COLD, Math.abs(warm));
+    scene.background.copy(tint);
+    scene.fog.color.copy(tint);
+    scene.fog.density = 0.045 + Math.max(0, warm) * 0.03;
+    rimTint.copy(RIM_BASE).lerp(RIM_HOT, Math.max(0, warm));
+    rim.color.copy(rimTint);
+    rim.intensity = 3.4 + Math.max(0, warm) * 2.2;
+    fill.intensity = 0.8 + Math.max(0, -warm) * 1.4;
+    key.intensity = 2.4 - Math.max(0, -warm) * 0.7;
+
     applyShot(progress);
     placeSubject(progress, clock);
     renderer.render(scene, camera);
@@ -865,6 +904,10 @@ export function createFoundryScene(canvas) {
     stage,
     subject: null,
     setSubject,
+    setClimate({ warmth = 0, agitation = 0 } = {}) {
+      climate.warmth = Math.max(-1, Math.min(1, warmth));
+      climate.agitation = clamp01(agitation);
+    },
     setProgress(t) {
       progress = clamp01(t);
     },
