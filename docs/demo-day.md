@@ -24,6 +24,13 @@ the picker pin it down. Point at the chips on the right: every skeleton and grou
 the catalogue can actually reach, read off the forty entries rather than written out by hand. Then
 press **Find the routes**.
 
+**0:25 — what is even possible, before you have finished asking.** The moment the skeleton lands, a
+map appears: every molecule on that skeleton this catalogue can reach, in columns by how many stages
+out they are. Add the phosphate and watch it narrow and trace the chain to the one that matches. Say
+the line: *every line on that map is one enzyme acting under its own rule, and a test runs each of
+them to check it. It is the same walk the search uses, so the picture cannot show a chain the search
+would not find.*
+
 **0:30 — the grid, and the claim underneath it.** Six chains come back. Read the headline aloud:
 how many of the eighteen starting molecules reach it, in how many stages, and that all the chains
 found are shown. Then say the line that matters: *this is a breadth-first search over molecules in
@@ -32,7 +39,8 @@ criterion to **widest shared temperature** and watch the order change — the or
 over committed catalogue fields, named on screen beside it.
 
 **0:50 — the honest dead end, which is the better demo.** Change the molecule to **Malate**
-carrying a **sulfate**. No chain makes it, and the app says how far it got: the closest molecule it
+carrying a **sulfate**, and set it to *exactly those*. The map says it first: the target appears
+dashed, in a column marked "not reached", with no line arriving at it. No chain makes it, and the app says how far it got: the closest molecule it
 ever stood in, how many stages in, and what it was still short of. Say why that is affordable: the
 walk is over molecules rather than paths, so the state space collapses, the walk finishes, and the
 claim is about the catalogue rather than about when the search gave up. **And if the scan runs out

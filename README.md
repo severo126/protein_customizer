@@ -29,7 +29,7 @@ filter service, seeds the funnel history with a sweep, and prints the URLs. Open
 <http://localhost:5173>, type *fructose with a phosphate on it*, and press **Find the routes**.
 
 ```bash
-npm test          # 215 JavaScript tests + 52 Python tests
+npm test          # 236 JavaScript tests + 53 Python tests
 ```
 
 ## What is in it
@@ -38,6 +38,14 @@ npm test          # 215 JavaScript tests + 52 Python tests
 forth until the target is pinned down, in the catalogue's own vocabulary of skeletons and groups.
 Then a grid shows the chains of catalogue entries that could make it, and the chain you pick is what
 plays.
+
+**You can see what is possible before you finish asking.** As soon as a skeleton is picked, the
+picker draws a map of the molecules this catalogue can actually reach on it, and the map narrows as
+groups are added, tracing the chain to whatever matches. It is built from the route search's own
+walk, so every node is a molecule the search also reaches and every line is one catalogue entry
+acting under its own rule — a test takes each line, runs that enzyme, and checks it produces the
+molecule the line ends at. A target nothing can reach is drawn dashed with no line arriving at it
+rather than being left out.
 
 **The search is code, not a model.** `src/model/routes.js` walks the catalogue's own `requires` and
 `yields` fields breadth-first over *molecules*, once per starting molecule, recording the fewest

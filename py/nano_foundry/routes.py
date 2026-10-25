@@ -46,6 +46,12 @@ SEARCH_LIMITS: dict[str, Any] = {
     "maxRoutesPerStarter": 24,
     "routesPerSet": 2,
     "nearMisses": 6,
+    # Stop the walk at the first layer that produces the target. True for a
+    # route search, because a chain that reaches the target and then keeps
+    # going is not a shorter way to the target. The reachability map behind the
+    # picker sets it false: it is asking what this catalogue can reach at all,
+    # not how to reach one thing.
+    "stopAtTarget": True,
 }
 
 
@@ -277,8 +283,13 @@ def scan_from_starter(
                 break
         frontier = nxt
         if target_keys:
-            shortest_depth = depth + 1
-            break
+            # Record the first layer that produced it, and only the first: a
+            # later layer reaching it again is a longer way to the same
+            # molecule.
+            if shortest_depth is None:
+                shortest_depth = depth + 1
+            if lim.get("stopAtTarget") is not False:
+                break
         depth += 1
 
     return {

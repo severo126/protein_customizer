@@ -188,5 +188,35 @@ class StarvedScan(unittest.TestCase):
         self.assertNotIn("No chain", headline)
 
 
+class FullWalk(unittest.TestCase):
+    """Running the walk on past the target, which is how the picker's map runs it.
+
+    The map behind the picker asks what this catalogue can reach at all rather
+    than how to reach one thing, so it needs the walk to run to its full depth.
+    That is a mode of the same search, so it is pinned on both sides: if the two
+    halves disagreed here, the map and the search would disagree about what is
+    reachable.
+    """
+
+    def test_stopping_and_running_on_both_match(self) -> None:
+        explored = CASES["explored"]
+        spec = explored["spec"]
+        target = make_target(core=spec["core"], groups=spec["groups"], match=spec["match"])
+        opts = {"starterIds": spec["starter_ids"]}
+
+        stopped = search_routes(ENTRIES, target, opts)
+        self.assertEqual(stopped["scan"]["statesSeen"], explored["stopped"]["states_seen"])
+        self.assertEqual(stopped["shortestDepth"], explored["stopped"]["shortest_depth"])
+        self.assertEqual(stopped["scan"]["exhausted"], explored["stopped"]["exhausted"])
+
+        full = search_routes(ENTRIES, target, {**opts, "stopAtTarget": False})
+        self.assertEqual(full["scan"]["statesSeen"], explored["full"]["states_seen"])
+        self.assertEqual(full["scan"]["exhausted"], explored["full"]["exhausted"])
+
+        # Running on past the target must not make it look further away.
+        self.assertEqual(full["shortestDepth"], stopped["shortestDepth"])
+        self.assertGreater(full["scan"]["statesSeen"], stopped["scan"]["statesSeen"])
+
+
 if __name__ == "__main__":
     unittest.main()
