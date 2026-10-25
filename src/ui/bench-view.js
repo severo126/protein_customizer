@@ -70,8 +70,8 @@ export function renderBench(root) {
         <div class="readout">
           <div class="panel box">
             <div class="score-value">${run.score.value}</div>
-            <div><strong>Foundry Score</strong></div>
-            <div class="score-note" title="${escapeText(run.score.basis)}" style="color:var(--amber)">${escapeText(run.scoreDisclaimer)}</div>
+            <div><strong>Score</strong></div>
+            <div class="score-note" title="${escapeText(`${run.scoreDisclaimer} ${run.score.basis}`)}" style="color:var(--amber)">A made-up number with made-up units — not a yield, a rate or a prediction.</div>
           </div>
           <div class="panel box">
             <strong>Running product</strong>

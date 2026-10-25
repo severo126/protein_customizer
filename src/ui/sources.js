@@ -37,8 +37,7 @@ export async function showSources(entry) {
 function panel(entry, view) {
   return `<div class="body">
     <h2 id="limits-title">Go and check: ${escapeText(entry.name)}</h2>
-    <p style="font-size:13px;color:var(--ink-dim)">Nano Foundry's card for this enzyme is a cartoon.
-    The sources below are the real thing. Where the two disagree, the sources are right.</p>
+    <p style="font-size:13px;color:var(--ink-dim)">Where these and the card disagree, these are right.</p>
     <p style="font-size:12px;color:var(--ink-faint)">${escapeText(entry.source.note)}</p>
     ${bodyFor(view)}
     <div class="close-row"><button class="btn primary" id="limits-close">Back to the workshop</button></div>
@@ -61,7 +60,7 @@ function bodyFor(view) {
         .join('')}
     </ul>
     <p style="font-size:11.5px;color:var(--ink-faint)">Public search results, fetched through ${escapeText(view.provider)}.
-    Nano Foundry has not read them and does not vouch for them.</p>`;
+    Not read or vouched for here.</p>`;
   }
 
   if (view.state === 'unconfigured') {

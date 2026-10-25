@@ -45,14 +45,26 @@ test('the interface never offers a validated or approved state', () => {
   }
 });
 
-test('the standing cartoon note is on the page itself, not only in a dialog', () => {
+// severo asked for the standing prose across the top to go, so the page no
+// longer carries the paragraph version. What replaces it is a disclosure that is
+// reachable from every screen: the button lives in the top bar, outside the
+// screen container, and the panel behind it still holds the never-checked list.
+test('the limits disclosure is reachable from every screen', () => {
   const html = readFileSync(`${root}/index.html`, 'utf8');
-  assert.match(html, /classroom cartoon/i);
-  assert.match(html, /order-of-magnitude-wrong physics/i);
-  assert.match(html, /No sequences anywhere/i);
-  // The limits panel is reachable from every screen because it lives in the
-  // top bar, which is outside the screen container.
   assert.match(html, /id="limits-button"/);
   const topbarEnd = html.indexOf('</header>');
   assert.ok(html.indexOf('id="limits-button"') < topbarEnd, 'the limits button must sit in the top bar');
+  const app = readFileSync(`${root}/src/ui/app.js`, 'utf8');
+  assert.match(app, /NOT_CHECKED/, 'the panel behind the button must still carry the never-checked list');
+  assert.match(app, /Nothing here ruled this out/, 'and what a pass actually means');
+});
+
+// The prose went; the meaning did not. Every screen that reports a verdict has
+// to keep the never-checked list beside it, however quietly it is folded away.
+test('every verdict screen still carries the never-checked list', () => {
+  for (const view of ['splice-view.js', 'workstation-view.js']) {
+    const text = readFileSync(`${root}/src/ui/${view}`, 'utf8');
+    assert.match(text, /NOT_CHECKED/, `${view} dropped the never-checked list`);
+    assert.match(text, /not-checked/, `${view} no longer renders it beside the verdict`);
+  }
 });

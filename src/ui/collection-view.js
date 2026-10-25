@@ -112,8 +112,7 @@ function stage(e) {
         <h3 class="card-name">${escapeText(e.name)}</h3>
         <p class="card-blurb">${escapeText(e.blurb)}</p>
         ${figure(e)}
-        <p class="card-figure-note">Cartoon figure, built from this entry's own region list — not a coordinate set,
-        and no structure data of any kind is behind it.</p>
+        <p class="card-figure-note">Cartoon figure — not a coordinate set.</p>
       </div>
 
       <button class="card-nav next" data-step="1" aria-label="Next enzyme">›</button>
@@ -192,7 +191,6 @@ function figure(e) {
         ${enzymeBody(e, { detail: true, ids: `card-${e.id}` })}
       </g>
     </svg>
-    <span class="card-disc-caption">disc ring scaled to the entry's cartoon radius (${radius}) · pillar height from each site's own tension value</span>
   </div>`;
 }
 

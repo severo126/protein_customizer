@@ -19,7 +19,6 @@
 
 import { escapeText } from './cartoon.js';
 import { failureModeFor } from '../model/failureModes.js';
-import { CARTOON_PHYSICS_NOTE } from '../model/disclaimers.js';
 import { summariseReferences, geminiKey } from './gemini.js';
 import { logEvent } from './telemetry.js';
 
@@ -138,7 +137,6 @@ function frame(killer, mode, inner) {
     <p class="lit-bridge"><strong>${escapeText(killer.label)}</strong> rejected this, and it decided that on cartoon
     geometry. What the filter is gesturing at is real, though, and it has a name:
     <strong>${escapeText(mode.realName)}</strong>. ${escapeText(mode.gist)}</p>
-    <p class="lit-caveat">${escapeText(CARTOON_PHYSICS_NOTE)}</p>
     ${inner}
   </div>`;
 }
@@ -147,7 +145,7 @@ function referenceList(found) {
   return `<ol class="lit-refs">${found.references.map((r) => `<li>${linkBody(r)}</li>`).join('')}</ol>
     <p class="lit-caveat">Public search results for the queries above, fetched through ${escapeText(found.provider)} and screened
     against the topics docs/scope.md §1 keeps out of this app${found.screenedOut ? `, which held back ${found.screenedOut} result${found.screenedOut === 1 ? '' : 's'} here` : ''}.
-    Nano Foundry has not read them and does not vouch for them.</p>`;
+    Not read or vouched for here.</p>`;
 }
 
 function linkBody(r) {
