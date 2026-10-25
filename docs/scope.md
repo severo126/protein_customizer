@@ -224,6 +224,28 @@ matches, and an emphasis on everything says nothing. The map is built from alrea
 it asserts no chemistry of its own; the one option it added to the search, running the walk past the
 target, is mirrored in `py/nano_foundry/routes.py` and pinned in `src/data/route-cases.json`.
 
+**What each chip would leave, before it is pressed.** Every chip in the picker carries the number of
+molecules this catalogue can still reach if it is pressed, and a chip with nothing behind it is
+marked and says what closed the door. `chipOutlook` in `src/model/route-map.js` reads the same walk
+the map is drawn from, so a chip cannot disagree with the picture above it, and it is a count and
+nothing more: which chains, and whether any of them clear the filters, stays the search's answer.
+`test/picker-gating.test.js` presses every chip on every draft and checks the chip's count against
+both the map's count and what `searchRoutes` then finds — exhaustively in the direction that
+matters, since a chip claiming "nothing behind this" where a route exists would hide a real answer
+behind a warning.
+
+**A dead chip is marked, not disabled.** The first press explains why it leads nowhere; a second
+press asks for it anyway. The screen's job is to stop someone walking into a dead end without
+noticing, not to decide what they may want, and the dead end is worth reaching on purpose: "nothing
+in this catalogue reaches that" is a real answer and the honest half of what this app does. The
+typed sentence can still ask for anything. The skeleton list is the one exception, because a
+dropdown has no second press: a skeleton that reaches nothing with the groups already named is
+disabled and says so in its label.
+
+Once the draft itself matches nothing, no individual chip is blamed — every chip counts zero there,
+and marking all fourteen would point at the next press for a door the draft has already shut. One
+line names what to undo instead.
+
 **The criteria are arithmetic, not judgement.** You may optimise for fewest stages, lowest supply
 load, or the widest shared temperature or pH window — each a committed catalogue field or a sum of
 them, named on screen beside the ordering so a reader can see what was sorted. There is no "best

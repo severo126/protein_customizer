@@ -99,9 +99,20 @@ export function exploreCatalogue(entries, limits = {}) {
     }
   }
 
+  // Grouped by skeleton as well, because every caller that asks a question per
+  // skeleton asks it fifteen times in a row: `chipOutlook` runs one count per
+  // chip on every render, and regrouping fifteen thousand molecules each time
+  // was most of its cost.
+  const byCore = new Map();
+  for (const v of reach.values()) {
+    if (!byCore.has(v.mol.core)) byCore.set(v.mol.core, []);
+    byCore.get(v.mol.core).push(v);
+  }
+
   return {
     scans,
     reach,
+    byCore,
     exhausted: scans.every((s) => s.exhausted),
     statesSeen: scans.reduce((n, s) => n + s.statesSeen, 0),
     maxDepth: lim.maxDepth,
@@ -411,4 +422,128 @@ function headlineFor(core, variants, matching, groups, match, exploration) {
   return matching.length === variants.length
     ? `All ${variants.length} reachable ${label} molecules match what you have said, ${near}.`
     : `${matching.length} of the ${variants.length} reachable ${label} molecules ${plural(matching.length, 'matches', 'match')} what you have said, ${near}.`;
+}
+
+/* ---------------------- what each chip would leave you ---------------------- */
+//
+// The picker used to let you build anything sayable and only tell you whether
+// it was reachable once you pressed the button. That is the wrong order: by
+// then you have made four choices and learn that one of them — you are not
+// told which — was the one that closed the door.
+//
+// So every chip is asked, before it is drawn, what the draft would look like
+// if it were pressed: how many molecules this catalogue can still reach that
+// would match. Zero is the interesting answer, and it is the one that gets
+// said on the chip.
+//
+// This reads the same `exploration` the map is drawn from, so a chip cannot
+// disagree with the picture above it. It is deliberately a count and nothing
+// more: which chains, and whether any of them clear the filters, is the
+// search's answer and is not pre-empted here.
+
+// How many reachable molecules on one skeleton match a target. Small enough to
+// run for every chip on every render — the candidates are already narrowed to
+// one skeleton, so this is tens of comparisons, not thousands.
+function groupByCore(reach) {
+  const byCore = new Map();
+  for (const v of reach.values()) {
+    if (!byCore.has(v.mol.core)) byCore.set(v.mol.core, []);
+    byCore.get(v.mol.core).push(v);
+  }
+  return byCore;
+}
+
+function countOnCore(reachList, target) {
+  let n = 0;
+  for (const v of reachList) if (matchesTarget(v.mol, target)) n += 1;
+  return n;
+}
+
+export function chipOutlook(exploration, draft, options) {
+  const core = draft?.core ?? null;
+  const groups = draft?.groups ?? [];
+  const match = draft?.match ?? 'carries';
+  const maxGroups = options?.maxGroups ?? MAP_LIMITS.maxDepth;
+
+  // `exploreCatalogue` already groups by skeleton; a hand-built exploration in
+  // a test may not, so fall back to grouping here rather than requiring it.
+  const byCore = exploration.byCore ?? groupByCore(exploration.reach);
+
+  // Each offered skeleton, carrying whatever groups have already been named.
+  // Switching skeleton keeps the groups, so a skeleton that cannot carry them
+  // is a dead end you would walk into, and this is where it gets said.
+  const cores = new Map();
+  for (const c of options?.cores ?? []) {
+    const list = byCore.get(c.id) ?? [];
+    cores.set(c.id, {
+      count: countOnCore(list, makeTarget({ core: c.id, groups, match })),
+      variants: list.length,
+    });
+  }
+
+  if (!core) {
+    return { core: null, current: 0, variants: 0, cores, groups: new Map(), modes: new Map(), atCap: false };
+  }
+
+  const list = byCore.get(core) ?? [];
+  const count = (gs, m) => countOnCore(list, makeTarget({ core, groups: gs, match: m }));
+
+  const groupOut = new Map();
+  const atCap = groups.length >= maxGroups;
+  for (const g of options?.groups ?? []) {
+    groupOut.set(g.id, { count: atCap ? count(groups, match) : count([...groups, g.id], match) });
+  }
+
+  const modes = new Map([
+    ['carries', { count: count(groups, 'carries') }],
+    ['exact', { count: count(groups, 'exact') }],
+  ]);
+
+  return {
+    core,
+    current: count(groups, match),
+    variants: list.length,
+    cores,
+    groups: groupOut,
+    modes,
+    atCap,
+  };
+}
+
+// What to say on a chip that leads nowhere. Written here rather than in the
+// view so the picker and the tests read the same words, and so the reason is
+// specific: "no" without a reason is the thing this whole change exists to
+// stop. Each one names what closed the door, not just that it is closed.
+export function deadReason(kind, label, draft) {
+  const named = (draft?.groups ?? []).length;
+  const already = named === 1 ? 'the group you have already named' : `the ${named} groups you have already named`;
+
+  if (kind === 'core') {
+    return named
+      ? `This catalogue does reach ${label}, but never carrying ${already}.`
+      : `Nothing in this catalogue reaches ${label} at all.`;
+  }
+
+  if (kind === 'mode') {
+    return named
+      ? `Read that way, nothing is left: every molecule this catalogue reaches here carries something besides ${already}.`
+      : 'Read that way you are asking for a bare skeleton with nothing on it at all, and this catalogue never reaches one of those.';
+  }
+
+  return named
+    ? `Adding ${label} closes it. This catalogue reaches this skeleton, but never with ${label} on it alongside ${already}.`
+    : `Nothing this catalogue reaches on this skeleton carries ${label}.`;
+}
+
+// Once the draft already matches nothing, every chip reads as dead, and
+// blaming each one individually would be fourteen wrong answers: the draft is
+// the problem, not the next chip. This is the line the picker says instead.
+export function stuckNote(draft) {
+  const named = (draft?.groups ?? []).length;
+  if ((draft?.match ?? 'carries') === 'exact' && named) {
+    return 'Nothing this catalogue reaches matches this, so nothing you add can help. Take a group off, or read it as carrying at least those rather than exactly those.';
+  }
+  return named
+    ? 'Nothing this catalogue reaches matches this, so nothing you add can help. Take a group off to open it back up.'
+    : 'Nothing this catalogue reaches matches this. Change the reading or pick another skeleton.';
 }

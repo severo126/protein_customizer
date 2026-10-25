@@ -28,7 +28,7 @@ import {
 import { makeTarget, describeTarget, validateTarget, SEARCH_LIMITS } from '../model/routes.js';
 import { groupMeta } from '../model/molecules.js';
 import { foldedWays } from './folded-ways.js';
-import { exploreCatalogue, mapFor } from '../model/route-map.js';
+import { exploreCatalogue, mapFor, chipOutlook, deadReason, stuckNote } from '../model/route-map.js';
 import { routeMapPanel } from './route-map-view.js';
 import { geminiKey, setGeminiKey, parseTarget } from './gemini.js';
 
@@ -50,10 +50,47 @@ function bubble(line) {
 }
 
 /* -------------------------------- the chips ------------------------------- */
+//
+// Every chip knows, before it is pressed, what pressing it would leave. The
+// number on a live chip is how many molecules this catalogue can still reach
+// that would match; a chip with nothing behind it is marked and says what
+// closed the door.
+//
+// A dead chip is not disabled. It takes two presses: the first says why it
+// leads nowhere, the second asks for it anyway. That is deliberate. The
+// screen's job here is to stop someone walking into a dead end without
+// noticing, not to decide for them what they are allowed to want — and the
+// dead end is worth seeing on purpose, because "nothing in this catalogue
+// reaches that" is a real answer and the honest half of what this app does.
+// The skeleton list is the exception: a dropdown has no second press, so a
+// skeleton that reaches nothing is disabled outright and says so in its label.
 
-function chips(opts) {
+function dare() {
+  return state.pickerDare ?? null;
+}
+
+function armed(kind, id) {
+  const d = dare();
+  return Boolean(d && d.kind === kind && d.id === id);
+}
+
+// A number small enough to sit on a chip without crowding the label.
+function countBadge(n) {
+  return `<span class="pick-count" aria-hidden="true">${n > 999 ? '999+' : n}</span>`;
+}
+
+function deadBadge() {
+  return `<span class="pick-none" aria-hidden="true">∅</span>`;
+}
+
+function chips(opts, outlook) {
   const draft = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
   const coreName = draft.core ? coreLabel(draft.core) : null;
+  // The draft already matches nothing. Every chip then counts zero, and
+  // marking all fourteen would blame the next press for a door the draft has
+  // already closed. One line about the draft instead.
+  const stuck = Boolean(outlook && outlook.core && outlook.current === 0);
+  const atCap = draft.groups.length >= opts.maxGroups;
 
   const groupChips = draft.groups.length
     ? draft.groups
@@ -67,17 +104,64 @@ function chips(opts) {
         .join('')
     : `<span class="pick-chip empty">no groups yet</span>`;
 
+  const coreOption = (c) => {
+    const o = outlook?.cores.get(c.id);
+    const dead = Boolean(o && o.count === 0);
+    const made = c.isStarter ? '' : ' · has to be made';
+    const reach = !o ? '' : dead ? ' · nothing reachable' : ` · ${o.count} reachable`;
+    return `<option value="${c.id}" ${c.id === draft.core ? 'selected' : ''} ${dead && c.id !== draft.core ? 'disabled' : ''}>${escapeText(
+      c.label,
+    )}${made}${reach}</option>`;
+  };
+
+  const addChip = (g) => {
+    const o = outlook?.groups.get(g.id);
+    const dead = Boolean(o && !stuck && o.count === 0);
+    const isArmed = armed('group', g.id);
+    const cls = ['pick-chip', 'add', dead ? 'dead' : '', isArmed ? 'armed' : '', stuck ? 'moot' : '']
+      .filter(Boolean)
+      .join(' ');
+    const title = dead
+      ? deadReason('group', g.label, draft)
+      : o
+        ? `${o.count} molecule${o.count === 1 ? '' : 's'} this catalogue reaches would still match.`
+        : '';
+    const badge = dead ? deadBadge() : o && !stuck ? countBadge(o.count) : '';
+    return `<button class="${cls}" data-add-group="${g.id}" ${atCap ? 'disabled' : ''} title="${escapeText(title)}">
+      <span class="pick-dot" style="--hue:${g.hue}"></span>${escapeText(g.label)}${badge}
+    </button>`;
+  };
+
+  const modeChip = (id, label) => {
+    const o = outlook?.modes.get(id);
+    const on = draft.match === id;
+    const dead = Boolean(o && !on && o.count === 0);
+    const isArmed = armed('mode', id);
+    const cls = ['pick-chip', 'mode', on ? 'on' : '', dead ? 'dead' : '', isArmed ? 'armed' : ''].filter(Boolean).join(' ');
+    const title = dead ? deadReason('mode', label, draft) : o ? `${o.count} would match read that way.` : '';
+    const badge = dead ? deadBadge() : o ? countBadge(o.count) : '';
+    return `<button class="${cls}" data-match="${id}" title="${escapeText(title)}">${escapeText(label)}${badge}</button>`;
+  };
+
+  // The one press that is being held back, with the reason, so the second
+  // press is a decision rather than a repeated click that mysteriously works.
+  const held = dare();
+  const dareLine = held
+    ? `<p class="pick-dare">${escapeText(
+        held.kind === 'mode'
+          ? deadReason('mode', held.label, draft)
+          : deadReason('group', held.label, draft),
+      )} <strong>Press ${escapeText(held.label)} again</strong> to ask for it anyway and see the dead end drawn.</p>`
+    : '';
+
+  const stuckLine = !held && stuck ? `<p class="pick-stuck">${escapeText(stuckNote(draft))}</p>` : '';
+
   return `<div class="pick-draft">
     <div class="pick-draft-row">
       <span class="pick-label">Skeleton</span>
       <select data-core aria-label="Skeleton">
         <option value="">— pick one —</option>
-        ${opts.cores
-          .map(
-            (c) =>
-              `<option value="${c.id}" ${c.id === draft.core ? 'selected' : ''}>${escapeText(c.label)}${c.isStarter ? '' : ' · has to be made'}</option>`,
-          )
-          .join('')}
+        ${opts.cores.map(coreOption).join('')}
       </select>
     </div>
     <div class="pick-draft-row">
@@ -86,24 +170,23 @@ function chips(opts) {
     </div>
     <div class="pick-draft-row">
       <span class="pick-label">Add</span>
-      <div class="pick-chips">
-        ${opts.groups
-          .map(
-            (g) =>
-              `<button class="pick-chip add" data-add-group="${g.id}" ${draft.groups.length >= opts.maxGroups ? 'disabled' : ''}>
-                <span class="pick-dot" style="--hue:${g.hue}"></span>${escapeText(g.label)}
-              </button>`,
-          )
-          .join('')}
-      </div>
+      <div class="pick-chips">${opts.groups.map(addChip).join('')}</div>
     </div>
     <div class="pick-draft-row">
       <span class="pick-label">Read it as</span>
       <div class="pick-chips">
-        <button class="pick-chip mode ${draft.match === 'carries' ? 'on' : ''}" data-match="carries">carrying at least those</button>
-        <button class="pick-chip mode ${draft.match === 'exact' ? 'on' : ''}" data-match="exact">exactly those and nothing else</button>
+        ${modeChip('carries', 'carrying at least those')}
+        ${modeChip('exact', 'exactly those and nothing else')}
       </div>
     </div>
+    ${dareLine}
+    ${stuckLine}
+    ${
+      outlook && outlook.core && !held && !stuck
+        ? `<p class="pick-legend">Numbers are how many molecules stay reachable if you press.
+           ∅ means none — hover for why.</p>`
+        : ''
+    }
     ${coreName ? `<p class="pick-reading"><strong>${escapeText(describeTarget(draftTarget()))}</strong></p>
        <p class="pick-origin">${escapeText(targetSummary(draftTarget()))}</p>` : ''}
   </div>`;
@@ -122,19 +205,19 @@ export function renderPicker(root) {
   const draft = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
   const ready = Boolean(draft.core);
   const log = state.pickerLog ?? [];
+  const outlook = outlookNow(opts);
 
   root.innerHTML = `<div class="pick">
     <div class="pick-head">
       <h1>What do you want to make?</h1>
-      <p class="pick-sub">Say it however you like. I'll work out which skeleton and which groups
-      you mean, then search the forty enzymes in this catalogue for every chain that could get
-      there.</p>
+      <p class="pick-sub">Say it in your own words, or build it from the chips. I'll search the
+      forty enzymes for every chain that gets there.</p>
     </div>
 
     <div class="pick-body">
       <div class="pick-talk">
         <div class="pick-log" data-log>
-          ${log.length ? log.map(bubble).join('') : `<div class="pick-line app"><p>Try something like “put a phosphate on glucose, then rearrange it” — or build it from the chips on the right.</p></div>`}
+          ${log.length ? log.map(bubble).join('') : `<div class="pick-line app"><p>Try “put a phosphate on glucose, then rearrange it”.</p></div>`}
         </div>
         ${
           state.pickerAsk
@@ -165,13 +248,12 @@ export function renderPicker(root) {
 
       <div class="pick-side">
         <h2>The molecule, as it stands</h2>
-        ${chips(opts)}
+        <div data-draft>${chips(opts, outlook)}</div>
         <button class="btn primary pick-go" data-search ${ready ? '' : 'disabled'}>
           ${ready ? 'Find the routes' : 'Pick a skeleton first'}
         </button>
-        <p class="pick-small">Up to ${opts.maxGroups} groups, which is where the search caps out.
-        Every skeleton and group here is one the catalogue can actually reach — the list is read
-        off the forty entries rather than written out by hand.</p>
+        <p class="pick-small">Up to ${opts.maxGroups} groups. Every skeleton and group offered
+        here is read off the forty entries, not written out by hand.</p>
       </div>
     </div>
 
@@ -201,6 +283,35 @@ function entriesById() {
   return new Map(state.catalogue.entries.map((e) => [e.id, e]));
 }
 
+// What each chip would leave, for the draft as it stands. Null until the walk
+// has run, and the chips then draw exactly as they used to — the marks are an
+// addition to the screen, never a precondition for it.
+function outlookNow(opts) {
+  if (!exploration) return null;
+  try {
+    return chipOutlook(exploration, state.pickerDraft ?? { core: null, groups: [], match: 'carries' }, opts);
+  } catch (err) {
+    console.error('route map: chip outlook failed', err);
+    return null;
+  }
+}
+
+// Would pressing this chip leave nothing reachable? Asked at click time from
+// the same walk the chips were drawn from, so the answer cannot disagree with
+// the mark on the chip. Unknown (no walk yet) is treated as open: a chip is
+// never held back on a guess.
+//
+// A draft that already matches nothing is treated as open too. Every chip
+// counts zero there, and holding each one back would be fourteen doors held
+// against a door the draft has already shut.
+function closesTheDoor(kind, id, opts) {
+  const outlook = outlookNow(opts);
+  if (!outlook || !outlook.core) return false;
+  if (outlook.current === 0) return false;
+  const o = kind === 'mode' ? outlook.modes.get(id) : outlook.groups.get(id);
+  return Boolean(o && o.count === 0);
+}
+
 function mapPanel() {
   const draft = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
   if (!draft.core) {
@@ -216,7 +327,7 @@ function mapPanel() {
 }
 
 // Build the walk once, off the first paint, then redraw the panel in place.
-function ensureExploration(root) {
+function ensureExploration(root, opts) {
   if (exploration || exploreFailed) return;
   const draft = state.pickerDraft ?? {};
   if (!draft.core) return;
@@ -231,11 +342,17 @@ function ensureExploration(root) {
     }
     const holder = root.querySelector('[data-map]');
     if (holder) holder.innerHTML = mapPanel();
+    // The chips carry the same facts, so they are refreshed with it. Swapping
+    // these two holders rather than re-rendering the screen keeps whatever the
+    // person was part-way through typing in the sentence box, and the click
+    // handlers sit on the wrapper above both, so they survive it.
+    const drafted = root.querySelector('[data-draft]');
+    if (drafted) drafted.innerHTML = chips(opts, outlookNow(opts));
   });
 }
 
 function wire(root, opts) {
-  ensureExploration(root);
+  ensureExploration(root, opts);
   const form = root.querySelector('[data-form]');
   const field = root.querySelector('[data-sentence]');
 
@@ -260,7 +377,16 @@ function wire(root, opts) {
     if (add) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
       if (d.groups.length >= opts.maxGroups) return;
-      setState({ pickerDraft: { ...d, groups: [...d.groups, add.dataset.addGroup] } });
+      const id = add.dataset.addGroup;
+      const label = groupMeta(id).label;
+      // Held back once, with the reason, if it would leave nothing. Pressed
+      // again it goes through: the dead end is a thing you are allowed to ask
+      // for on purpose, it just should not happen by accident.
+      if (closesTheDoor('group', id, opts) && !armed('group', id)) {
+        setState({ pickerDare: { kind: 'group', id, label } });
+        return;
+      }
+      setState({ pickerDraft: { ...d, groups: [...d.groups, id] }, pickerDare: null });
       return;
     }
     const drop = e.target.closest('[data-drop-group]');
@@ -268,13 +394,19 @@ function wire(root, opts) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
       const groups = [...d.groups];
       groups.splice(Number(drop.dataset.dropGroup), 1);
-      setState({ pickerDraft: { ...d, groups } });
+      setState({ pickerDraft: { ...d, groups }, pickerDare: null });
       return;
     }
     const mode = e.target.closest('[data-match]');
     if (mode) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
-      setState({ pickerDraft: { ...d, match: mode.dataset.match } });
+      const id = mode.dataset.match;
+      const label = id === 'exact' ? 'exactly those and nothing else' : 'carrying at least those';
+      if (id !== d.match && closesTheDoor('mode', id, opts) && !armed('mode', id)) {
+        setState({ pickerDare: { kind: 'mode', id, label } });
+        return;
+      }
+      setState({ pickerDraft: { ...d, match: id }, pickerDare: null });
       return;
     }
     const answer = e.target.closest('[data-answer]');
@@ -293,7 +425,7 @@ function wire(root, opts) {
     const sel = e.target.closest('[data-core]');
     if (sel) {
       const d = state.pickerDraft ?? { core: null, groups: [], match: 'carries' };
-      setState({ pickerDraft: { ...d, core: sel.value || null } });
+      setState({ pickerDraft: { ...d, core: sel.value || null }, pickerDare: null });
     }
   });
 }
@@ -312,7 +444,7 @@ function applyAnswer(value) {
 
   say('user', ask.choose === 'core' ? coreLabel(value) : ask.choose === 'groups' ? groupMeta(value).label : value);
   say('app', `Noted. The molecule now reads: ${describeTarget(makeTarget({ core: next.core ?? '', groups: next.groups, match: next.match }))}.`);
-  setState({ pickerDraft: next, pickerAsk: null });
+  setState({ pickerDraft: next, pickerAsk: null, pickerDare: null });
 }
 
 async function handleSentence(sentence, opts) {

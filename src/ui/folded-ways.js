@@ -1,15 +1,15 @@
-// The ways into the screens that lost their tabs.
+// One line on the landing screen, for the one place the nav cannot point at.
 //
-// The bench and the workstation still render, unchanged, but the nav is three
-// tabs now and neither of them is one. Without this they would only be
-// reachable from the run step, which you can only get to by finishing a
-// search — so a judge following the demo script from the front door would be
-// stuck, and the bench's one-press run and its mid-run refusal are the two
-// things the pitch deck is built around.
+// This row used to carry three links, because the bench and the workstation
+// had no tab and would otherwise have been unreachable from the front door.
+// Both have tabs again, so two of the three became a second copy of the nav,
+// three lines below it. They are gone.
 //
-// One row, on every step of the flow, saying plainly that both are still there
-// and what each is for. Quiet on purpose: naming the molecule is the front door
-// now, and this is the door beside it rather than a second front door.
+// What is left has no tab and cannot have one: the chain player is a step
+// inside the make-a-molecule flow rather than a screen, and you would normally
+// only reach it by finishing a search. The pitch is built around the seeded
+// runs it holds — including the stage that refuses — so there is one way
+// straight to it.
 
 import { escapeText } from './cartoon.js';
 
@@ -17,18 +17,8 @@ export const FOLDED_WAYS = [
   {
     go: 'run',
     step: true,
-    label: 'Build a lane by hand',
-    blurb: 'The chain player with the seeded demo runs, including the stage that refuses.',
-  },
-  {
-    go: 'bench',
-    label: 'The bench',
-    blurb: 'Pick the stages yourself, press the run once, and read the traffic lights.',
-  },
-  {
-    go: 'workstation',
-    label: 'The workstation',
-    blurb: 'Look the catalogue up by the behaviour you want instead of by name.',
+    label: 'Play a seeded run',
+    blurb: 'The chain player, including the stage that refuses.',
   },
 ];
 
@@ -39,7 +29,6 @@ export function foldedWays() {
         <span>${escapeText(w.blurb)}</span></li>`,
   ).join('');
   return `<div class="folded-ways">
-    <h2>Still here, if you would rather drive it yourself</h2>
     <ul>${items}</ul>
   </div>`;
 }
