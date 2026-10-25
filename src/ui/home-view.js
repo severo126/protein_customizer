@@ -433,6 +433,8 @@ async function renderRun(root) {
       <svg class="home-leaders" aria-hidden="true"></svg>
       <div class="home-labels"></div>
       <div class="home-vignette" aria-hidden="true"></div>
+      <div class="home-stalled" aria-hidden="true"></div>
+      <div class="home-loading state-card bare" aria-live="polite"><span class="state-ring"></span><p>Drawing the stage…</p></div>
       <div class="home-thermal" aria-hidden="true"></div>
       <div class="home-caption"></div>
       <div class="home-hint" aria-hidden="true">drag to turn it
@@ -487,6 +489,7 @@ async function renderRun(root) {
     scene?.dispose();
     return;
   }
+  homeEl.querySelector('.home-loading')?.remove();
   if (!scene) {
     canvas.hidden = true;
     fallback.hidden = false;
@@ -514,8 +517,13 @@ async function renderRun(root) {
   };
 
   const empty = () => {
-    captionEl.innerHTML = `<div class="home-card">
-      <p class="hero-sub">Load a route below, then press Play.</p>
+    captionEl.innerHTML = `<div class="home-card vacant">
+      <svg class="state-glyph" viewBox="0 0 44 44" aria-hidden="true">
+        <circle cx="22" cy="22" r="15" stroke-dasharray="3 5" /><path class="lit" d="M18 15l12 7-12 7z" />
+      </svg>
+      <div class="beat-step">Nothing on the stage</div>
+      <h2>Load a route to play it</h2>
+      <p class="hero-sub">Pick a chain from the routes, or press one of the three lanes below.</p>
     </div>`;
   };
 
@@ -543,9 +551,20 @@ async function renderRun(root) {
     playBtn.textContent = '▶ Play again';
     playBtn.disabled = false;
     if (lastStage && !lastStage.result.ok) {
+      // The dead end is the conclusion, so it gets the weight of one: the
+      // field closes in, the next move is offered, and the reason stays in
+      // the caption above exactly as the pipeline gave it.
+      homeEl.classList.add('stalled');
+      playBtn.classList.remove('primary');
       captionEl.insertAdjacentHTML(
         'beforeend',
-        `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div></div>`,
+        `<div class="home-card ruled-out"><div class="beat-step">Dead end</div>
+          <h2>The run stops here</h2>
+          <p>${escapeText(lastStage.entry.name)} would not take ${escapeText(describe(lastStage.molIn))}, so nothing past this stage was made, and nothing past it was guessed.</p>
+          <div class="home-end-actions">
+            <button class="btn small primary" data-step="ask">Change the molecule</button>
+            <button class="btn small ghost" data-go="bench">Rework the lane on the bench</button>
+          </div></div>`,
       );
     } else if (lastStage) {
       captionEl.insertAdjacentHTML(
@@ -558,6 +577,8 @@ async function renderRun(root) {
 
   function play() {
     if (!stages.length) return;
+    homeEl.classList.remove('stalled');
+    playBtn.classList.add('primary');
     at = 0;
     current = -1;
     if (scene) scene.setProgress(0);
@@ -611,6 +632,7 @@ async function renderRun(root) {
   if (!stages.length) {
     empty();
     playBtn.disabled = true;
+    playBtn.classList.remove('primary');
   } else {
     showStage(0);
     at = IDLE_AT;

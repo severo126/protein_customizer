@@ -85,7 +85,7 @@ function chain(route) {
   </ol>`;
 }
 
-function card({ route, metrics }, advisedId) {
+function card({ route, metrics }, advisedId, lead = false) {
   const advised = route.id === advisedId;
   const chosen = route.id === state.chosenRoute;
   return `<article class="rg-card ${chosen ? 'chosen' : ''} ${advised ? 'advised' : ''}" data-route="${escapeText(route.id)}">
@@ -108,7 +108,7 @@ function card({ route, metrics }, advisedId) {
         )}</span>
       </div>
     </div>
-    <button class="btn small primary" data-play-route="${escapeText(route.id)}">Watch this one run</button>
+    <button class="btn small ${lead ? 'primary' : ''}" data-play-route="${escapeText(route.id)}">Watch this one run</button>
   </article>`;
 }
 
@@ -179,7 +179,9 @@ export function renderRoutes(root) {
   root.innerHTML = `<div class="rg">
     ${head(target, result, crit, true)}
     <div class="rg-body">
-      <div class="rg-grid">${ranked.map((r) => card(r, advisedId)).join('')}</div>
+      <div class="rg-grid">${ranked
+        .map((r, i) => card(r, advisedId, advisedId ? r.route.id === advisedId : i === 0))
+        .join('')}</div>
       <aside class="rg-aside">
         <h2>Which one should I pick?</h2>
         <p class="rg-aside-sub">The grid above is already ordered by <strong>${escapeText(crit.label.toLowerCase())}</strong>,
@@ -193,7 +195,7 @@ export function renderRoutes(root) {
                 numbers the search measured. It cannot add a stage or name an enzyme the search did
                 not find.</p>
               </div>`
-            : `<button class="btn primary" data-advise ${geminiKey() ? '' : 'disabled'}>
+            : `<button class="btn ghost" data-advise ${geminiKey() ? '' : 'disabled'}>
                 ${geminiKey() ? 'Ask Gemini to weigh them up' : 'Needs a Gemini key'}
               </button>
               <p class="rg-advice-note">${

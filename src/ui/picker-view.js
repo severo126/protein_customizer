@@ -42,8 +42,9 @@ function bubble(line) {
   const who = line.role === 'user' ? 'you' : 'app';
   const source = line.source ? `<span class="pick-source">${escapeText(line.source)}</span>` : '';
   const quoted = line.quoted ? `<p class="pick-quoted">${escapeText(line.quoted)}</p>` : '';
-  return `<div class="pick-line ${who}">
-    <p>${escapeText(line.text)}</p>
+  const thinking = line.text === 'Reading that…';
+  return `<div class="pick-line ${who}${thinking ? ' thinking' : ''}">
+    <p>${thinking ? '<span class="state-ring small" aria-hidden="true"></span>' : ''}${escapeText(line.text)}</p>
     ${quoted}
     ${source}
   </div>`;
@@ -238,7 +239,7 @@ export function renderPicker(root) {
         }
         <form class="pick-form" data-form>
           <textarea data-sentence rows="2" placeholder="${hasKey ? 'A fructose carrying a phosphate' : 'phosphate on glucose'}"></textarea>
-          <button class="btn primary" type="submit">Work out what I mean</button>
+          <button class="btn ${ready ? 'ghost' : 'primary'}" type="submit">Work out what I mean</button>
         </form>
         <p class="pick-note">${escapeText(hasKey ? PICKER_NOTE : PICKER_NO_KEY_NOTE)}</p>
         ${hasKey ? '' : `<label class="pick-key">Gemini API key (kept in this browser only)
@@ -249,7 +250,7 @@ export function renderPicker(root) {
       <div class="pick-side">
         <h2>The molecule, as it stands</h2>
         <div data-draft>${chips(opts, outlook)}</div>
-        <button class="btn primary pick-go" data-search ${ready ? '' : 'disabled'}>
+        <button class="btn ${ready ? 'primary' : 'ghost'} pick-go" data-search ${ready ? '' : 'disabled'}>
           ${ready ? 'Find the routes' : 'Pick a skeleton first'}
         </button>
         <p class="pick-small">Up to ${opts.maxGroups} groups. Every skeleton and group offered

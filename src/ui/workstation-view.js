@@ -113,9 +113,12 @@ function optionText(w) {
 /* ---------- the results ---------- */
 
 function emptyPanel() {
-  return `<div class="panel">
-    <strong>Nothing asked for yet</strong>
-    <p class="blurb">Tick a behaviour on the left.</p>
+  return `<div class="state-card">
+    <svg class="state-glyph" viewBox="0 0 44 44" aria-hidden="true">
+      <path d="M8 12h18M8 22h28M8 32h14" /><path class="lit" d="M30 26l4 4 7-8" />
+    </svg>
+    <h3>Nothing asked for yet</h3>
+    <p>Tick a behaviour on the left and the catalogue is searched for enzymes that commit to it.</p>
   </div>`;
 }
 
@@ -203,7 +206,7 @@ function buildCard(build, index) {
     ${build.entries.length > 1 ? domainMap(build.entries[0]) : ''}
 
     <div class="actions">
-      <button class="btn small primary" data-bench="${escapeText(build.entryIds.join('+'))}">Send to the bench</button>
+      <button class="btn small ${index === 0 ? 'primary' : ''}" data-bench="${escapeText(build.entryIds.join('+'))}">Send to the bench</button>
       ${build.entries.length === 2 ? `<button class="btn small" data-splice-build="${escapeText(build.entryIds.join('+'))}">Splice table</button>` : ''}
       <button class="btn small ghost" data-export-build="${index}">Export this build</button>
     </div>

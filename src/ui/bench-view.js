@@ -193,9 +193,12 @@ function renderReaction(run) {
   const i = playIndex(run);
   const stage = run.stages[i];
   if (!stage || !stage.input) {
-    return `<div class="panel reaction-empty">
-      <strong>Watch a stage run</strong>
-      <p class="score-note">Add an enzyme to the lane.</p>
+    return `<div class="state-card">
+      <svg class="state-glyph" viewBox="0 0 44 44" aria-hidden="true">
+        <circle cx="22" cy="22" r="15" stroke-dasharray="3 5" /><path class="lit" d="M18 15l12 7-12 7z" />
+      </svg>
+      <h3>Watch a stage run</h3>
+      <p>Drop an enzyme into the lane and its stage plays here, including the one that refuses.</p>
     </div>`;
   }
   return reactionPanel(stage.enzyme, stage.input, {

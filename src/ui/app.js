@@ -77,7 +77,18 @@ export function setState(patch) {
   render();
 }
 
+let shownScreen = null;
+let arriveTimer = null;
+
 export function render() {
+  // A change of screen is the one moment the blocks animate in; a re-render
+  // of the same screen (a chip pressed, a filter changed) must not replay it.
+  if (state.screen !== shownScreen) {
+    shownScreen = state.screen;
+    screenEl.classList.add('arriving');
+    clearTimeout(arriveTimer);
+    arriveTimer = setTimeout(() => screenEl.classList.remove('arriving'), 1000);
+  }
   for (const tab of document.querySelectorAll('.tab')) {
     if (tab.dataset.screen === state.screen) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
@@ -139,7 +150,7 @@ dialog.addEventListener('click', (e) => {
 /* ---------- boot ---------- */
 
 async function boot() {
-  screenEl.innerHTML = `<div class="empty">Loading the catalogue…</div>`;
+  screenEl.innerHTML = `<div class="state-card bare"><span class="state-ring"></span><p>Loading the catalogue…</p></div>`;
   const [res, demoRes] = await Promise.all([fetch('src/data/catalogue.json'), fetch('src/data/demo.json')]);
   const catalogue = await res.json();
   state.demo = await demoRes.json();
