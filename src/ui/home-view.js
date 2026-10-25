@@ -219,8 +219,9 @@ function drawLabels(stage, t) {
     placed.push({ el, p, lx, ly: p.y + dy * 80 - 18, hgt: el._h || 70, left });
   }
 
-  // Settle overlaps top to bottom.
+  // Three at once is the most a reader can take in while something is moving.
   placed.sort((m, n) => m.ly - n.ly);
+  placed.splice(3);
   for (let i = 0; i < placed.length; i++) {
     const m = placed[i];
     m.ly = Math.max(16, m.ly);
