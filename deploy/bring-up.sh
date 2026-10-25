@@ -46,7 +46,7 @@ if [[ "$MODE" == "vultr" ]]; then
     DATABASE_URL="${DATABASE_URL/sslmode=require/sslmode=no-verify}"
   fi
   ENV_LINES=""
-  for var in DATABASE_URL SERPAPI_KEY; do
+  for var in DATABASE_URL SERPAPI_KEY GEMINI_API_KEY; do
     [[ -n "${!var:-}" ]] && ENV_LINES+="      $var=${!var}"$'\n'
   done
   CLOUD_INIT=$(sed -e "s|__REPO_REF__|$REPO_REF|" -e "s|__REPO_URL__|$REPO_URL|" deploy/cloud-init.yaml)
