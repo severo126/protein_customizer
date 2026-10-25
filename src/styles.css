@@ -573,13 +573,13 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   font-size: 11px; color: var(--ink-faint); letter-spacing: 0.02em;
   text-transform: uppercase; line-height: 1.5;
 }
-.home-caption { position: absolute; left: 6%; top: 0; bottom: 56px; width: min(440px, 40vw);
+.home-caption { position: absolute; left: 6%; top: 0; bottom: 56px; width: min(440px, 34vw);
   display: flex; flex-direction: column; justify-content: center; gap: 10px; pointer-events: none; }
 /* The caption is set straight on the field, no box: type at a different
    weight from the callouts is what separates it, not a border. */
 .home-card { pointer-events: auto; padding: 0; }
 .home-card.ruled-out .beat-step { color: var(--red); }
-.home-card h2 { margin: 8px 0 12px; font-size: clamp(28px, 3.2vw, 40px); letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 2px 0 var(--shadow-ink); }
+.home-card h2 { margin: 8px 0 12px; font-size: clamp(26px, 2.9vw, 40px); letter-spacing: -0.02em; line-height: 1.05; text-shadow: 0 2px 0 var(--shadow-ink); }
 .home-card p { margin: 0 0 8px; color: var(--ink-dim); font-size: 14px; line-height: 1.55; max-width: 38ch; text-shadow: 0 1px 0 var(--shadow-ink); }
 .home-card p:last-child { margin-bottom: 0; }
 .home-card .caveat, .home-card .tally { font-size: 11.5px; color: var(--ink-faint); }
@@ -599,15 +599,20 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
 /* One hand-lettered line and a drawn arrow at the subject, gone after the
    first touch. The only element on the stage not set in the UI face. */
 .home-hint {
-  position: absolute; left: 58%; top: 16%; pointer-events: none;
+  position: absolute; right: 6%; bottom: 14%; pointer-events: none;
+  display: flex; flex-direction: column-reverse; align-items: flex-start;
   font-family: 'Caveat', 'Patrick Hand', 'Segoe Print', cursive;
   font-size: 28px; color: var(--ink); text-shadow: 0 1px 0 var(--shadow-ink);
   transform: rotate(-4deg); opacity: 1; transition: opacity 0.6s;
 }
 .home-hint.gone { opacity: 0; }
-/* Once the stage has callouts of its own, the hint has had its moment. */
-.home-labels:has(.home-label.shown) ~ .home-hint { opacity: 0; }
-.home-hint svg { display: block; width: 72px; height: 54px; margin: -2px 0 0 38px; overflow: visible; }
+/* Once the stage has callouts of its own the hint has had its moment, but it
+   gets that moment: a few seconds beside them before it fades. */
+.home-labels:has(.home-label.shown) ~ .home-hint { opacity: 0; transition-delay: 6s; }
+/* And with nothing on the stage there is nothing to turn. */
+.home-caption:has(.hero-sub) ~ .home-hint { opacity: 0; transition-delay: 0s; }
+/* The arrow is drawn pointing down-right; from this corner it points up at the subject. */
+.home-hint svg { display: block; width: 72px; height: 54px; margin: 0 0 -4px 8px; overflow: visible; transform: scale(-1, -1); }
 .home-hint path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 900px) { .home-hint { display: none; } }
 .home-progress-bar { height: 100%; width: 0; background: var(--accent); }
