@@ -433,6 +433,8 @@ async function renderRun(root) {
       <svg class="home-leaders" aria-hidden="true"></svg>
       <div class="home-labels"></div>
       <div class="home-vignette" aria-hidden="true"></div>
+      <div class="home-stalled" aria-hidden="true"></div>
+      <div class="home-loading state-card bare" aria-live="polite"><span class="state-ring"></span><p>Drawing the stage…</p></div>
       <div class="home-thermal" aria-hidden="true"></div>
       <div class="home-caption"></div>
       <div class="home-hint" aria-hidden="true">drag to turn it
@@ -487,6 +489,7 @@ async function renderRun(root) {
     scene?.dispose();
     return;
   }
+  homeEl.querySelector('.home-loading')?.remove();
   if (!scene) {
     canvas.hidden = true;
     fallback.hidden = false;
@@ -543,9 +546,20 @@ async function renderRun(root) {
     playBtn.textContent = '▶ Play again';
     playBtn.disabled = false;
     if (lastStage && !lastStage.result.ok) {
+      // The dead end is the conclusion, so it gets the weight of one: the
+      // field closes in, the next move is offered, and the reason stays in
+      // the caption above exactly as the pipeline gave it.
+      homeEl.classList.add('stalled');
+      playBtn.classList.remove('primary');
       captionEl.insertAdjacentHTML(
         'beforeend',
-        `<div class="home-card ruled-out"><div class="beat-step">The run stops here</div></div>`,
+        `<div class="home-card ruled-out"><div class="beat-step">Dead end</div>
+          <h2>The run stops here</h2>
+          <p>${escapeText(lastStage.entry.name)} would not take ${escapeText(describe(lastStage.molIn))}, so nothing past this stage was made, and nothing past it was guessed.</p>
+          <div class="home-end-actions">
+            <button class="btn small primary" data-step="ask">Change the molecule</button>
+            <button class="btn small ghost" data-go="bench">Rework the lane on the bench</button>
+          </div></div>`,
       );
     } else if (lastStage) {
       captionEl.insertAdjacentHTML(
@@ -558,6 +572,8 @@ async function renderRun(root) {
 
   function play() {
     if (!stages.length) return;
+    homeEl.classList.remove('stalled');
+    playBtn.classList.add('primary');
     at = 0;
     current = -1;
     if (scene) scene.setProgress(0);

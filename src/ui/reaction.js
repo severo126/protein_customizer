@@ -336,7 +336,7 @@ export function reactionPanel(entry, molIn, { freeze = null, title = 'Watch the 
           result.ok ? '' : ' · refused'
         }</div>
       </div>
-      <button class="btn small primary" data-replay>▶ Play again</button>
+      <button class="btn small" data-replay>▶ Play again</button>
     </div>
     <div data-reaction-stage>${reactionScene(entry, molIn, { freeze })}</div>
     <div class="cartoon-label">stylised animation — ${escapeText(REACTION_NOTE)}</div>

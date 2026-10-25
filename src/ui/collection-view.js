@@ -47,8 +47,14 @@ export function renderCollection(container) {
   root = container;
   deck = buildDeck();
   if (!deck.length) {
-    root.innerHTML = `<div class="panel" style="padding:16px"><h2>Nothing matches</h2>
-      <p class="empty">No entry of the forty matches every filter at once. Clear one in the drawer below.</p>
+    root.innerHTML = `<div class="panel" style="padding:16px">
+      <div class="state-card">
+        <svg class="state-glyph" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="19" cy="19" r="10" /><path d="M27 27l9 9" /><path class="lit" d="M14 19h10" />
+        </svg>
+        <h3>Nothing matches</h3>
+        <p>No entry of the forty matches every filter at once. Clear one in the drawer below.</p>
+      </div>
       ${drawer()}</div>`;
     wire();
     return;
