@@ -11,6 +11,7 @@
 
 import { enzymeBody, moleculeGlyph, escapeText } from './cartoon.js';
 import { groupMeta, prettyCore, describe } from '../model/molecules.js';
+import { article } from '../model/behaviours.js';
 import { runStage } from '../model/pipeline.js';
 
 export const REACTION_NOTE =
@@ -81,11 +82,11 @@ function script(entry, molIn, result) {
   if (a.op === 'add') {
     captions.push([RUN.dock, `A ${groupMeta(a.group).label} comes off ${cofactor ?? 'the donor'} and is handed onto the substrate.`]);
   } else if (a.op === 'remove') {
-    captions.push([RUN.dock, `The ${groupMeta(a.group).label} is cut off and leaves the cleft${a.yields ? `, leaving a ${groupMeta(a.yields).label} behind` : ''}.`]);
+    captions.push([RUN.dock, `The ${groupMeta(a.group).label} is cut off and leaves the cleft${a.yields ? `, leaving ${article(groupMeta(a.yields).label)} behind` : ''}.`]);
   } else if (a.op === 'rearrange') {
     captions.push([RUN.dock, `The skeleton is turned over: ${prettyCore(a.from)} becomes ${prettyCore(a.to)}.`]);
   } else {
-    captions.push([RUN.dock, `Two groups already on the molecule are pulled together into a ${groupMeta(a.group).label}.`]);
+    captions.push([RUN.dock, `Two groups already on the molecule are pulled together into ${article(groupMeta(a.group).label)}.`]);
   }
 
   captions.push([RUN.open, 'The jaw opens and the product leaves.']);
