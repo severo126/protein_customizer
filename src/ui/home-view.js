@@ -39,6 +39,7 @@ import { renderPicker } from './picker-view.js';
 import { renderRoutes } from './route-grid.js';
 import { laneTimeline, timelineHeadline, PLAYBACK_NOTE, STAGE_MS } from './route-playback.js';
 import { describeTarget, coreLabel } from '../model/routes.js';
+import { article } from '../model/behaviours.js';
 
 // How long one stage takes to play, in seconds.
 const STAGE_SECONDS = 5.5;
@@ -61,9 +62,11 @@ let sceneModuleFailed = false;
 function verb(entry) {
   const a = entry.action;
   const g = groupMeta(a.group).label;
-  if (a.op === 'add') return `puts a ${g} on`;
-  if (a.op === 'remove') return `takes a ${g} off`;
-  if (a.op === 'join') return `joins groups into a ${g}`;
+  // article() rather than a bare "a", because the group labels include acyl and
+  // amine and "a acyl" is the kind of thing a judge reads out loud.
+  if (a.op === 'add') return `puts ${article(g)} on`;
+  if (a.op === 'remove') return `takes ${article(g)} off`;
+  if (a.op === 'join') return `joins groups into ${article(g)}`;
   return 'rearranges the skeleton';
 }
 
@@ -268,7 +271,11 @@ function labelSet(stage, t, sub, scene, beat = null) {
       hot: true,
     });
   }
-  if (stage.result.ok && sub.product?.visible) {
+  // The product mesh becomes visible while it is still sitting in the cleft, so
+  // offering its label then puts it on the same anchor as the active-site label
+  // and the two cards overlap. 0.86 is where the site label stops, above, so
+  // the two hand over at one boundary rather than sharing the anchor.
+  if (stage.result.ok && sub.product?.visible && t >= 0.86) {
     out.push({
       id: 'product',
       text: `Product · ${prettyCore(stage.result.product.core)}`,

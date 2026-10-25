@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { catalogue } from './helpers.js';
 import { starter, STARTERS } from '../src/model/molecules.js';
 import { runPipeline } from '../src/model/pipeline.js';
@@ -327,4 +328,107 @@ test('no headline this module can produce calls a route safe, viable, valid or d
     assert.doesNotMatch(c.blurb, banned, `criterion ${c.id} overclaims`);
     assert.doesNotMatch(c.label, banned, `criterion ${c.id} label overclaims`);
   }
+});
+
+/* ---------------------------------------------------------------------------
+ * The parity contract.
+ *
+ * src/data/route-cases.json is generated from this implementation by
+ * tools/make-route-cases.mjs and asserted by both suites. This half's job is to
+ * catch the case where somebody changes the search and forgets to regenerate
+ * the file: without this, a drift would only ever show up as a Python failure,
+ * and the Python half would be blamed for it.
+ * ------------------------------------------------------------------------- */
+
+const CASES = JSON.parse(readFileSync(new URL('../src/data/route-cases.json', import.meta.url), 'utf8'));
+
+const molKey = (m) => `${m.core}|${[...m.groups].join(',')}`;
+const win = (w) => (w ? [w.low, w.high, w.width] : null);
+const blameOf = (b) => (b ? [b.floor, b.ceiling] : null);
+
+test('the route parity contract was generated from this catalogue and these limits', () => {
+  assert.equal(CASES.catalogue_entries, entries.length, 'route-cases.json is stale: run npm run routes:build');
+  assert.ok(CASES.cases.length >= 25);
+  assert.equal(CASES.limits.max_depth, SEARCH_LIMITS.maxDepth);
+  assert.equal(CASES.limits.max_groups, SEARCH_LIMITS.maxGroups);
+  assert.equal(CASES.limits.routes_per_set, SEARCH_LIMITS.routesPerSet);
+  assert.equal(CASES.limits.near_misses, SEARCH_LIMITS.nearMisses);
+  assert.deepEqual(CASES.criteria, CRITERIA.map((c) => c.id));
+  assert.deepEqual(CASES.vocabulary, targetVocabulary(entries));
+});
+
+test('the route parity contract still describes what the search does', () => {
+  for (const { spec, expect } of CASES.cases) {
+    const target = makeTarget({ core: spec.core, groups: spec.groups, match: spec.match });
+    const result = searchRoutes(entries, target, spec.starter_ids ? { starterIds: spec.starter_ids } : {});
+    const where = `${spec.core} ${spec.match} [${spec.groups}]${spec.starter_ids ? ` from ${spec.starter_ids}` : ''}`;
+
+    assert.equal(validateTarget(entries, target).ok, expect.valid, `${where}: valid`);
+    assert.equal(describeTarget(target), expect.describe, `${where}: description`);
+    assert.equal(result.reachable, expect.reachable, `${where}: reachable`);
+    assert.equal(result.scan.exhausted, expect.exhausted, `${where}: scan finished`);
+    assert.equal(result.scan.statesSeen, expect.states_seen, `${where}: states seen`);
+    assert.equal(result.scan.nodesExplored, expect.nodes_explored, `${where}: nodes`);
+    assert.equal(result.totalFound, expect.total_found, `${where}: chains found`);
+    assert.equal(result.truncated, expect.truncated, `${where}: truncated`);
+    assert.equal(result.shortestDepth, expect.shortest_depth, `${where}: shortest`);
+    assert.equal(result.longestShortest, expect.longest_shortest, `${where}: longest`);
+    assert.deepEqual(
+      result.reachedFrom.map((r) => ({ starter_id: r.starterId, stages: r.stages })),
+      expect.reached_from,
+      `${where}: which starters reach it`,
+    );
+    assert.deepEqual(result.routes.map((r) => r.id), expect.route_ids, `${where}: chains`);
+    assert.deepEqual(
+      result.routes.map((r) => r.molecules.map(molKey)),
+      expect.molecules,
+      `${where}: molecules along the chains`,
+    );
+
+    for (const want of expect.metrics) {
+      const m = routeMetrics(entries, result.routes.find((r) => r.id === want.route_id));
+      const w = `${where}/${want.route_id}`;
+      assert.equal(m.stages, want.stages, `${w}: stages`);
+      assert.equal(m.supplyLoad, want.supply_load, `${w}: supply load`);
+      assert.deepEqual(m.cofactors, want.cofactors, `${w}: cofactors`);
+      assert.deepEqual(m.needs, want.needs, `${w}: needs`);
+      assert.deepEqual(win(m.tempWindow), want.temp_window, `${w}: temp`);
+      assert.equal(m.tempEmpty, want.temp_empty, `${w}: temp empty`);
+      assert.deepEqual(blameOf(m.tempBlame), want.temp_blame, `${w}: temp blame`);
+      assert.deepEqual(win(m.phWindow), want.ph_window, `${w}: pH`);
+      assert.equal(m.phEmpty, want.ph_empty, `${w}: pH empty`);
+      assert.deepEqual(blameOf(m.phBlame), want.ph_blame, `${w}: pH blame`);
+    }
+
+    for (const want of expect.rankings) {
+      assert.deepEqual(
+        rankRoutes(entries, result.routes, want.criterion).map((x) => x.route.id),
+        want.order,
+        `${where}: ranked by ${want.criterion}`,
+      );
+    }
+
+    assert.deepEqual(
+      result.nearMisses.map((n) => ({
+        starter_id: n.starterId,
+        depth: n.depth,
+        molecule: molKey(n.molecule),
+        distance: { core_off: n.distance.coreOff, missing: n.distance.missing, extra: n.distance.extra, total: n.distance.total },
+      })),
+      expect.near_misses,
+      `${where}: near misses`,
+    );
+    assert.equal(searchHeadline(result), expect.headline, `${where}: headline`);
+  }
+});
+
+test('the contract pins the rule that an unfinished scan is not a dead end', () => {
+  const result = searchRoutes(entries, makeTarget({ core: 'malate', groups: ['sulfate'] }), {
+    maxScanNodes: CASES.starved.limits.max_scan_nodes,
+  });
+  assert.equal(result.reachable, CASES.starved.expect.reachable);
+  assert.equal(result.scan.exhausted, false);
+  assert.equal(searchHeadline(result), CASES.starved.expect.headline);
+  assert.match(searchHeadline(result), /did not finish inside its budget/);
+  assert.doesNotMatch(searchHeadline(result), /No chain/);
 });

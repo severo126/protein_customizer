@@ -418,8 +418,12 @@ export function searchRoutes(entries, target, opts = {}) {
 }
 
 // Keep the few closest states the scan ever stood in. Strictly better replaces;
-// a tie keeps whichever was reached first, which breadth-first order makes the
-// shorter one.
+// a tie goes to whichever took fewer stages to reach, because the dead-end
+// panel shows only the states at the best distance and "this is as close as it
+// got, and it got there in two stages" is the more useful of two equally close
+// answers. The depth is the one the scan recorded, so the ordering is a fact
+// about the walk rather than about which starter happened to be looked at
+// first.
 function considerNear(near, node, target, cap) {
   const d = targetDistance(node.mol, target).total;
   if (d === 0) return;
@@ -439,7 +443,7 @@ function cmpNear(a, b, target) {
   const da = targetDistance(a.mol, target).total;
   const db = targetDistance(b.mol, target).total;
   if (da !== db) return da - db;
-  return a.stages.length - b.stages.length;
+  return (a.depth ?? 0) - (b.depth ?? 0);
 }
 
 function toRoute(path, target) {

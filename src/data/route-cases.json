@@ -1,0 +1,4978 @@
+{
+ "generated_by": "tools/make-route-cases.mjs",
+ "note": "The route-search parity contract. Generated from src/model/routes.js and asserted by both test/routes.test.js and py/tests/test_routes_parity.py. Do not hand-edit.",
+ "catalogue_entries": 40,
+ "limits": {
+  "max_depth": 5,
+  "max_groups": 7,
+  "max_routes": 60,
+  "max_routes_per_starter": 24,
+  "routes_per_set": 2,
+  "near_misses": 6
+ },
+ "vocabulary": {
+  "cores": [
+   "glucose",
+   "glycerol",
+   "catechol",
+   "glycine",
+   "pyruvate",
+   "triose",
+   "starch",
+   "cellulose",
+   "tributyrin",
+   "fumarate",
+   "aspartate",
+   "urea",
+   "peroxide",
+   "nitrile",
+   "protein-stain",
+   "acetoacetate",
+   "glycerate-2-p",
+   "glucose-1-p",
+   "fructose",
+   "triose-iso",
+   "glucose-6-p",
+   "enolpyruvate",
+   "malate",
+   "amide"
+  ],
+  "groups": [
+   "hydroxyl",
+   "amine",
+   "carboxyl",
+   "carbonyl",
+   "phosphate",
+   "sugar",
+   "acyl",
+   "amide",
+   "peroxide",
+   "bond",
+   "peptide",
+   "methyl",
+   "sulfate",
+   "ring"
+  ],
+  "starters": [
+   {
+    "id": "glucose",
+    "core": "glucose",
+    "label": "Glucose",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl",
+     "hydroxyl"
+    ]
+   },
+   {
+    "id": "glycerol",
+    "core": "glycerol",
+    "label": "Glycerol",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl",
+     "hydroxyl"
+    ]
+   },
+   {
+    "id": "catechol",
+    "core": "catechol",
+    "label": "Catechol",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ]
+   },
+   {
+    "id": "glycine",
+    "core": "glycine",
+    "label": "Glycine",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ]
+   },
+   {
+    "id": "pyruvate",
+    "core": "pyruvate",
+    "label": "Pyruvate",
+    "groups": [
+     "carboxyl",
+     "carbonyl"
+    ]
+   },
+   {
+    "id": "triose",
+    "core": "triose",
+    "label": "Triose phosphate",
+    "groups": [
+     "phosphate",
+     "hydroxyl",
+     "carbonyl"
+    ]
+   },
+   {
+    "id": "starch",
+    "core": "starch",
+    "label": "Starch fragment",
+    "groups": [
+     "sugar",
+     "sugar",
+     "hydroxyl"
+    ]
+   },
+   {
+    "id": "cellulose",
+    "core": "cellulose",
+    "label": "Cellulose fragment",
+    "groups": [
+     "sugar",
+     "sugar",
+     "sugar"
+    ]
+   },
+   {
+    "id": "tributyrin",
+    "core": "tributyrin",
+    "label": "Small fat",
+    "groups": [
+     "acyl",
+     "acyl",
+     "acyl"
+    ]
+   },
+   {
+    "id": "fumarate",
+    "core": "fumarate",
+    "label": "Fumarate",
+    "groups": [
+     "carboxyl",
+     "carboxyl"
+    ]
+   },
+   {
+    "id": "aspartate",
+    "core": "aspartate",
+    "label": "Aspartate",
+    "groups": [
+     "amine",
+     "carboxyl",
+     "carboxyl"
+    ]
+   },
+   {
+    "id": "urea",
+    "core": "urea",
+    "label": "Urea",
+    "groups": [
+     "amide",
+     "amine"
+    ]
+   },
+   {
+    "id": "peroxide",
+    "core": "peroxide",
+    "label": "Hydrogen peroxide",
+    "groups": [
+     "peroxide"
+    ]
+   },
+   {
+    "id": "nitrile",
+    "core": "nitrile",
+    "label": "Small nitrile",
+    "groups": [
+     "bond"
+    ]
+   },
+   {
+    "id": "protein-stain",
+    "core": "protein-stain",
+    "label": "Protein stain fragment",
+    "groups": [
+     "peptide",
+     "peptide",
+     "amine"
+    ]
+   },
+   {
+    "id": "acetoacetate",
+    "core": "acetoacetate",
+    "label": "Acetoacetate",
+    "groups": [
+     "acyl",
+     "carbonyl",
+     "carboxyl"
+    ]
+   },
+   {
+    "id": "glycerate-2-p",
+    "core": "glycerate-2-p",
+    "label": "2-Phosphoglycerate",
+    "groups": [
+     "phosphate",
+     "carboxyl",
+     "hydroxyl"
+    ]
+   },
+   {
+    "id": "glucose-1-p",
+    "core": "glucose-1-p",
+    "label": "Glucose-1-phosphate",
+    "groups": [
+     "phosphate",
+     "hydroxyl",
+     "hydroxyl"
+    ]
+   }
+  ],
+  "matches": [
+   "exact",
+   "carries"
+  ]
+ },
+ "criteria": [
+  "stages",
+  "supply",
+  "temp",
+  "ph"
+ ],
+ "cases": [
+  {
+   "spec": {
+    "core": "glucose",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes Glucose carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Glucose itself, before any stage ran, still carrying hydroxyl, hydroxyl, hydroxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 0,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "bond"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,bond,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "bond",
+        "bond"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "carboxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 5,
+      "molecule": "glucose|hydroxyl,hydroxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 5,
+      "molecule": "glucose|hydroxyl,hydroxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "amine"
+       ],
+       "total": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glycerol",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glycerol carrying a phosphate (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Glycerol carrying a phosphate (and possibly more), in 1 stage. All 3 chains the search found are shown.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 15211,
+    "nodes_explored": 218920,
+    "total_found": 3,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "glycerol",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "glycerol>hexokinase",
+     "glycerol>glycerol-kinase",
+     "glycerol>glucokinase"
+    ],
+    "molecules": [
+     [
+      "glycerol|hydroxyl,hydroxyl,hydroxyl",
+      "glycerol|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glycerol|hydroxyl,hydroxyl,hydroxyl",
+      "glycerol|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glycerol|hydroxyl,hydroxyl,hydroxyl",
+      "glycerol|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glycerol>hexokinase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "ATP"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.5,
+       8.2,
+       1.6999999999999993
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glycerol>glycerol-kinase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "ATP"
+      ],
+      "needs": [],
+      "temp_window": [
+       15,
+       42,
+       27
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       9,
+       2
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glycerol>glucokinase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "ATP"
+      ],
+      "needs": [],
+      "temp_window": [
+       25,
+       45,
+       20
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.5,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glycerol>glucokinase",
+       "glycerol>glycerol-kinase",
+       "glycerol>hexokinase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glycerol>glucokinase",
+       "glycerol>glycerol-kinase",
+       "glycerol>hexokinase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glycerol>glycerol-kinase",
+       "glycerol>hexokinase",
+       "glycerol>glucokinase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glycerol>glycerol-kinase",
+       "glycerol>hexokinase",
+       "glycerol>glucokinase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "catechol",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Catechol carrying 2× hydroxyl",
+    "headline": "1 of the 18 starting molecules can reach Catechol carrying 2× hydroxyl, in 0 stages. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 15088,
+    "nodes_explored": 218880,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 0,
+    "longest_shortest": 0,
+    "reached_from": [
+     {
+      "starter_id": "catechol",
+      "stages": 0
+     }
+    ],
+    "route_ids": [
+     "catechol>"
+    ],
+    "molecules": [
+     [
+      "catechol|hydroxyl,hydroxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "catechol>",
+      "stages": 0,
+      "supply_load": 0,
+      "cofactors": [],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": null,
+      "ph_window": null,
+      "ph_empty": true,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "catechol>"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "catechol>"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "catechol>"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "catechol>"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "peroxide",
+      "depth": 3,
+      "molecule": "peroxide|hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 0,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [
+        "hydroxyl"
+       ],
+       "total": 101
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [
+        "hydroxyl"
+       ],
+       "total": 101
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 101
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "fructose|hydroxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 101
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,carboxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [
+        "carboxyl"
+       ],
+       "total": 101
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glycine",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glycine carrying an amine, a carboxyl (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Glycine carrying an amine, a carboxyl (and possibly more), in 0 stages. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 15181,
+    "nodes_explored": 219880,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 0,
+    "longest_shortest": 0,
+    "reached_from": [
+     {
+      "starter_id": "glycine",
+      "stages": 0
+     }
+    ],
+    "route_ids": [
+     "glycine>"
+    ],
+    "molecules": [
+     [
+      "glycine|amine,carboxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glycine>",
+      "stages": 0,
+      "supply_load": 0,
+      "cofactors": [],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": null,
+      "ph_window": null,
+      "ph_empty": true,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glycine>"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glycine>"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glycine>"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glycine>"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "pyruvate",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Pyruvate carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes Pyruvate carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Pyruvate itself, before any stage ran, still carrying carboxyl, carbonyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "pyruvate",
+      "depth": 0,
+      "molecule": "pyruvate|carboxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "carbonyl"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "pyruvate",
+      "depth": 1,
+      "molecule": "pyruvate|carbonyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carbonyl",
+        "carbonyl"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "pyruvate",
+      "depth": 1,
+      "molecule": "pyruvate|carbonyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carbonyl",
+        "amine"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "pyruvate",
+      "depth": 3,
+      "molecule": "pyruvate|carboxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "pyruvate",
+      "depth": 3,
+      "molecule": "pyruvate|carboxyl,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "pyruvate",
+      "depth": 4,
+      "molecule": "pyruvate|carbonyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carbonyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "triose",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Triose phosphate carrying a phosphate (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Triose phosphate carrying a phosphate (and possibly more), in 0 stages. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 12884,
+    "nodes_explored": 188280,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 0,
+    "longest_shortest": 0,
+    "reached_from": [
+     {
+      "starter_id": "triose",
+      "stages": 0
+     }
+    ],
+    "route_ids": [
+     "triose>"
+    ],
+    "molecules": [
+     [
+      "triose|phosphate,hydroxyl,carbonyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "triose>",
+      "stages": 0,
+      "supply_load": 0,
+      "cofactors": [],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": null,
+      "ph_window": null,
+      "ph_empty": true,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "triose>"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "triose>"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "triose>"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "triose>"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "starch",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Starch fragment carrying 2× hydroxyl",
+    "headline": "No chain of up to 5 catalogue stages makes Starch fragment carrying 2× hydroxyl. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 1 stage in, at Starch fragment, still carrying sugar that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "sugar"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 2,
+      "molecule": "starch|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 2,
+      "molecule": "starch|hydroxyl,hydroxyl,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 3,
+      "molecule": "starch|hydroxyl,hydroxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carbonyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 3,
+      "molecule": "starch|hydroxyl,hydroxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "amine"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 4,
+      "molecule": "starch|hydroxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 1
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "cellulose",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Cellulose fragment carrying an amine, a carboxyl (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Cellulose fragment carrying an amine, a carboxyl (and possibly more), in 2 stages. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 14988,
+    "nodes_explored": 217840,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 2,
+    "longest_shortest": 2,
+    "reached_from": [
+     {
+      "starter_id": "cellulose",
+      "stages": 2
+     }
+    ],
+    "route_ids": [
+     "cellulose>polygalacturonase>glutamine-synthetase"
+    ],
+    "molecules": [
+     [
+      "cellulose|sugar,sugar,sugar",
+      "cellulose|sugar,sugar,carboxyl",
+      "cellulose|sugar,sugar,carboxyl,amine"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "cellulose>polygalacturonase>glutamine-synthetase",
+      "stages": 2,
+      "supply_load": 4,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [
+       "glycosylation",
+       "secretion"
+      ],
+      "temp_window": [
+       25,
+       45,
+       20
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": null,
+      "ph_empty": true,
+      "ph_blame": [
+       "glutamine-synthetase",
+       "polygalacturonase"
+      ]
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "cellulose>polygalacturonase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "cellulose>polygalacturonase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "cellulose>polygalacturonase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "cellulose>polygalacturonase>glutamine-synthetase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "tributyrin",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Small fat carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes Small fat carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 1 stage in, at Small fat, still carrying acyl, new ring that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "tributyrin",
+      "depth": 1,
+      "molecule": "tributyrin|acyl,ring",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "acyl",
+        "ring"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 2,
+      "molecule": "tributyrin|hydroxyl,ring",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "ring"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 3,
+      "molecule": "tributyrin|ring,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "ring",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 5,
+      "molecule": "tributyrin|carboxyl,ring",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "ring"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 5,
+      "molecule": "tributyrin|acyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "acyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 0,
+      "molecule": "tributyrin|acyl,acyl,acyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "acyl",
+        "acyl",
+        "acyl"
+       ],
+       "total": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "fumarate",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Fumarate carrying a phosphate (and possibly more)",
+    "headline": "2 of the 18 starting molecules can reach Fumarate carrying a phosphate (and possibly more), in 1 to 2 stages. All 3 chains the search found are shown.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 14214,
+    "nodes_explored": 205600,
+    "total_found": 3,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 2,
+    "reached_from": [
+     {
+      "starter_id": "fumarate",
+      "stages": 1
+     },
+     {
+      "starter_id": "aspartate",
+      "stages": 2
+     }
+    ],
+    "route_ids": [
+     "fumarate>pyruvate-kinase",
+     "aspartate>pyruvate-kinase>aspartase",
+     "aspartate>aspartase>pyruvate-kinase"
+    ],
+    "molecules": [
+     [
+      "fumarate|carboxyl,carboxyl",
+      "fumarate|carboxyl,carboxyl,phosphate"
+     ],
+     [
+      "aspartate|amine,carboxyl,carboxyl",
+      "aspartate|amine,carboxyl,carboxyl,phosphate",
+      "fumarate|amine,carboxyl,carboxyl,phosphate"
+     ],
+     [
+      "aspartate|amine,carboxyl,carboxyl",
+      "fumarate|amine,carboxyl,carboxyl",
+      "fumarate|amine,carboxyl,carboxyl,phosphate"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "fumarate>pyruvate-kinase",
+      "stages": 1,
+      "supply_load": 2,
+      "cofactors": [
+       "ADP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.8,
+       8,
+       1.2000000000000002
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "aspartate>pyruvate-kinase>aspartase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ADP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       25,
+       45,
+       20
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7.5,
+       8,
+       0.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "aspartate>aspartase>pyruvate-kinase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ADP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       25,
+       45,
+       20
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7.5,
+       8,
+       0.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "fumarate>pyruvate-kinase",
+       "aspartate>aspartase>pyruvate-kinase",
+       "aspartate>pyruvate-kinase>aspartase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "fumarate>pyruvate-kinase",
+       "aspartate>aspartase>pyruvate-kinase",
+       "aspartate>pyruvate-kinase>aspartase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "fumarate>pyruvate-kinase",
+       "aspartate>aspartase>pyruvate-kinase",
+       "aspartate>pyruvate-kinase>aspartase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "fumarate>pyruvate-kinase",
+       "aspartate>aspartase>pyruvate-kinase",
+       "aspartate>pyruvate-kinase>aspartase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "aspartate",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Aspartate carrying 2× hydroxyl",
+    "headline": "No chain of up to 5 catalogue stages makes Aspartate carrying 2× hydroxyl. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 4 stages in, at Aspartate, still carrying amine, carboxyl, carboxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "aspartate",
+      "depth": 4,
+      "molecule": "aspartate|amine,carboxyl,carboxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "aspartate",
+      "depth": 5,
+      "molecule": "aspartate|amine,carboxyl,hydroxyl,hydroxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "aspartate",
+      "depth": 5,
+      "molecule": "aspartate|amine,carboxyl,hydroxyl,hydroxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "amine"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "aspartate",
+      "depth": 2,
+      "molecule": "aspartate|amine,carboxyl,carboxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 4
+      }
+     },
+     {
+      "starter_id": "aspartate",
+      "depth": 3,
+      "molecule": "aspartate|amine,carboxyl,hydroxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "carbonyl"
+       ],
+       "total": 4
+      }
+     },
+     {
+      "starter_id": "aspartate",
+      "depth": 3,
+      "molecule": "aspartate|amine,carboxyl,hydroxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "amine",
+        "carboxyl",
+        "amine"
+       ],
+       "total": 4
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "urea",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Urea carrying an amine, a carboxyl (and possibly more)",
+    "headline": "No chain of up to 5 catalogue stages makes Urea carrying an amine, a carboxyl (and possibly more). The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Urea itself, before any stage ran, still short of carboxyl.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "urea",
+      "depth": 0,
+      "molecule": "urea|amide,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "urea",
+      "depth": 1,
+      "molecule": "urea|amide,amine,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "urea",
+      "depth": 1,
+      "molecule": "urea|amine,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "urea",
+      "depth": 2,
+      "molecule": "urea|amide,amine,methyl,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "urea",
+      "depth": 2,
+      "molecule": "urea|amine,methyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "urea",
+      "depth": 3,
+      "molecule": "urea|amide,amine,methyl,methyl,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "peroxide",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Hydrogen peroxide carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes Hydrogen peroxide carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Hydrogen peroxide itself, before any stage ran, still carrying peroxide that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "peroxide",
+      "depth": 0,
+      "molecule": "peroxide|peroxide",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "peroxide"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "peroxide",
+      "depth": 1,
+      "molecule": "peroxide|hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "peroxide",
+      "depth": 3,
+      "molecule": "peroxide|bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "peroxide",
+      "depth": 5,
+      "molecule": "peroxide|carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "peroxide",
+      "depth": 2,
+      "molecule": "peroxide|hydroxyl,phosphate",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "phosphate"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "peroxide",
+      "depth": 2,
+      "molecule": "peroxide|hydroxyl,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "methyl"
+       ],
+       "total": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "nitrile",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Small nitrile carrying a phosphate (and possibly more)",
+    "headline": "No chain of up to 5 catalogue stages makes Small nitrile carrying a phosphate (and possibly more). The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Small nitrile itself, before any stage ran, still short of phosphate.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "nitrile",
+      "depth": 0,
+      "molecule": "nitrile|bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate"
+       ],
+       "extra": [],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "protein-stain",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Protein stain fragment carrying 2× hydroxyl",
+    "headline": "No chain of up to 5 catalogue stages makes Protein stain fragment carrying 2× hydroxyl. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was Protein stain fragment itself, before any stage ran, still short of hydroxyl, hydroxyl and still carrying peptide link, peptide link, amine that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "protein-stain",
+      "depth": 0,
+      "molecule": "protein-stain|peptide,peptide,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "peptide",
+        "peptide",
+        "amine"
+       ],
+       "total": 5
+      }
+     },
+     {
+      "starter_id": "protein-stain",
+      "depth": 1,
+      "molecule": "protein-stain|peptide,amine,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "peptide",
+        "amine",
+        "amine"
+       ],
+       "total": 5
+      }
+     },
+     {
+      "starter_id": "protein-stain",
+      "depth": 2,
+      "molecule": "protein-stain|amine,amine,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "amine",
+        "amine",
+        "amine"
+       ],
+       "total": 5
+      }
+     },
+     {
+      "starter_id": "protein-stain",
+      "depth": 1,
+      "molecule": "protein-stain|peptide,peptide,amine,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "peptide",
+        "peptide",
+        "amine",
+        "methyl"
+       ],
+       "total": 6
+      }
+     },
+     {
+      "starter_id": "protein-stain",
+      "depth": 2,
+      "molecule": "protein-stain|peptide,amine,methyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "peptide",
+        "amine",
+        "methyl",
+        "amine"
+       ],
+       "total": 6
+      }
+     },
+     {
+      "starter_id": "protein-stain",
+      "depth": 3,
+      "molecule": "protein-stain|amine,methyl,amine,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "extra": [
+        "amine",
+        "methyl",
+        "amine",
+        "amine"
+       ],
+       "total": 6
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "acetoacetate",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Acetoacetate carrying an amine, a carboxyl (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Acetoacetate carrying an amine, a carboxyl (and possibly more), in 1 stage. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 14177,
+    "nodes_explored": 206000,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "acetoacetate",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "acetoacetate>glutamine-synthetase"
+    ],
+    "molecules": [
+     [
+      "acetoacetate|acyl,carbonyl,carboxyl",
+      "acetoacetate|acyl,carbonyl,carboxyl,amine"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "acetoacetate>glutamine-synthetase",
+      "stages": 1,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.8,
+       8.2,
+       1.3999999999999995
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "acetoacetate>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "acetoacetate>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "acetoacetate>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "acetoacetate>glutamine-synthetase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glycerate-2-p",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "2-Phosphoglycerate carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes 2-Phosphoglycerate carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 5 stages in, at 2-Phosphoglycerate, still carrying new bond that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 5,
+      "molecule": "glycerate-2-p|bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 5,
+      "molecule": "glycerate-2-p|carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 1,
+      "molecule": "glycerate-2-p|carboxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 2,
+      "molecule": "glycerate-2-p|carbonyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carbonyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 2,
+      "molecule": "glycerate-2-p|phosphate,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "phosphate",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glycerate-2-p",
+      "depth": 2,
+      "molecule": "glycerate-2-p|phosphate,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "phosphate",
+        "carboxyl"
+       ],
+       "total": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose-1-p",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose-1-phosphate carrying a phosphate (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Glucose-1-phosphate carrying a phosphate (and possibly more), in 0 stages. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 14236,
+    "nodes_explored": 205080,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 0,
+    "longest_shortest": 0,
+    "reached_from": [
+     {
+      "starter_id": "glucose-1-p",
+      "stages": 0
+     }
+    ],
+    "route_ids": [
+     "glucose-1-p>"
+    ],
+    "molecules": [
+     [
+      "glucose-1-p|phosphate,hydroxyl,hydroxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glucose-1-p>",
+      "stages": 0,
+      "supply_load": 0,
+      "cofactors": [],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": null,
+      "ph_window": null,
+      "ph_empty": true,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glucose-1-p>"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glucose-1-p>"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glucose-1-p>"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glucose-1-p>"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "fructose",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Fructose carrying 2× hydroxyl",
+    "headline": "No chain of up to 5 catalogue stages makes Fructose carrying 2× hydroxyl. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 1 stage in, at Fructose, still carrying hydroxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "fructose|hydroxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "bond"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 5,
+      "molecule": "fructose|hydroxyl,hydroxyl,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl"
+       ],
+       "total": 1
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "phosphate"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "methyl"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl,sugar",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "sugar"
+       ],
+       "total": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "triose-iso",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Rearranged triose carrying an amine, a carboxyl (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Rearranged triose carrying an amine, a carboxyl (and possibly more), in 3 stages. 2 of the 3 chains it found are shown, picked to be different combinations of enzymes rather than reorderings of the same one.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 13151,
+    "nodes_explored": 190800,
+    "total_found": 3,
+    "truncated": false,
+    "shortest_depth": 3,
+    "longest_shortest": 3,
+    "reached_from": [
+     {
+      "starter_id": "triose",
+      "stages": 3
+     }
+    ],
+    "route_ids": [
+     "triose>tim>carbonic-anhydrase>glutamine-synthetase",
+     "triose>carbonic-anhydrase>tim>glutamine-synthetase"
+    ],
+    "molecules": [
+     [
+      "triose|phosphate,hydroxyl,carbonyl",
+      "triose-iso|phosphate,hydroxyl,carbonyl",
+      "triose-iso|phosphate,carboxyl",
+      "triose-iso|phosphate,carboxyl,amine"
+     ],
+     [
+      "triose|phosphate,hydroxyl,carbonyl",
+      "triose|phosphate,carboxyl",
+      "triose-iso|phosphate,carboxyl",
+      "triose-iso|phosphate,carboxyl,amine"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "triose>tim>carbonic-anhydrase>glutamine-synthetase",
+      "stages": 3,
+      "supply_load": 3,
+      "cofactors": [
+       "ATP",
+       "Mg2+",
+       "Zn2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.8,
+       8,
+       1.2000000000000002
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "triose>carbonic-anhydrase>tim>glutamine-synthetase",
+      "stages": 3,
+      "supply_load": 3,
+      "cofactors": [
+       "ATP",
+       "Mg2+",
+       "Zn2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.8,
+       8,
+       1.2000000000000002
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "triose>carbonic-anhydrase>tim>glutamine-synthetase",
+       "triose>tim>carbonic-anhydrase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "triose>carbonic-anhydrase>tim>glutamine-synthetase",
+       "triose>tim>carbonic-anhydrase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "triose>carbonic-anhydrase>tim>glutamine-synthetase",
+       "triose>tim>carbonic-anhydrase>glutamine-synthetase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "triose>carbonic-anhydrase>tim>glutamine-synthetase",
+       "triose>tim>carbonic-anhydrase>glutamine-synthetase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose-6-p",
+    "groups": [],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose-6-phosphate carrying nothing else",
+    "headline": "No chain of up to 5 catalogue stages makes Glucose-6-phosphate carrying nothing else. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 2 stages in, at Glucose-6-phosphate, still carrying hydroxyl, new bond that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 2,
+      "molecule": "glucose-6-p|hydroxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 4,
+      "molecule": "glucose-6-p|bond,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "bond",
+        "bond"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 1,
+      "molecule": "glucose-6-p|phosphate,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "phosphate",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 2,
+      "molecule": "glucose-6-p|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 3,
+      "molecule": "glucose-6-p|hydroxyl,phosphate,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "phosphate",
+        "bond"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 3,
+      "molecule": "glucose-6-p|hydroxyl,methyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "hydroxyl",
+        "methyl",
+        "bond"
+       ],
+       "total": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "enolpyruvate",
+    "groups": [
+     "phosphate"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Enolpyruvate carrying a phosphate (and possibly more)",
+    "headline": "1 of the 18 starting molecules can reach Enolpyruvate carrying a phosphate (and possibly more), in 1 stage. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 12338,
+    "nodes_explored": 178120,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "glycerate-2-p",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "glycerate-2-p>enolase"
+    ],
+    "molecules": [
+     [
+      "glycerate-2-p|phosphate,carboxyl,hydroxyl",
+      "enolpyruvate|phosphate,carboxyl,hydroxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glycerate-2-p>enolase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       50,
+       30
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.8,
+       8.2,
+       1.3999999999999995
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glycerate-2-p>enolase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glycerate-2-p>enolase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glycerate-2-p>enolase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glycerate-2-p>enolase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "malate",
+    "groups": [
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Malate carrying 2× hydroxyl",
+    "headline": "No chain of up to 5 catalogue stages makes Malate carrying 2× hydroxyl. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 5 stages in, at Malate, still carrying carboxyl, carboxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "fumarate",
+      "depth": 5,
+      "molecule": "malate|carboxyl,carboxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [],
+       "extra": [
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 3,
+      "molecule": "malate|carboxyl,carboxyl,hydroxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 4,
+      "molecule": "malate|carboxyl,hydroxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "carboxyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 4,
+      "molecule": "malate|carboxyl,hydroxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "carboxyl",
+        "amine"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 5,
+      "molecule": "malate|carboxyl,hydroxyl,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "carboxyl",
+        "bond"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 5,
+      "molecule": "malate|hydroxyl,carbonyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "hydroxyl"
+       ],
+       "extra": [
+        "carbonyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "amide",
+    "groups": [
+     "amine",
+     "carboxyl"
+    ],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Amide carrying an amine, a carboxyl (and possibly more)",
+    "headline": "No chain of up to 5 catalogue stages makes Amide carrying an amine, a carboxyl (and possibly more). The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 1 stage in, at Amide, still short of amine, carboxyl.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "nitrile",
+      "depth": 1,
+      "molecule": "amide|bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "amine",
+        "carboxyl"
+       ],
+       "extra": [],
+       "total": 2
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,acyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar,carboxyl,amine",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "fructose",
+    "groups": [
+     "phosphate",
+     "hydroxyl",
+     "hydroxyl",
+     "hydroxyl"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Fructose carrying 3× hydroxyl, a phosphate",
+    "headline": "1 of the 18 starting molecules can reach Fructose carrying 3× hydroxyl, a phosphate, in 2 stages. All 6 chains the search found are shown.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 15042,
+    "nodes_explored": 216640,
+    "total_found": 6,
+    "truncated": false,
+    "shortest_depth": 2,
+    "longest_shortest": 2,
+    "reached_from": [
+     {
+      "starter_id": "glucose",
+      "stages": 2
+     }
+    ],
+    "route_ids": [
+     "glucose>hexokinase>glucose-isomerase",
+     "glucose>glycerol-kinase>glucose-isomerase",
+     "glucose>glucokinase>glucose-isomerase",
+     "glucose>glucose-isomerase>hexokinase",
+     "glucose>glucose-isomerase>glycerol-kinase",
+     "glucose>glucose-isomerase>glucokinase"
+    ],
+    "molecules": [
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ],
+     [
+      "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "fructose|hydroxyl,hydroxyl,hydroxyl,phosphate"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glucose>hexokinase>glucose-isomerase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       45,
+       45,
+       0
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.2,
+       1.1999999999999993
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glucose>glycerol-kinase>glucose-isomerase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": [
+       "glucose-isomerase",
+       "glycerol-kinase"
+      ],
+      "ph_window": [
+       7,
+       9,
+       2
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glucose>glucokinase>glucose-isomerase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       45,
+       45,
+       0
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.5,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glucose>glucose-isomerase>hexokinase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       45,
+       45,
+       0
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.2,
+       1.1999999999999993
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glucose>glucose-isomerase>glycerol-kinase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": null,
+      "temp_empty": true,
+      "temp_blame": [
+       "glucose-isomerase",
+       "glycerol-kinase"
+      ],
+      "ph_window": [
+       7,
+       9,
+       2
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     },
+     {
+      "route_id": "glucose>glucose-isomerase>glucokinase",
+      "stages": 2,
+      "supply_load": 2,
+      "cofactors": [
+       "ATP",
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       45,
+       45,
+       0
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.5,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glucose>glucokinase>glucose-isomerase",
+       "glucose>glucose-isomerase>glucokinase",
+       "glucose>glucose-isomerase>glycerol-kinase",
+       "glucose>glucose-isomerase>hexokinase",
+       "glucose>glycerol-kinase>glucose-isomerase",
+       "glucose>hexokinase>glucose-isomerase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glucose>glucokinase>glucose-isomerase",
+       "glucose>glucose-isomerase>glucokinase",
+       "glucose>glucose-isomerase>glycerol-kinase",
+       "glucose>glucose-isomerase>hexokinase",
+       "glucose>glycerol-kinase>glucose-isomerase",
+       "glucose>hexokinase>glucose-isomerase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glucose>glucokinase>glucose-isomerase",
+       "glucose>glucose-isomerase>glucokinase",
+       "glucose>glucose-isomerase>hexokinase",
+       "glucose>hexokinase>glucose-isomerase",
+       "glucose>glucose-isomerase>glycerol-kinase",
+       "glucose>glycerol-kinase>glucose-isomerase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glucose>glucose-isomerase>glycerol-kinase",
+       "glucose>glycerol-kinase>glucose-isomerase",
+       "glucose>glucokinase>glucose-isomerase",
+       "glucose>glucose-isomerase>glucokinase",
+       "glucose>glucose-isomerase>hexokinase",
+       "glucose>hexokinase>glucose-isomerase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glycerol",
+      "depth": 1,
+      "molecule": "glycerol|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose-1-p",
+      "depth": 2,
+      "molecule": "glucose-1-p|hydroxyl,hydroxyl,phosphate,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "catechol",
+      "depth": 3,
+      "molecule": "catechol|hydroxyl,hydroxyl,phosphate,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 3,
+      "molecule": "starch|hydroxyl,phosphate,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "cellulose",
+      "depth": 4,
+      "molecule": "cellulose|hydroxyl,phosphate,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "tributyrin",
+      "depth": 4,
+      "molecule": "tributyrin|hydroxyl,phosphate,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose-6-p",
+    "groups": [],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose-6-phosphate, carrying anything",
+    "headline": "1 of the 18 starting molecules can reach Glucose-6-phosphate, carrying anything, in 1 stage. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 14244,
+    "nodes_explored": 205120,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "glucose-1-p",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "glucose-1-p>phosphoglucomutase"
+    ],
+    "molecules": [
+     [
+      "glucose-1-p|phosphate,hydroxyl,hydroxyl",
+      "glucose-6-p|phosphate,hydroxyl,hydroxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glucose-1-p>phosphoglucomutase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.5,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 0,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "malate",
+    "groups": [
+     "sulfate"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Malate carrying a sulfate",
+    "headline": "No chain of up to 5 catalogue stages makes Malate carrying a sulfate. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 1 stage in, at Malate, still short of sulfate and still carrying carboxyl, carboxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "fumarate",
+      "depth": 1,
+      "molecule": "malate|carboxyl,carboxyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "carboxyl",
+        "carboxyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 2,
+      "molecule": "malate|carboxyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "carboxyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 2,
+      "molecule": "malate|carboxyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "carboxyl",
+        "amine"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 3,
+      "molecule": "malate|carbonyl,carbonyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "carbonyl",
+        "carbonyl"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 3,
+      "molecule": "malate|carbonyl,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "carbonyl",
+        "amine"
+       ],
+       "total": 3
+      }
+     },
+     {
+      "starter_id": "fumarate",
+      "depth": 3,
+      "molecule": "malate|amine,amine",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "sulfate"
+       ],
+       "extra": [
+        "amine",
+        "amine"
+       ],
+       "total": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "triose-iso",
+    "groups": [],
+    "match": "carries",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Rearranged triose, carrying anything",
+    "headline": "1 of the 18 starting molecules can reach Rearranged triose, carrying anything, in 1 stage. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 12894,
+    "nodes_explored": 188320,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "triose",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "triose>tim"
+    ],
+    "molecules": [
+     [
+      "triose|phosphate,hydroxyl,carbonyl",
+      "triose-iso|phosphate,hydroxyl,carbonyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "triose>tim",
+      "stages": 1,
+      "supply_load": 0,
+      "cofactors": [],
+      "needs": [],
+      "temp_window": [
+       20,
+       50,
+       30
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       6.5,
+       8,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "triose>tim"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "triose>tim"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "triose>tim"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "triose>tim"
+      ]
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 0,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 1,
+      "molecule": "fructose|hydroxyl,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose",
+    "groups": [
+     "phosphate",
+     "phosphate",
+     "phosphate",
+     "phosphate",
+     "phosphate",
+     "phosphate",
+     "phosphate",
+     "phosphate"
+    ],
+    "match": "exact",
+    "starter_ids": null
+   },
+   "expect": {
+    "valid": false,
+    "describe": "Glucose carrying 8× phosphate",
+    "headline": "No chain of up to 5 catalogue stages makes Glucose carrying 8× phosphate. The search walked every one of the 15,628 molecules the forty entries can reach; the closest it came was 4 stages in, at Glucose, still short of phosphate, phosphate, phosphate, phosphate and still carrying hydroxyl, hydroxyl, hydroxyl that would have to come off.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 15628,
+    "nodes_explored": 226400,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate,phosphate,phosphate",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 7
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 3,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate,phosphate",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 8
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 5,
+      "molecule": "glucose|hydroxyl,hydroxyl,phosphate,phosphate,phosphate,bond",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "bond"
+       ],
+       "total": 8
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 2,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl"
+       ],
+       "total": 9
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate,phosphate,methyl",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl",
+        "methyl"
+       ],
+       "total": 9
+      }
+     },
+     {
+      "starter_id": "glucose",
+      "depth": 4,
+      "molecule": "glucose|hydroxyl,hydroxyl,hydroxyl,phosphate,phosphate,phosphate,sugar",
+      "distance": {
+       "core_off": 0,
+       "missing": [
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate",
+        "phosphate"
+       ],
+       "extra": [
+        "hydroxyl",
+        "hydroxyl",
+        "hydroxyl",
+        "sugar"
+       ],
+       "total": 9
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose-6-p",
+    "groups": [],
+    "match": "carries",
+    "starter_ids": [
+     "glucose-1-p"
+    ]
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose-6-phosphate, carrying anything",
+    "headline": "1 of the 18 starting molecules can reach Glucose-6-phosphate, carrying anything, in 1 stage. It is the only chain the search found.",
+    "reachable": true,
+    "exhausted": true,
+    "states_seen": 9,
+    "nodes_explored": 40,
+    "total_found": 1,
+    "truncated": false,
+    "shortest_depth": 1,
+    "longest_shortest": 1,
+    "reached_from": [
+     {
+      "starter_id": "glucose-1-p",
+      "stages": 1
+     }
+    ],
+    "route_ids": [
+     "glucose-1-p>phosphoglucomutase"
+    ],
+    "molecules": [
+     [
+      "glucose-1-p|phosphate,hydroxyl,hydroxyl",
+      "glucose-6-p|phosphate,hydroxyl,hydroxyl"
+     ]
+    ],
+    "metrics": [
+     {
+      "route_id": "glucose-1-p>phosphoglucomutase",
+      "stages": 1,
+      "supply_load": 1,
+      "cofactors": [
+       "Mg2+"
+      ],
+      "needs": [],
+      "temp_window": [
+       20,
+       45,
+       25
+      ],
+      "temp_empty": false,
+      "temp_blame": null,
+      "ph_window": [
+       7,
+       8.5,
+       1.5
+      ],
+      "ph_empty": false,
+      "ph_blame": null
+     }
+    ],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "supply",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "temp",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     },
+     {
+      "criterion": "ph",
+      "order": [
+       "glucose-1-p>phosphoglucomutase"
+      ]
+     }
+    ],
+    "near_misses": []
+   }
+  },
+  {
+   "spec": {
+    "core": "glucose-6-p",
+    "groups": [],
+    "match": "carries",
+    "starter_ids": [
+     "starch"
+    ]
+   },
+   "expect": {
+    "valid": true,
+    "describe": "Glucose-6-phosphate, carrying anything",
+    "headline": "No chain of up to 5 catalogue stages makes Glucose-6-phosphate, carrying anything. The search walked every one of the 1,088 molecules the forty entries can reach; the closest it came was Starch fragment itself, before any stage ran, never reached a Glucose-6-phosphate skeleton at all.",
+    "reachable": false,
+    "exhausted": true,
+    "states_seen": 1088,
+    "nodes_explored": 16280,
+    "total_found": 0,
+    "truncated": false,
+    "shortest_depth": null,
+    "longest_shortest": null,
+    "reached_from": [],
+    "route_ids": [],
+    "molecules": [],
+    "metrics": [],
+    "rankings": [
+     {
+      "criterion": "stages",
+      "order": []
+     },
+     {
+      "criterion": "supply",
+      "order": []
+     },
+     {
+      "criterion": "temp",
+      "order": []
+     },
+     {
+      "criterion": "ph",
+      "order": []
+     }
+    ],
+    "near_misses": [
+     {
+      "starter_id": "starch",
+      "depth": 0,
+      "molecule": "starch|sugar,sugar,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,sugar,hydroxyl,phosphate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,sugar,hydroxyl,methyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,sugar,hydroxyl,sugar",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,sugar,hydroxyl,sulfate",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     },
+     {
+      "starter_id": "starch",
+      "depth": 1,
+      "molecule": "starch|sugar,hydroxyl,hydroxyl",
+      "distance": {
+       "core_off": 1,
+       "missing": [],
+       "extra": [],
+       "total": 100
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "starved": {
+  "limits": {
+   "max_scan_nodes": 50
+  },
+  "expect": {
+   "reachable": false,
+   "exhausted": false,
+   "headline": "The search did not finish inside its budget, so this says nothing either way about whether Malate carrying a sulfate can be made. It walked 143 molecules without reaching it."
+  }
+ }
+}
