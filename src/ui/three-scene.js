@@ -21,6 +21,7 @@
 
 import * as THREE from 'three';
 import { groupMeta } from '../model/molecules.js';
+import { archetypeOf } from '../model/archetypes.js';
 import { buildStructure, buildGroupFragment, elementMeta, STRUCTURE_NOTE } from '../model/structure.js';
 
 export const SCENE_NOTE = 'Invented geometry — not a structure.';
@@ -530,7 +531,7 @@ export function createFoundryScene(canvas) {
 
   /* dust: small, dim, and the only particles — nothing that happens at this
      scale looks like god rays, caustics or bubbles */
-  const dustCount = 900;
+  const dustCount = 450;
   const dustPos = new Float32Array(dustCount * 3);
   for (let i = 0; i < dustCount; i++) {
     const r = 6 + Math.random() * 26;
@@ -549,7 +550,7 @@ export function createFoundryScene(canvas) {
       map: glowTexture(),
       color: 0xb4c0ff,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.2,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     }),
@@ -580,6 +581,28 @@ export function createFoundryScene(canvas) {
     bokeh.add(disc);
   }
   scene.add(bokeh);
+
+  /* a pool of light under the subject: a thin lit rim, a faint fill and one
+     point light, in the archetype's hue, so the floor is the one element with
+     a different weight from everything above it and a stage change reads as
+     the floor changing colour. It is set dressing, not a surface. */
+  const floor = new THREE.Group();
+  floor.position.y = -2.9;
+  floor.rotation.x = -Math.PI / 2;
+  const floorColour = flat(205 / 360, 0.8, 0.6);
+  const floorTarget = floorColour.clone();
+  const floorRim = new THREE.Mesh(
+    new THREE.RingGeometry(1.85, 1.92, 96),
+    new THREE.MeshBasicMaterial({ color: floorColour, transparent: true, opacity: 0.7, side: THREE.DoubleSide, toneMapped: false }),
+  );
+  const floorFill = new THREE.Mesh(
+    new THREE.CircleGeometry(1.85, 96),
+    new THREE.MeshBasicMaterial({ color: floorColour, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }),
+  );
+  floor.add(floorFill, floorRim);
+  const floorLight = new THREE.PointLight(floorColour, 2.4, 9, 1.4);
+  floorLight.position.set(0, -1.6, 0.6);
+  scene.add(floor, floorLight);
 
   const stage = new THREE.Group();
   scene.add(stage);
@@ -634,6 +657,9 @@ export function createFoundryScene(canvas) {
     const enzyme = buildEnzyme(entry);
     enzyme.position.copy(OFFSTAGE_IN);
     stage.add(enzyme);
+
+    const arch = archetypeOf(entry);
+    if (arch) floorTarget.copy(flat(arch.hue / 360, 0.8, 0.6));
 
     const molecule = buildMolecule(molIn, { scale: 1 });
     stage.add(molecule);
@@ -867,7 +893,7 @@ export function createFoundryScene(canvas) {
       out.push({
         id: `ribbon-${i}`,
         text: `${site.label} · ${site.region}`,
-        detail: `Drawn as its own lobe, in the ${site.region} colour, because the catalogue entry labels this region a ${site.region}. Where it sits is invented.`,
+        detail: `${site.region} · named in the catalogue entry. Where it sits is invented.`,
         object: mesh.userData.pin ?? mesh,
       });
     });
@@ -920,6 +946,10 @@ export function createFoundryScene(canvas) {
     orbitTarget.el *= 1 - Math.min(1, dt * 0.35);
 
     dust.rotation.y += dt * 0.012;
+    floorColour.lerp(floorTarget, Math.min(1, dt * 2));
+    floorRim.material.color.copy(floorColour);
+    floorFill.material.color.copy(floorColour);
+    floorLight.color.copy(floorColour);
     stage.traverse((o) => {
       if (o.userData.orbit) o.rotation.z += dt * o.userData.orbit;
     });
