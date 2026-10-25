@@ -804,3 +804,27 @@ body.home-mode .standing-note { position: relative; z-index: 6; }
   .stat-value { grid-column: 2; }
   .drawer-row { flex-direction: column; gap: 4px; }
   .drawer-row-label { width: auto; }}
+
+/* The literature panel beside a rejection: the verdict is above it and was
+   reached without any of this. See src/ui/literature.js. */
+.verdict-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.lit-panel {
+  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  background: #171a24; border: 1px solid #2c3346; display: grid; gap: 10px;
+}
+.lit-panel h4 {
+  margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+.lit-bridge { margin: 0; font-size: 12.5px; line-height: 1.5; }
+.lit-note { margin: 0; font-size: 12.5px; color: var(--ink-dim); line-height: 1.5; }
+.lit-refs, .lit-links { margin: 0; padding-left: 20px; display: grid; gap: 9px; font-size: 12.5px; }
+.lit-refs a, .lit-links a { color: var(--accent-2); }
+.lit-snippet { font-size: 11.5px; color: var(--ink-faint); line-height: 1.4; margin-top: 2px; }
+.lit-caveat { margin: 0; font-size: 11px; color: var(--ink-faint); line-height: 1.45; }
+.lit-summary { display: grid; gap: 8px; padding-top: 2px; border-top: 1px solid #2c3346; }
+.lit-summary strong {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint);
+}
+.lit-summary p { margin: 0; font-size: 12.5px; line-height: 1.55; }

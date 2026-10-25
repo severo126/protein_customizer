@@ -8,6 +8,7 @@ import { PASS_VERDICT, NOT_CHECKED, CARTOON_PHYSICS_NOTE } from '../model/discla
 import { exportConstruct } from '../model/exportConstruct.js';
 import { download } from './bench-view.js';
 import { explainRejection } from './gemini.js';
+import { showLiterature } from './literature.js';
 import { logEvent } from './telemetry.js';
 
 export function renderSplice(root) {
@@ -94,7 +95,11 @@ function verdictBox(verdict) {
     <h3>Ruled out by this toy — ${escapeText(killer.label)}</h3>
     <div class="meaning">${escapeText(killer.reason)}</div>
     <div class="meaning" id="plain-english"></div>
-    <button class="btn small" id="explain">Explain this in plain English</button>
+    <div class="verdict-actions">
+      <button class="btn small" id="explain">Explain this in plain English</button>
+      <button class="btn small" id="explain-literature">What does the literature say?</button>
+    </div>
+    <div id="literature"></div>
   </div>`;
 }
 
@@ -188,6 +193,19 @@ function wire(root) {
       const verdict = runFilters(a, siteA, b, siteB, state.linker, laneEntries());
       out.textContent = 'Asking for a plain-English explanation…';
       out.textContent = await explainRejection({ a, b, siteA, siteB, linker: state.linker, verdict });
+      return;
+    }
+    if (e.target.id === 'explain-literature') {
+      // The verdict is already in hand; this only goes and finds out what has
+      // been published about the failure mode the filter named.
+      const a = state.spliceA;
+      const b = state.spliceB;
+      const siteA = a.domain.sites.find((s) => s.id === state.siteA);
+      const siteB = b.domain.sites.find((s) => s.id === state.siteB);
+      const verdict = runFilters(a, siteA, b, siteB, state.linker, laneEntries());
+      const killer = verdict.results.find((r) => !r.pass);
+      if (!killer) return;
+      await showLiterature(root.querySelector('#literature'), { killer });
     }
   };
 }

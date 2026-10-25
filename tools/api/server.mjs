@@ -12,6 +12,7 @@ import { readFile, appendFile, mkdir } from 'node:fs/promises';
 import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { extname, join, normalize } from 'node:path';
+import { screenReferences } from './sourceFilter.mjs';
 
 const root = process.cwd();
 const port = Number(process.env.PORT ?? 5173);
@@ -116,6 +117,80 @@ export async function readJsonl() {
   return rows;
 }
 
+// Google Scholar, when a key is configured. Better ranking, costs money.
+async function viaSerpApi(query) {
+  const serp = new URL('https://serpapi.com/search.json');
+  serp.searchParams.set('engine', 'google_scholar');
+  serp.searchParams.set('q', query);
+  serp.searchParams.set('num', '8');
+  serp.searchParams.set('api_key', process.env.SERPAPI_KEY);
+  const out = await fetch(serp, { signal: AbortSignal.timeout(12000) });
+  if (!out.ok) throw new Error(`SerpApi HTTP ${out.status}`);
+  const data = await out.json();
+  return {
+    provider: 'Google Scholar, via SerpApi',
+    results: (data.organic_results ?? []).map((r) => ({
+      title: r.title,
+      link: r.link,
+      snippet: r.publication_info?.summary ?? r.snippet ?? '',
+    })),
+  };
+}
+
+// Crossref publishes a rate limit of one request per second, and a failure mode
+// panel fires both of its queries at once. Without a gate the second one comes
+// back empty and the panel silently shows half a reading list, which is exactly
+// the kind of quiet wrongness this app is not allowed to have. So outbound
+// Crossref calls queue here and are spaced, and a caller waits rather than
+// getting nothing.
+let crossrefTurn = Promise.resolve();
+const CROSSREF_SPACING_MS = 1100;
+
+function nextCrossrefSlot() {
+  const mine = crossrefTurn.then(() => new Promise((r) => setTimeout(r, CROSSREF_SPACING_MS)));
+  crossrefTurn = mine.catch(() => {});
+  return mine;
+}
+
+// Crossref, when there is no key. Open, no account needed, and every hit is a
+// DOI, so the links go to the paper itself rather than to a search page.
+async function viaCrossref(query) {
+  await nextCrossrefSlot();
+  const api = new URL('https://api.crossref.org/works');
+  api.searchParams.set('query.bibliographic', query);
+  api.searchParams.set('rows', '12');
+  api.searchParams.set('select', 'title,URL,container-title,published');
+  // Crossref indexes far more than papers. Without this the reading list fills
+  // up with figure supplements, structure depositions and the referee reports
+  // and decision letters attached to one article, all of which look like hits
+  // and none of which is something to go and read.
+  api.searchParams.set('filter', 'type:journal-article');
+  const out = await fetch(api, {
+    signal: AbortSignal.timeout(12000),
+    // Crossref asks callers to identify themselves; it gets better service.
+    headers: { 'user-agent': 'NanoFoundry/0.1 (educational classroom toy; https://github.com/severo126/protein_customizer)' },
+  });
+  if (!out.ok) throw new Error(`Crossref HTTP ${out.status}`);
+  const data = await out.json();
+  // The same article is often indexed several times under different DOIs, so a
+  // list of eight can be the same paper eight times. Dedupe on the title.
+  const seen = new Set();
+  const results = [];
+  for (const r of data.message?.items ?? []) {
+    const title = (r.title ?? [])[0] ?? '';
+    const fingerprint = title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!fingerprint || seen.has(fingerprint)) continue;
+    seen.add(fingerprint);
+    results.push({
+      title,
+      link: r.URL ?? '',
+      snippet: [(r['container-title'] ?? [])[0], (r.published?.['date-parts'] ?? [])[0]?.[0]].filter(Boolean).join(', '),
+    });
+    if (results.length >= 8) break;
+  }
+  return { provider: 'Crossref', results };
+}
+
 async function body(req) {
   const chunks = [];
   for await (const c of req) chunks.push(c);
@@ -141,36 +216,45 @@ createServer(async (req, res) => {
     }
   }
 
+  // The one retrieval path in the app. Two things vary, and nothing else:
+  //
+  //   * `topic` frames the query. `enzyme` (the default) looks up a catalogue
+  //     card; `failure-mode` looks up what the literature says about a kind of
+  //     rejection a filter has already made.
+  //   * which backend answers. With SERPAPI_KEY set it is Google Scholar through
+  //     SerpApi; without one it is Crossref, which needs no key and returns DOIs.
+  //     The Crossref leg is why the citation trail works on a fresh clone at all,
+  //     which matters more here than the slightly better ranking a key buys.
+  //
+  // Both legs hold their credentials server-side, both go through the same screen
+  // in sourceFilter.mjs, and both fall back to the same hand-written links. The
+  // response says which backend answered so the panel can attribute it honestly.
   if (url.pathname === '/api/sources') {
     const q = url.searchParams.get('q') ?? '';
+    const topic = url.searchParams.get('topic') === 'failure-mode' ? 'failure-mode' : 'enzyme';
     if (!q) return json(res, 400, { error: 'q is required' });
-    if (!process.env.SERPAPI_KEY) {
+
+    // A catalogue card is one enzyme, so the name alone is ambiguous and gets a
+    // nudge. A failure-mode query is already a full phrase; appending to it only
+    // narrows it to nothing.
+    const query = topic === 'failure-mode' ? q : `${q} enzyme`;
+
+    try {
+      const { provider, results } = process.env.SERPAPI_KEY ? await viaSerpApi(query) : await viaCrossref(query);
+      const { kept, dropped } = screenReferences(results);
+      return json(res, 200, { configured: true, provider, topic, query: q, results: kept, screened_out: dropped });
+    } catch (err) {
+      // Nothing answered, so hand over somewhere to look rather than pretending
+      // to have found sources.
       return json(res, 200, {
         configured: false,
+        topic,
         fallback_links: [
           { label: `Search the literature for "${q}"`, url: `https://scholar.google.com/scholar?q=${encodeURIComponent(q)}` },
           { label: `Look "${q}" up in a general reference`, url: `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}` },
         ],
-        note: 'Set SERPAPI_KEY to turn the citation trail on.',
+        note: `No reference search answered (${err.message}). Set SERPAPI_KEY for the Scholar backend, or check this box can reach api.crossref.org.`,
       });
-    }
-    try {
-      const serp = new URL('https://serpapi.com/search.json');
-      serp.searchParams.set('engine', 'google_scholar');
-      serp.searchParams.set('q', `${q} enzyme`);
-      serp.searchParams.set('num', '8');
-      serp.searchParams.set('api_key', process.env.SERPAPI_KEY);
-      const out = await fetch(serp);
-      if (!out.ok) throw new Error(`SerpApi HTTP ${out.status}`);
-      const data = await out.json();
-      const results = (data.organic_results ?? []).map((r) => ({
-        title: r.title,
-        link: r.link,
-        snippet: r.publication_info?.summary ?? r.snippet ?? '',
-      }));
-      return json(res, 200, { configured: true, query: q, results });
-    } catch (err) {
-      return json(res, 502, { configured: true, error: err.message });
     }
   }
 

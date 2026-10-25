@@ -153,6 +153,41 @@ export async function explainRejection({ a, b, siteA, siteB, linker, verdict }) 
   }
 }
 
+// Read the references src/ui/literature.js has already retrieved, and say what
+// they report about the failure mode the filter named. The model is handed the
+// verdict and the screened reference list and nothing else, so there is nothing
+// here for it to decide or to score: both are settled before it is called.
+export async function summariseReferences({ killer, mode, references }) {
+  if (!geminiKey()) throw new Error('no key set');
+  if (!references.length) throw new Error('nothing retrieved to read');
+
+  const spec = await agentSpec('literature-explainer');
+  const list = references
+    .slice(0, 8)
+    .map((r, i) => `[${i + 1}] ${r.title}${r.snippet ? ` — ${r.snippet}` : ''}`)
+    .join('\n');
+
+  const text = await callGemini(
+    [
+      spec.instructionText,
+      '',
+      'A deterministic cartoon filter has rejected a hypothetical two-domain construct.',
+      'Say what the retrieved references below report about this kind of failure. Cite them by',
+      'number. Do not reconsider the verdict, do not score anything, and do not suggest a fix.',
+      '',
+      `Filter that rejected it: ${killer.label}.`,
+      `Reason the deterministic filter gave: ${killer.reason}`,
+      `The real failure mode this cartoon filter is gesturing at: ${mode.realName}. ${mode.gist}`,
+      '',
+      'Retrieved references (titles and search snippets only — you have not read the full text):',
+      list,
+    ].join('\n'),
+    spec,
+  );
+  logEvent('literature.summarise', { filter: killer.id, references: references.length });
+  return text.trim();
+}
+
 async function callGemini(prompt, spec) {
   const started = performance.now();
   const controller = new AbortController();

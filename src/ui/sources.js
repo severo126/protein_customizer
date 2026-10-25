@@ -19,7 +19,12 @@ export async function showSources(entry) {
     const res = await fetch(`/api/sources?q=${encodeURIComponent(entry.name)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    dialog.innerHTML = panel(entry, data.configured ? { state: 'results', results: data.results ?? [] } : { state: 'unconfigured', links: data.fallback_links ?? [] });
+    dialog.innerHTML = panel(
+      entry,
+      data.configured
+        ? { state: 'results', results: data.results ?? [], provider: data.provider ?? 'a public reference search' }
+        : { state: 'unconfigured', links: data.fallback_links ?? [] },
+    );
   } catch (err) {
     dialog.innerHTML = panel(entry, { state: 'offline', error: String(err.message ?? err) });
   }
@@ -52,13 +57,13 @@ function bodyFor(view) {
         )
         .join('')}
     </ul>
-    <p style="font-size:11.5px;color:var(--ink-faint)">Public search results, fetched through SerpApi.
+    <p style="font-size:11.5px;color:var(--ink-faint)">Public search results, fetched through ${escapeText(view.provider)}.
     Nano Foundry has not read them and does not vouch for them.</p>`;
   }
 
   if (view.state === 'unconfigured') {
-    return `<p class="empty">No SerpApi key is configured on the server, so this panel cannot pull
-      references automatically. The searches it would have run:</p>
+    return `<p class="empty">No reference search answered, so this panel cannot pull references
+      automatically. The searches it would have run:</p>
       <ul style="padding-left:18px;display:grid;gap:6px">
         ${view.links.map((l) => `<li><a href="${escapeText(l.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-2)">${escapeText(l.label)}</a></li>`).join('')}
       </ul>`;
